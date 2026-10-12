@@ -32,7 +32,7 @@ def test_tool_definitions_fit_token_budget():
     tools = run(server.server.list_tools())
     payload = json.dumps([t.model_dump(exclude_none=True) for t in tools])
     approx_tokens = len(payload) / 4
-    assert len(tools) <= 10
+    assert len(tools) <= 11
     assert approx_tokens < TOOL_TOKEN_BUDGET, f"{approx_tokens:.0f} tokens"
 
 

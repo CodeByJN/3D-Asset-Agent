@@ -20,7 +20,8 @@ server = MCPServer("asset-agent", instructions=(
     "your GPU) and returns one line. Fix things with revise (only that layer and what depends on it "
     "rebuilds), not by regenerating. preview only when you must see it (layer='breakdown' shows geometry, "
     "topology, colour, texture). After each make_asset or revise the user looks at, ask for a 1-10 "
-    "rating and call rate."))
+    "rating and call rate. studio(name) sends an asset to the user's Roblox Studio test place: run the "
+    "Luau it returns with the Roblox Studio MCP's execute_luau (Edit)."))
 
 
 def home() -> Path:
@@ -75,7 +76,8 @@ def import_mesh(name: str, path: str, image: str | None = None, style: str = "au
 @tool
 def revise(name: str, layer: str, change: dict, part: str | None = None) -> str:
     """Change one layer; only it and what depends on it rebuild. Layers and keys:
-    finish {roughness, metallic, tint} | geometry {scale [x,y,z], offset, or a new shape: source
+    finish {roughness, metallic, tint} | vfx {effect_name: {type fire|smoke|sparkles|glow, color,
+    size, rate} or null} | geometry {scale [x,y,z], offset, or a new shape: source
     (mesh path) | prompt | image, keep [scale, texture] (default both)} |
     topology {target_tris} | uv {angle, margin} | surface {mode, image, ao, tex_size} |
     collision {max_tris} | export {scale_to (m), target roblox|godot|unity}."""
@@ -102,8 +104,8 @@ def validate(name: str) -> str:
 
 @server.tool(structured_output=False)
 def preview(name: str, size: int = 256, layer: str = "final"):
-    """Image, 2x2. layer: final | geometry | topology | colour | texture (4 views each) |
-    breakdown (those 4 layers, 3/4 view). Costs image tokens: use sparingly."""
+    """Image. layer: final | geometry | topology | colour | texture | vfx (4 views each) |
+    breakdown (labelled row: mesh, topology, colour, texture, vfx). Costs image tokens: use sparingly."""
     try:
         return Image(path=str(_asset(name).preview(min(size, 512), layer)))
     except Exception as e:
@@ -153,6 +155,17 @@ def rate(name: str, stars: int, note: str = "") -> str:
         return f"rated {name} v{a.m['version']} {stars}/10 (no project, so nothing learned)"
     return Project.open(home(), a.m["project"]).rate(name, a.m["version"], stars, note, a.params_snapshot(),
                                                      a.m.get("prompt"))
+
+
+@server.tool(structured_output=False)
+def studio(name: str) -> str:
+    """Upload the asset to your Roblox account (only if its model changed) and return Luau that puts
+    it in the open Studio place, replacing the old copy, with its effects."""
+    try:
+        line, script = _asset(name).to_studio()
+        return f"{line}\nrun via Roblox Studio MCP execute_luau (datamodel Edit):\n{script}"
+    except Exception as e:
+        return f"error: {type(e).__name__}: {' '.join(str(e).split())}"[:300]
 
 
 def main():

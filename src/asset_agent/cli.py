@@ -53,6 +53,10 @@ def main(argv=None):
     s = sub.add_parser("connect", help="use a shape server on another machine")
     s.add_argument("url", help="e.g. http://192.168.1.50:8080")
     s.add_argument("--key", help="printed by `asset-agent serve --remote`")
+    s = sub.add_parser("roblox", help="save Roblox Open Cloud credentials for sending assets to Studio")
+    s.add_argument("--user", help="your Roblox user id (the number in your profile URL)")
+    s.add_argument("--group", help="upload to a group instead (group id)")
+    s.add_argument("--key", help="Open Cloud API key with Assets read+write")
     a = p.parse_args(argv)
     try:
         if a.cmd == "status":
@@ -63,6 +67,11 @@ def main(argv=None):
             return gpu.serve(a.remote, a.port, a.model, not a.no_flashvdm)
         elif a.cmd == "connect":
             print(connect(a.url, a.key))
+        elif a.cmd == "roblox":
+            kv = {k: v for k, v in (("roblox_user", a.user), ("roblox_group", a.group), ("roblox_key", a.key)) if v}
+            c = config.save(**kv)
+            print(f"roblox: user={c.get('roblox_user')} group={c.get('roblox_group')} "
+                  f"key={'set' if c.get('roblox_key') else 'missing'} -> {config.path()}")
     except gpu.SetupError as e:
         print(f"error: {e}", file=sys.stderr)
         return 1
