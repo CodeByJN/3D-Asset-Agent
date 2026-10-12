@@ -12,7 +12,7 @@ from mcp.server.mcpserver import Image, MCPServer
 from . import generators
 from .asset import Asset
 from .make import make_asset as _make_asset
-from . import vfx
+from . import roblox, studio_client, vfx
 from .project import Project
 
 server = MCPServer("asset-agent", instructions=(
@@ -21,8 +21,9 @@ server = MCPServer("asset-agent", instructions=(
     "your GPU) and returns one line. Fix things with revise (only that layer and what depends on it "
     "rebuilds), not by regenerating. preview only when you must see it (layer='breakdown' shows geometry, "
     "topology, colour, texture). After each make_asset or revise the user looks at, ask for a 1-10 "
-    "rating and call rate. studio(name) sends an asset to the user's Roblox Studio test place: run the "
-    "Luau it returns with the Roblox Studio MCP's execute_luau (Edit)."))
+    "rating and call rate. studio(name) puts an asset in the user's open Roblox Studio place. VFX: "
+    "vfx_lab shows a preset playing in Studio; rate(preset, stars) scores it; vfx_import saves effects "
+    "already in the place (e.g. Creator Store packs inserted with Studio's insert_asset) as presets."))
 
 
 def home() -> Path:
@@ -146,10 +147,17 @@ def plan(project: str, brief: str | None = None, references: list[str] | None = 
 
 @tool
 def rate(name: str, stars: int, note: str = "") -> str:
-    """Rate the asset's current version 1-10 with a short note on what's good or wrong.
-    Ratings tune the project's defaults and show up in plan()."""
+    """Rate an asset's current version (or a VFX preset) 1-10 with a short note on what's good or
+    wrong. Ratings tune the project's defaults and show up in plan()."""
     if not 1 <= stars <= 10:
         raise ValueError("stars must be 1-10")
+    if not (home() / name / "manifest.json").exists() and name in vfx.presets():
+        p = vfx.presets()[name]
+        p["score"] = stars
+        if note:
+            p["note"] = note
+        vfx.save_preset(name, p)
+        return f"vfx preset {name} scored {stars}/10"
     a = _asset(name)
     a.m.setdefault("ratings", []).append({"v": a.m["version"], "stars": stars, "note": note})
     a._save()
@@ -161,13 +169,56 @@ def rate(name: str, stars: int, note: str = "") -> str:
 
 @server.tool(structured_output=False)
 def studio(name: str) -> str:
-    """Upload the asset to your Roblox account (only if its model changed) and return Luau that puts
-    it in the open Studio place, replacing the old copy, with its effects."""
+    """Upload the asset to your Roblox account (only if its model changed) and put it in the open
+    Studio place, replacing the old copy, with its effects."""
     try:
         line, script = _asset(name).to_studio()
-        return f"{line}\nrun via Roblox Studio MCP execute_luau (datamodel Edit):\n{script}"
+        try:
+            return f"{line} | studio: {studio_client.run(lambda s: s.luau(script))}"
+        except studio_client.StudioError as e:
+            return f"{line} | Studio not reachable ({e}); run via Roblox Studio MCP execute_luau (Edit):\n{script}"
     except Exception as e:
         return f"error: {type(e).__name__}: {' '.join(str(e).split())}"[:300]
+
+
+@server.tool(structured_output=False)
+def vfx_lab(preset: str, color: list[float] | None = None, size: float = 1.0, rate: float = 1.0,
+            stand_in: str | None = None):
+    """Play a VFX preset in the open Studio place (a lab stage above the map) and return a screenshot.
+    color/size/rate preview a variant. stand_in: character | item | rarity | base | default."""
+    try:
+        fx = {k: v for k, v in (("color", color), ("size", size), ("rate", rate)) if v not in (None, 1.0)}
+        code = roblox.lab_script(preset, fx, stand_in)
+        out = home() / "_vfx" / f"{preset}.png"
+
+        async def go(s):
+            import asyncio
+            cam, look = ([float(x) for x in v.split(",")] for v in (await s.luau(code)).strip().split("|"))
+            await asyncio.sleep(0.35)  # let bursts and tweens get going
+            return await s.capture(out, cam, look)
+        return Image(path=str(studio_client.run(go)))
+    except Exception as e:
+        return f"error: {type(e).__name__}: {' '.join(str(e).split())}"[:300]
+
+
+@tool
+def vfx_import(path: str, name: str = "", use: str = "", tags: list[str] | None = None,
+               asset_id: str | None = None) -> str:
+    """Save an effect that's in the open Studio place as VFX preset `name`. path: dot path like
+    workspace.Pack.Blast; end it with .* to list the effects under it instead."""
+    if path.endswith(".*"):
+        return studio_client.run(lambda s: s.luau(roblox.list_script(path[:-2]))) or "no effects found"
+    raw = studio_client.run(lambda s: s.luau(roblox.serialize_script(path)))
+    try:
+        data = json.loads(raw)
+    except ValueError:
+        raise ValueError(f"Studio said: {' '.join(raw.split())[:200]}")
+    name = name or data["name"].lower().replace(" ", "_")
+    src = {"kind": "creator_store" if asset_id else "studio", "asset_id": asset_id, "path": path}
+    p = roblox.import_preset(data, use=use or data["name"], tags=tags or [], source=src)
+    vfx.save_preset(name, p)
+    stats = " ".join(f"{k}={v}" for k, v in data.get("stats", {}).items() if v)
+    return f"saved vfx preset {name}: {p['mode']}, {stats}"
 
 
 def main():

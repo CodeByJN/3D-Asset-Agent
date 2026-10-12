@@ -32,7 +32,7 @@ def test_tool_definitions_fit_token_budget():
     tools = run(server.server.list_tools())
     payload = json.dumps([t.model_dump(exclude_none=True) for t in tools])
     approx_tokens = len(payload) / 4
-    assert len(tools) <= 11
+    assert len(tools) <= 13
     assert approx_tokens < TOOL_TOKEN_BUDGET, f"{approx_tokens:.0f} tokens"
 
 
@@ -84,3 +84,14 @@ def test_plan_and_rate(home):
 def test_library_lists_vfx_presets(home):
     out = text(call("library", query="rarity"))
     assert "vfx rarity_mythic [rarity,wheel,aura]" in out, out
+
+
+def test_rate_scores_vfx_presets(home, tmp_path, monkeypatch):
+    import shutil
+    from asset_agent import vfx
+    lib = tmp_path / "presets.json"
+    shutil.copy(vfx.library_path(), lib)
+    monkeypatch.setenv("ASSET_AGENT_VFX", str(lib))
+    assert text(call("rate", name="card_glint", stars=6, note="ok")) == "vfx preset card_glint scored 6/10"
+    assert vfx.presets()["card_glint"]["score"] == 6
+    assert "card_glint [item,pickup,steal] 6/10" in text(call("library", query="glint"))
