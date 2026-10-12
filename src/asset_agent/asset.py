@@ -23,14 +23,20 @@ PART_LAYERS = ["geometry", "topology", "collision", "uv", "surface"]
 DEPS = {"geometry": [], "topology": ["geometry"], "collision": ["geometry"],
         "uv": ["topology"], "surface": ["uv", "geometry"]}
 DEFAULT_FINISH = {"roughness": 0.8, "metallic": 0.0, "tint": [1.0, 1.0, 1.0], "parts": {}}
+# default per-part colours for flat (untextured) surfaces; changing them is a finish-only revision
+PALETTE = [[0.80, 0.52, 0.30], [0.35, 0.55, 0.80], [0.45, 0.70, 0.35], [0.85, 0.75, 0.35], [0.70, 0.40, 0.65]]
 
 
 def _sha(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()[:16]
 
 
+# Bump when worker.py output changes, so existing layers rebuild instead of being reused.
+PIPELINE_VERSION = 2
+
+
 def _key(*parts) -> str:
-    return _sha(json.dumps(parts, sort_keys=True).encode())
+    return _sha(json.dumps([PIPELINE_VERSION, *parts], sort_keys=True).encode())
 
 
 def _filehash(path: Path) -> str:
@@ -49,8 +55,13 @@ class Asset:
     # ------------------------------------------------------------ create / io
 
     @classmethod
-    def create(cls, root, sources: dict[str, str | Path], budget: str = "roblox_prop", **overrides) -> "Asset":
-        """Create an asset folder from one source mesh per named part."""
+    def create(cls, root, sources: dict[str, str | Path], budget: str = "roblox_prop",
+               images: dict[str, str | Path] | None = None, surface_mode: str = "auto", **overrides) -> "Asset":
+        """Create an asset folder from one source mesh per named part.
+
+        images: optional reference image per part (used by surface_mode "project").
+        surface_mode: auto | bake | project | flat (see worker.op_surface).
+        """
         root = Path(root)
         if (root / "manifest.json").exists():
             raise FileExistsError(f"{root} already has a manifest")
@@ -63,14 +74,20 @@ class Asset:
         (root / "manifest.json").write_text(json.dumps(m))
         (root / "finish.json").write_text(json.dumps(DEFAULT_FINISH, indent=2))
         a = cls(root)
-        for part, src in sources.items():
+        fin = DEFAULT_FINISH | {"parts": {}}
+        for i, (part, src) in enumerate(sources.items()):
             a.m["parts"][part] = {}
             a._set_source(part, src)
             a.m["params"]["geometry"][part] = {}
             a.m["params"]["topology"][part] = {"target_tris": None}  # resolved after first geometry build
             a.m["params"]["collision"][part] = {"max_tris": b["collision_tris"]}
             a.m["params"]["uv"][part] = {"angle": 66, "margin": 0.02}
-            a.m["params"]["surface"][part] = {"tex_size": b["tex_size"]}
+            a.m["params"]["surface"][part] = {"tex_size": b["tex_size"], "mode": surface_mode, "image": None}
+            if images and images.get(part):
+                a._set_image(part, images[part])
+            if surface_mode == "flat":
+                fin["parts"][part] = {"tint": PALETTE[i % len(PALETTE)]}
+        (root / "finish.json").write_text(json.dumps(fin, indent=2))
         a._save()
         return a
 
@@ -80,6 +97,13 @@ class Asset:
         if not dst.exists():
             shutil.copy(src, dst)
         self.m["parts"][part]["source"] = dst.relative_to(self.root).as_posix()
+
+    def _set_image(self, part, img):
+        img = Path(img)
+        dst = self.root / "source" / f"{part}-ref-{_filehash(img)[:8]}{img.suffix.lower()}"
+        if not dst.exists():
+            shutil.copy(img, dst)
+        self.m["params"]["surface"][part]["image"] = dst.relative_to(self.root).as_posix()
 
     def _save(self):
         (self.root / "manifest.json").write_text(json.dumps(self.m, indent=1))
@@ -145,6 +169,7 @@ class Asset:
                               lambda f: {"op": "surface", "part": part, "src": str(self.path(src["files"]["glb"])),
                                          "target": str(self.path(self.cur(lk("uv", part))["files"]["glb"])),
                                          "out": str(self.path(f["glb"])), "png": str(self.path(f["png"])),
+                                         "image": str(self.path(params["image"])) if params.get("image") else None,
                                          "params": params})
         dep = lk(DEPS[kind][0], part)
         inputs = [self.cur(dep)["key"]]
@@ -237,7 +262,7 @@ class Asset:
         geometry:  source (new mesh file), scale [x,y,z], pivot, offset, merge_distance
         topology:  target_tris
         uv:        angle, margin
-        surface:   tex_size
+        surface:   mode (auto|bake|project|flat), image (reference image path), ao (0-1), tex_size
         collision: max_tris
         export:    scale_to (metres, longest side), target (roblox|godot|unity)
         """
@@ -256,6 +281,8 @@ class Asset:
                     self._set_source(p, ch.pop("source"))
                 if layer == "surface":
                     self.m["params"]["surface"][p].pop("from_version", None)
+                    if "image" in ch:
+                        self._set_image(p, ch.pop("image"))
                 self.m["params"][layer][p].update(ch)
         else:
             raise KeyError(f"unknown layer {layer!r}")

@@ -185,18 +185,9 @@ def op_uv(s):
     return {"tris": tris(me)}
 
 
-def op_surface(s):
-    """Bake base color from a textured source mesh onto the UV'd target (selected-to-active).
-
-    The source is the part's geometry layer (still carrying the generator texture), so a
-    reshaped or re-decimated part keeps its texture without regenerating it.
-    """
-    p = s["params"]
-    hi = import_any(s["src"])
-    lo = import_any(s["target"])
-    size = p["tex_size"]
-    img = bpy.data.images.new(f"{s['part']}_basecolor", size, size, alpha=False)
-    mat = bpy.data.materials.new(s["part"])
+def new_image_material(name, size):
+    img = bpy.data.images.new(name, size, size, alpha=False)
+    mat = bpy.data.materials.new(name)
     try:
         mat.use_nodes = True
     except AttributeError:
@@ -207,6 +198,118 @@ def op_surface(s):
     tex.image = img
     nt.links.new(tex.outputs["Color"], bsdf.inputs["Base Color"])
     nt.nodes.active = tex
+    return mat, img, tex
+
+
+def pixels(img):
+    px = np.empty(len(img.pixels), dtype=np.float32)
+    img.pixels.foreach_get(px)
+    return px.reshape(-1, 4)
+
+
+def bake(sources, target, type, **kw):
+    bpy.ops.object.select_all(action="DESELECT")
+    for o in sources + [target]:
+        o.select_set(True)
+    bpy.context.view_layer.objects.active = target
+    bpy.ops.object.bake(type=type, use_selected_to_active=bool(sources), **kw)
+
+
+def subject_rect(img, inset=0.02):
+    """Object's UV rect (u0, v0, u1, v1) and mean colour in a reference image.
+    The object is where alpha is set, else where pixels differ from the corner colour."""
+    w, h = img.size
+    px = pixels(img).reshape(h, w, 4)
+    if px[..., 3].min() < 0.9:
+        mask = px[..., 3] > 0.5
+    else:
+        bg = np.median(px[[0, 0, -1, -1], [0, -1, 0, -1], :3], axis=0)
+        mask = np.abs(px[..., :3] - bg).max(axis=2) > 0.08
+    rows, cols = np.where(mask.any(1))[0], np.where(mask.any(0))[0]
+    if not len(rows):
+        return (0.0, 0.0, 1.0, 1.0), px[..., :3].reshape(-1, 3).mean(0)
+    u0, v0, u1, v1 = cols[0] / w, rows[0] / h, (cols[-1] + 1) / w, (rows[-1] + 1) / h
+    du, dv = (u1 - u0) * inset, (v1 - v0) * inset  # keep background edge pixels out
+    return (u0 + du, v0 + dv, u1 - du, v1 - dv), px[mask][:, :3].mean(0)
+
+
+def projection_source(lo, image_path):
+    """Copy of `lo` with the reference image planar-projected from the front (-Y), fitted to the
+    object's silhouette in the image. Generators treat the input image as the object's front."""
+    hi = lo.copy()
+    hi.data = lo.data.copy()
+    bpy.context.scene.collection.objects.link(hi)
+    me = hi.data
+    img = bpy.data.images.load(str(image_path))
+    (u0, v0, u1, v1), mean = subject_rect(img)
+    b0, b1 = bbox([hi])
+    w, h = (b1.x - b0.x) or 1.0, (b1.z - b0.z) or 1.0
+    co = np.empty(len(me.vertices) * 3, dtype=np.float32)
+    me.vertices.foreach_get("co", co)
+    co = co.reshape(-1, 3)
+    vi = np.empty(len(me.loops), dtype=np.int32)
+    me.loops.foreach_get("vertex_index", vi)
+    u = u0 + (co[vi, 0] - b0.x) / w * (u1 - u0)
+    v = v0 + (co[vi, 2] - b0.z) / h * (v1 - v0)
+    uv = me.uv_layers.new(name="proj")
+    uv.data.foreach_set("uv", np.stack([u, v], 1).ravel())
+    mat, _, tex = new_image_material("proj", 4)
+    tex.image = img
+    uvn = mat.node_tree.nodes.new("ShaderNodeUVMap")
+    uvn.uv_map = "proj"
+    nt = mat.node_tree
+    nt.links.new(uvn.outputs["UV"], tex.inputs["Vector"])
+    # Faces turned away from the front would only get smeared edge pixels: fade them to the mean colour.
+    geo = nt.nodes.new("ShaderNodeNewGeometry")
+    sep = nt.nodes.new("ShaderNodeSeparateXYZ")
+    nt.links.new(geo.outputs["Normal"], sep.inputs[0])
+    absn = nt.nodes.new("ShaderNodeMath")
+    absn.operation = "ABSOLUTE"
+    nt.links.new(sep.outputs["Y"], absn.inputs[0])
+    ramp = nt.nodes.new("ShaderNodeMapRange")  # |n.y| 0.25..0.6 -> 0..1
+    ramp.inputs["From Min"].default_value, ramp.inputs["From Max"].default_value = 0.25, 0.6
+    nt.links.new(absn.outputs[0], ramp.inputs["Value"])
+    mix = nt.nodes.new("ShaderNodeMix")
+    mix.data_type = "RGBA"
+    a = next(i for i in mix.inputs if i.name == "A" and i.type == "RGBA")
+    b = next(i for i in mix.inputs if i.name == "B" and i.type == "RGBA")
+    if not img.is_float:  # byte images report sRGB pixels; sockets take linear colour
+        mean = np.where(mean <= 0.04045, mean / 12.92, ((mean + 0.055) / 1.055) ** 2.4)
+    a.default_value = (*map(float, mean), 1.0)
+    nt.links.new(ramp.outputs[0], mix.inputs[0])
+    nt.links.new(tex.outputs["Color"], b)
+    bsdf = next(n for n in nt.nodes if n.type == "BSDF_PRINCIPLED")
+    nt.links.new(next(o for o in mix.outputs if o.type == "RGBA"), bsdf.inputs["Base Color"])
+    me.materials.clear()
+    me.materials.append(mat)
+    return hi
+
+
+AO_DEFAULT = {"bake": 0.0, "project": 0.35, "flat": 0.75}
+
+
+def op_surface(s):
+    """Make the part's base-color texture on its UV layout. Modes:
+
+    bake    - bake from the textured geometry layer (generator texture), selected-to-active. A
+              reshaped or re-decimated part keeps its texture without regenerating it.
+    project - planar-project the reference image from the front (shape-only generators).
+    flat    - white x ambient occlusion; the colour comes from finish tint (cheap to change).
+    auto    - bake if the geometry has a texture, else project if there's an image, else flat.
+    """
+    p = s["params"]
+    size = p["tex_size"]
+    hi = import_any(s["src"])
+    lo = import_any(s["target"])
+    mode = p.get("mode", "auto")
+    if mode == "auto":
+        mode = "bake" if any(True for _ in image_nodes(hi)) else "project" if s.get("image") else "flat"
+    if mode == "project":
+        if not s.get("image"):
+            raise ValueError("project mode needs an image")
+        bpy.data.objects.remove(hi)
+        hi = projection_source(lo, s["image"])
+    mat, img, _ = new_image_material(f"{s['part']}_basecolor", size)
     lo.data.materials.clear()
     lo.data.materials.append(mat)
 
@@ -214,25 +317,31 @@ def op_surface(s):
     scene.render.engine = "CYCLES"
     scene.cycles.device = "CPU"
     scene.cycles.samples = 1
-    lo_min, lo_max = bbox([lo])
-    diag = (lo_max - lo_min).length or 1.0
-    bpy.ops.object.select_all(action="DESELECT")
-    hi.select_set(True)
-    lo.select_set(True)
-    bpy.context.view_layer.objects.active = lo
-    bpy.ops.object.bake(type="DIFFUSE", pass_filter={"COLOR"}, use_selected_to_active=True,
-                        cage_extrusion=0.02 * diag, max_ray_distance=0.1 * diag,
-                        margin=p.get("margin", 4))
+    b0, b1 = bbox([lo])
+    diag = (b1 - b0).length or 1.0
+    margin = p.get("margin", 4)
+    if mode == "flat":
+        base = np.ones((size * size, 4), dtype=np.float32)
+    else:
+        near = mode == "project"  # projection source coincides with the target
+        bake([hi], lo, "DIFFUSE", pass_filter={"COLOR"}, margin=margin,
+             cage_extrusion=(0.01 if near else 0.02) * diag, max_ray_distance=(0.03 if near else 0.1) * diag)
+        base = pixels(img)
+    bpy.data.objects.remove(hi)
+    ao = p.get("ao", AO_DEFAULT[mode])
+    if ao > 0:
+        scene.cycles.samples = 16
+        bake([], lo, "AO", margin=margin)
+        base[:, :3] *= 1 - ao * (1 - pixels(img)[:, :1])
+    base[:, 3] = 1
+    img.pixels.foreach_set(base.ravel())
     Path(s["png"]).parent.mkdir(parents=True, exist_ok=True)
     img.filepath_raw = s["png"]
     img.file_format = "PNG"
     img.save()
-    px = np.empty(size * size * 4, dtype=np.float32)
-    img.pixels.foreach_get(px)
-    mean = px.reshape(-1, 4)[:, :3].mean(axis=0)
-    bpy.data.objects.remove(hi)
+    mean = base[:, :3].mean(axis=0)
     export_glb(s["out"], [lo])
-    return {"tex": size, "mean_rgb": [round(float(c), 3) for c in mean]}
+    return {"tex": size, "mode": mode, "mean_rgb": [round(float(c), 3) for c in mean]}
 
 
 def op_collision(s):

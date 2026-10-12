@@ -87,3 +87,21 @@ def test_errors_are_one_line(tmp_path):
                     "out": str(tmp_path / "o.glb"), "params": {}}])
     msg = str(e.value)
     assert "\n" not in msg and len(msg) <= 300 and msg.startswith("step 0 geometry[x]"), msg
+
+
+def test_flat_and_project_surfaces(fixtures, tmp_path):
+    """Shape-only sources: flat colour via finish tint, or the reference image projected on."""
+    a = Asset.create(tmp_path / "flat", {"body": fixtures / "body.glb"}, max_tris=800, tex_size=128,
+                     surface_mode="flat")
+    a.build()
+    s = a.cur("surface[body]")["stats"]
+    assert s["mode"] == "flat" and min(s["mean_rgb"]) > 0.5  # white x AO; colour lives in finish
+    assert a.finish["parts"]["body"]["tint"]
+
+    p = Asset.create(tmp_path / "proj", {"body": fixtures / "body.glb"}, max_tris=800, tex_size=128,
+                     images={"body": fixtures / "lid.png"}, surface_mode="project")
+    p.build()
+    s = p.cur("surface[body]")["stats"]
+    assert s["mode"] == "project" and p.cur("export")["stats"]["ok"]
+    line = p.revise("surface", part="body", image=fixtures / "body.png")
+    assert "rebuilt surface[body], export" in line, line
