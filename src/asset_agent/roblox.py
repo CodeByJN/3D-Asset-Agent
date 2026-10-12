@@ -17,7 +17,7 @@ import urllib.request
 import uuid
 from pathlib import Path
 
-from . import config, vfx
+from . import config, luau, vfx
 
 API = "https://apis.roblox.com/assets/v1"
 
@@ -84,58 +84,10 @@ def upload(fbx: Path, name: str, asset_id: str | None = None, timeout: float = 1
 
 # ---------------------------------------------------------------- Studio script
 
-TEXTURES = {"fire": "fire_main", "smoke": "smoke_main", "sparkles": "sparkles_main", "spark": "fire_sparks_main",
-            "glow": "forcefield_glow_main", "vortex": "forcefield_vortex_main"}
-
-
-def _c3(rgb):
-    return "Color3.new(" + ",".join(f"{x:.3g}" for x in rgb) + ")"
-
-
-def _colors(keys):
-    if len(keys) == 1:
-        return f"ColorSequence.new({_c3(keys[0][1])})"
-    return "ColorSequence.new({" + ",".join(f"ColorSequenceKeypoint.new({t:g},{_c3(c)})" for t, c in keys) + "})"
-
-
-def _numbers(keys):
-    return "NumberSequence.new({" + ",".join(f"NumberSequenceKeypoint.new({t:g},{v:.3g})" for t, v in keys) + "})"
-
-
-def _range(r):
-    return f"NumberRange.new({r[0]:g},{r[1]:g})"
-
-
-def _emitter_lua(e) -> str:
-    """One emitter (ParticleEmitter or PointLight) as Luau statements creating `e`."""
-    if e.get("class") == "light":
-        return (f"local e=Instance.new('PointLight') e.Color={_c3(e['color'])} e.Range={min(60, e['range']):g} "
-                f"e.Brightness={e['brightness']:g}")
-    spread = e.get("spread", [0, 0])
-    out = [f"local e=Instance.new('ParticleEmitter') e.Texture='rbxasset://textures/particles/{TEXTURES[e['tex']]}.dds'",
-           f"e.Color={_colors(e['color'])} e.Size={_numbers(e['size'])}",
-           f"e.Transparency={_numbers(e.get('transparency', [[0, 0], [1, 1]]))}",
-           f"e.Lifetime={_range(e['lifetime'])} e.Speed={_range(e['speed'])} e.Rate={e['rate']:.3g}",
-           f"e.SpreadAngle=Vector2.new({spread[0]:g},{spread[1]:g}) e.LightEmission={e.get('light', 0):g}"]
-    if e.get("accel"):
-        out.append("e.Acceleration=Vector3.new(" + ",".join(f"{x:g}" for x in e["accel"]) + ")")
-    if e.get("rotspeed"):
-        out.append(f"e.RotSpeed={_range(e['rotspeed'])} e.Rotation=NumberRange.new(0,360)")
-    if e.get("drag"):
-        out.append(f"e.Drag={e['drag']:g}")
-    if e.get("shape"):
-        out.append(f"e.Shape=Enum.ParticleEmitterShape.{e['shape']}")
-    if e.get("lock"):
-        out.append("e.LockedToPart=true")
-    return " ".join(out)
-
-
 def studio_script(name: str, asset_id: str, revision: str, effects: dict) -> str:
     """Compact Luau for Studio's execute_luau. Returns a one-line status string when run."""
-    fx_lua = "\n".join(
-        f"do {_emitter_lua(e)} e.Name='{n}' e:SetAttribute('AssetAgentVFX',true) e.Parent=h end"
-        for n, fx in vfx.resolve(effects).items() for e in fx["emitters"])
-    return f"""local NAME,ID,REV='{name}',{asset_id},'{revision}'
+    fx = {n: {"nodes": e["nodes"], "mode": e["mode"]} for n, e in vfx.resolve(effects).items()}
+    return luau.BUILD + f"""local NAME,ID,REV,FX='{name}',{asset_id},'{revision}',HS:JSONDecode({luau.data(fx)})
 local m=workspace:FindFirstChild(NAME) local loaded=false
 if not(m and m:GetAttribute('AssetAgentRev')==REV) then
  local ok,c=pcall(function() return game:GetService('InsertService'):LoadAsset(ID) end)
@@ -150,5 +102,79 @@ if not(m and m:GetAttribute('AssetAgentRev')==REV) then
  n.Parent=workspace m=n loaded=true end
 for _,d in m:GetDescendants() do if d:GetAttribute('AssetAgentVFX') then d:Destroy() end end
 local h=m.PrimaryPart or m:FindFirstChildWhichIsA('BasePart',true)
-{fx_lua}
-return (loaded and 'loaded ' or 'kept model, ')..NAME..' with {len(effects)} effect(s)'"""
+local n=0 for tag,e in FX do play(build(h,tag,e.nodes)) n+=1 end
+return (loaded and 'loaded ' or 'kept model, ')..NAME..' with '..n..' effect(s)'"""
+
+
+# ---------------------------------------------------------------- VFX lab and import
+
+LAB_AT = (0, 200, 600)  # out of the way of the game: a floating stage above the map
+STAND_INS = {"character": (2, 5, 1), "item": (3, 2, 0.3), "rarity": (2, 2, 2), "base": (4, 3, 4), "default": (3, 3, 3)}
+
+
+def lab_script(preset: str, effect: dict | None = None, stand_in: str | None = None) -> str:
+    """Luau that (re)builds a dark lab stage with a stand-in object, applies one preset and plays it.
+    Returns the camera position and look-at point for a screenshot as 'x,y,z|x,y,z'."""
+    p = vfx.presets()[preset]
+    if stand_in is None:
+        tags = p.get("tags", [])
+        stand_in = next((t for t in ("character", "item", "rarity", "base") if t in tags), "default")
+    size = STAND_INS[stand_in]
+    fx = vfx.resolve({preset: {"type": preset, **(effect or {})}})[preset]
+    x, y, z = LAB_AT
+    return luau.BUILD + f"""local AT,SZ,FX=Vector3.new({x},{y},{z}),Vector3.new({size[0]},{size[1]},{size[2]}),HS:JSONDecode({luau.data(fx["nodes"])})
+local lab=workspace:FindFirstChild('AssetAgentLab') if lab then lab:Destroy() end
+lab=Instance.new('Model') lab.Name='AssetAgentLab'
+local floor=Instance.new('Part') floor.Name='Floor' floor.Anchored=true floor.Size=Vector3.new(60,1,60)
+floor.CFrame=CFrame.new(AT-Vector3.new(0,0.5,0)) floor.Color=Color3.fromRGB(28,30,40) floor.Material=Enum.Material.SmoothPlastic floor.Parent=lab
+local h=Instance.new('Part') h.Name='StandIn' h.Anchored=true h.Size=SZ h.CFrame=CFrame.new(AT+Vector3.new(0,SZ.Y/2,0))
+h.Color=Color3.fromRGB(120,128,160) h.Material=Enum.Material.SmoothPlastic h.Parent=lab
+lab.Parent=workspace
+play(build(h,'{preset}',FX))
+local e=math.max(SZ.X,SZ.Y,SZ.Z)
+local look=h.Position local cam=look+Vector3.new(e*1.6,e*0.9,e*2.6)
+return string.format('%g,%g,%g|%g,%g,%g',cam.X,cam.Y,cam.Z,look.X,look.Y,look.Z)"""
+
+
+def serialize_script(path: str) -> str:
+    """Luau returning the tagged-JSON tree of the instance at a dot path (e.g. workspace.Pack.Fire)."""
+    return luau.SERIALIZE + f"""local i=game for seg in string.gmatch({json.dumps(path)},'[^.]+') do
+ i=(i==game and seg=='workspace') and workspace or i:FindFirstChild(seg)
+ if not i then return 'not found: '..seg end end
+return serialize(i)"""
+
+
+def list_script(path: str) -> str:
+    """Luau listing the effect candidates under a dot path: name and counts of VFX instances."""
+    return f"""local i=game for seg in string.gmatch({json.dumps(path)},'[^.]+') do
+ i=(i==game and seg=='workspace') and workspace or i:FindFirstChild(seg)
+ if not i then return 'not found: '..seg end end
+local out={{}}
+for _,c in i:GetChildren() do
+ local n={{}} for _,d in c:GetDescendants() do
+  if d:IsA('ParticleEmitter') or d:IsA('Beam') or d:IsA('Trail') or d:IsA('Light') then n[d.ClassName]=(n[d.ClassName] or 0)+1 end end
+ local s={{}} for k,v in n do table.insert(s,k..'='..v) end
+ if #s>0 then table.insert(out,c.Name..' ('..table.concat(s,' ')..')') end
+end
+return table.concat(out,'\\n')"""
+
+
+def import_preset(serialized: dict, *, use: str, tags: list[str], source: dict) -> dict:
+    """Turn SERIALIZE output into a preset. Emitters that start disabled are bursts: they get an
+    EmitCount (from their Rate) unless the pack already set one."""
+    burst = False
+
+    def walk(n):
+        nonlocal burst
+        if n["class"] == "ParticleEmitter" and n["props"].get("Enabled") is False:
+            burst = True
+            attrs = n.setdefault("attrs", {}) or {}
+            n["attrs"] = attrs
+            attrs.setdefault("EmitCount", max(1, round(n["props"].get("Rate", 20) * 0.5)))
+        for c in n.get("children") or []:
+            walk(c)
+    nodes = serialized["nodes"]
+    for n in nodes:
+        walk(n)
+    return {"tags": tags, "use": use, "source": source, "mode": "burst" if burst else "loop",
+            "sketch": "sparkles", "stats": serialized.get("stats", {}), "nodes": nodes}

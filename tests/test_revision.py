@@ -92,7 +92,7 @@ def test_vfx_only_change_touches_nothing_else(fixtures, tmp_path, monkeypatch): 
     assert snapshot(a) == files and a.cur("export")["hash"] == export_hash
     line, script = a.to_studio()
     assert line.startswith("asset 777 unchanged") and uploads == [None], line  # no re-upload
-    assert "Color3.new(0,0.3,1)" in script and "fire_main" in script and "flames=fire" in line
+    assert '"cs":[[0,0.0,0.3,1.0]' in script and "fire_main" in script and "flames=fire" in line
 
     a.rollback("vfx", 2)  # back to orange
     assert a.effects["flames"]["color"] == [1, 0.4, 0]
@@ -115,3 +115,30 @@ def test_breakdown_strip(fixtures, tmp_path):  # noqa: F811
     w, h = int.from_bytes(png[16:20], "big"), int.from_bytes(png[20:24], "big")
     assert (w, h) == (5 * 128, 128)
     assert a.preview(128, "vfx").stat().st_size > 1000
+
+
+def test_vfx_transforms_and_import():
+    from asset_agent import roblox, vfx
+    nodes = [{"class": "Attachment", "name": "A0", "props": {"CFrame": {"cf": [0, 2, 0, 0, 90, 0]}}, "children": [
+        {"class": "ParticleEmitter", "name": "P", "props": {
+            "Size": {"ns": [[0, 1, 0.5], [1, 0, 0]]}, "Speed": {"nr": [2, 4]}, "Rate": 10,
+            "Color": {"cs": [[0, 1, 0.5, 0], [1, 0.5, 0.25, 0]]}, "Enabled": False}}]},
+        {"class": "Beam", "name": "B", "props": {"Width0": 2, "Attachment0": {"ref": "A0"},
+                                                  "Color": {"cs": [[0, 1, 1, 1], [1, 1, 1, 1]]}}},
+        {"class": "Part", "name": "Ring", "props": {"Size": {"v3": [4, 0.2, 4]}, "CFrame": {"cf": [1, 0, 0, 0, 0, 0]}},
+         "tween": {"time": 0.4, "props": {"Size": {"v3": [8, 0.2, 8]}, "Transparency": 1}}}]
+    out = vfx.transform(nodes, k=2, rate=3, rgb=[0, 0, 1])
+    a, beam, ring = out
+    pe = a["children"][0]["props"]
+    assert a["props"]["CFrame"]["cf"] == [0, 4, 0, 0, 90, 0]  # position scales, rotation doesn't
+    assert pe["Size"]["ns"] == [[0, 2, 1], [1, 0, 0]] and pe["Speed"]["nr"] == [4, 8] and pe["Rate"] == 30
+    assert pe["Color"]["cs"] == [[0, 0, 0, 1], [1, 0, 0, 0.5]]  # hue swapped, brightness kept
+    assert beam["props"]["Width0"] == 4 and beam["props"]["Attachment0"] == {"ref": "A0"}
+    assert ring["props"]["Size"]["v3"] == [8, 0.4, 8] and ring["tween"]["props"]["Size"]["v3"] == [16, 0.4, 16]
+    assert nodes[0]["props"]["CFrame"]["cf"][1] == 2  # input untouched
+    assert vfx.main_colour(nodes) == [1, 0.5, 0]
+
+    p = roblox.import_preset({"nodes": nodes, "stats": {"ParticleEmitter": 1}}, use="u", tags=["t"],
+                             source={"kind": "creator_store", "asset_id": "1"})
+    assert p["mode"] == "burst" and p["nodes"][0]["children"][0]["attrs"]["EmitCount"] == 5
+    assert roblox.luau.data({"s": "x"}).startswith("[=[") and roblox.luau.data({"s": "]=]"}).startswith("[==[")

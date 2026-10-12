@@ -1,5 +1,5 @@
 {
- "_doc": "VFX presets. Original effects tuned to common Roblox conventions (RNG rarity auras, anime power-ups, simulator money pops). Sizes are studs, tuned for a ~4 stud object; an effect's size/rate multiply them. tex: fire|smoke|sparkles|spark|glow|vortex (Roblox built-in particle textures). color/size/transparency: [[time 0-1, value], ...]. sketch: how Blender previews draw it. score: the user's 1-10 rating from the gallery (seed set, 2026-10-12: all rejected as too basic).",
+ "_doc": "VFX presets: trees of real Roblox instances (see src/asset_agent/vfx.py for the format). Sizes are studs for a ~4 stud object; an effect's size/rate multiply them. score: the user's 1-10 rating. source.kind: original (hand-made) | creator_store (imported, keep asset_id for credit/licence).",
  "fire": {
   "tags": [
    "base",
@@ -7,69 +7,89 @@
   ],
   "use": "plain flames",
   "sketch": "fire",
-  "emitters": [
+  "score": 3,
+  "nodes": [
    {
-    "tex": "fire",
-    "color": [
-     [
-      0,
-      [
-       1,
-       0.75,
-       0.3
+    "class": "ParticleEmitter",
+    "name": "Emitter1",
+    "props": {
+     "Texture": "rbxasset://textures/particles/fire_main.dds",
+     "Color": {
+      "cs": [
+       [
+        0,
+        1,
+        0.75,
+        0.3
+       ],
+       [
+        1,
+        1,
+        0.3,
+        0.05
+       ]
       ]
-     ],
-     [
-      1,
-      [
-       1,
-       0.3,
-       0.05
+     },
+     "Size": {
+      "ns": [
+       [
+        0,
+        1.6
+       ],
+       [
+        1,
+        0
+       ]
       ]
-     ]
-    ],
-    "size": [
-     [
-      0,
-      1.6
-     ],
-     [
-      1,
-      0
-     ]
-    ],
-    "transparency": [
-     [
-      0,
-      0.2
-     ],
-     [
-      1,
-      1
-     ]
-    ],
-    "lifetime": [
-     0.6,
-     1.2
-    ],
-    "speed": [
-     2,
-     5
-    ],
-    "rate": 60,
-    "spread": [
-     15,
-     15
-    ],
-    "light": 1,
-    "accel": [
-     0,
-     6,
-     0
-    ]
+     },
+     "Transparency": {
+      "ns": [
+       [
+        0,
+        0.2
+       ],
+       [
+        1,
+        1
+       ]
+      ]
+     },
+     "Lifetime": {
+      "nr": [
+       0.6,
+       1.2
+      ]
+     },
+     "Speed": {
+      "nr": [
+       2,
+       5
+      ]
+     },
+     "Rate": 60,
+     "SpreadAngle": {
+      "v2": [
+       15,
+       15
+      ]
+     },
+     "LightEmission": 1,
+     "Acceleration": {
+      "v3": [
+       0,
+       6,
+       0
+      ]
+     }
+    }
    }
   ],
-  "score": 3
+  "mode": "loop",
+  "source": {
+   "kind": "original",
+   "by": "claude",
+   "set": "seed-2026-10-12"
+  }
  },
  "smoke": {
   "tags": [
@@ -78,73 +98,101 @@
   ],
   "use": "slow grey puffs",
   "sketch": "smoke",
-  "emitters": [
+  "score": 1,
+  "nodes": [
    {
-    "tex": "smoke",
-    "color": [
-     [
-      0,
-      [
-       0.5,
-       0.5,
-       0.5
+    "class": "ParticleEmitter",
+    "name": "Emitter1",
+    "props": {
+     "Texture": "rbxasset://textures/particles/smoke_main.dds",
+     "Color": {
+      "cs": [
+       [
+        0,
+        0.5,
+        0.5,
+        0.5
+       ],
+       [
+        1,
+        0.35,
+        0.35,
+        0.35
+       ]
       ]
-     ],
-     [
-      1,
-      [
-       0.35,
-       0.35,
-       0.35
+     },
+     "Size": {
+      "ns": [
+       [
+        0,
+        1.2
+       ],
+       [
+        1,
+        3
+       ]
       ]
-     ]
-    ],
-    "size": [
-     [
-      0,
-      1.2
-     ],
-     [
-      1,
-      3
-     ]
-    ],
-    "transparency": [
-     [
-      0,
-      0.5
-     ],
-     [
-      1,
-      1
-     ]
-    ],
-    "lifetime": [
-     2,
-     4
-    ],
-    "speed": [
-     1,
-     2
-    ],
-    "rate": 8,
-    "spread": [
-     15,
-     15
-    ],
-    "light": 0,
-    "accel": [
-     0,
-     1,
-     0
-    ],
-    "rotspeed": [
-     -30,
-     30
-    ]
+     },
+     "Transparency": {
+      "ns": [
+       [
+        0,
+        0.5
+       ],
+       [
+        1,
+        1
+       ]
+      ]
+     },
+     "Lifetime": {
+      "nr": [
+       2,
+       4
+      ]
+     },
+     "Speed": {
+      "nr": [
+       1,
+       2
+      ]
+     },
+     "Rate": 8,
+     "SpreadAngle": {
+      "v2": [
+       15,
+       15
+      ]
+     },
+     "LightEmission": 0,
+     "Acceleration": {
+      "v3": [
+       0,
+       1,
+       0
+      ]
+     },
+     "RotSpeed": {
+      "nr": [
+       -30,
+       30
+      ]
+     },
+     "Rotation": {
+      "nr": [
+       0,
+       360
+      ]
+     }
+    }
    }
   ],
-  "score": 1
+  "mode": "loop",
+  "source": {
+   "kind": "original",
+   "by": "claude",
+   "set": "seed-2026-10-12"
+  }
  },
  "sparkles": {
   "tags": [
@@ -153,64 +201,82 @@
   ],
   "use": "glints around an item",
   "sketch": "sparkles",
-  "emitters": [
+  "score": 2,
+  "nodes": [
    {
-    "tex": "sparkles",
-    "color": [
-     [
-      0,
-      [
-       1,
-       0.9,
-       0.4
+    "class": "ParticleEmitter",
+    "name": "Emitter1",
+    "props": {
+     "Texture": "rbxasset://textures/particles/sparkles_main.dds",
+     "Color": {
+      "cs": [
+       [
+        0,
+        1,
+        0.9,
+        0.4
+       ],
+       [
+        1,
+        1,
+        0.75,
+        0.2
+       ]
       ]
-     ],
-     [
-      1,
-      [
-       1,
-       0.75,
-       0.2
+     },
+     "Size": {
+      "ns": [
+       [
+        0,
+        0.4
+       ],
+       [
+        1,
+        0
+       ]
       ]
-     ]
-    ],
-    "size": [
-     [
-      0,
-      0.4
-     ],
-     [
-      1,
-      0
-     ]
-    ],
-    "transparency": [
-     [
-      0,
-      0
-     ],
-     [
-      1,
-      1
-     ]
-    ],
-    "lifetime": [
-     0.5,
-     1
-    ],
-    "speed": [
-     0.5,
-     1.5
-    ],
-    "rate": 25,
-    "spread": [
-     180,
-     180
-    ],
-    "light": 1
+     },
+     "Transparency": {
+      "ns": [
+       [
+        0,
+        0
+       ],
+       [
+        1,
+        1
+       ]
+      ]
+     },
+     "Lifetime": {
+      "nr": [
+       0.5,
+       1
+      ]
+     },
+     "Speed": {
+      "nr": [
+       0.5,
+       1.5
+      ]
+     },
+     "Rate": 25,
+     "SpreadAngle": {
+      "v2": [
+       180,
+       180
+      ]
+     },
+     "LightEmission": 1
+    }
    }
   ],
-  "score": 2
+  "mode": "loop",
+  "source": {
+   "kind": "original",
+   "by": "claude",
+   "set": "seed-2026-10-12"
+  }
  },
  "glow": {
   "tags": [
@@ -219,19 +285,30 @@
   ],
   "use": "soft light around an item",
   "sketch": "glow",
-  "emitters": [
+  "score": 1,
+  "nodes": [
    {
-    "class": "light",
-    "color": [
-     1,
-     0.85,
-     0.55
-    ],
-    "range": 12,
-    "brightness": 2
+    "class": "PointLight",
+    "name": "Light1",
+    "props": {
+     "Color": {
+      "c3": [
+       1,
+       0.85,
+       0.55
+      ]
+     },
+     "Range": 12,
+     "Brightness": 2
+    }
    }
   ],
-  "score": 1
+  "mode": "loop",
+  "source": {
+   "kind": "original",
+   "by": "claude",
+   "set": "seed-2026-10-12"
+  }
  },
  "card_glint": {
   "tags": [
@@ -241,82 +318,113 @@
   ],
   "use": "a stealable card: slow glints so it reads as valuable",
   "sketch": "sparkles",
-  "emitters": [
+  "score": 4,
+  "nodes": [
    {
-    "tex": "sparkles",
-    "color": [
-     [
-      0,
-      [
-       1,
-       1,
-       0.85
+    "class": "ParticleEmitter",
+    "name": "Emitter1",
+    "props": {
+     "Texture": "rbxasset://textures/particles/sparkles_main.dds",
+     "Color": {
+      "cs": [
+       [
+        0,
+        1,
+        1,
+        0.85
+       ],
+       [
+        1,
+        1,
+        0.8,
+        0.3
+       ]
       ]
-     ],
-     [
-      1,
-      [
-       1,
-       0.8,
+     },
+     "Size": {
+      "ns": [
+       [
+        0,
+        0
+       ],
+       [
+        0.3,
+        0.6
+       ],
+       [
+        1,
+        0
+       ]
+      ]
+     },
+     "Transparency": {
+      "ns": [
+       [
+        0,
+        0
+       ],
+       [
+        1,
+        1
+       ]
+      ]
+     },
+     "Lifetime": {
+      "nr": [
+       0.6,
+       1
+      ]
+     },
+     "Speed": {
+      "nr": [
+       0,
        0.3
       ]
-     ]
-    ],
-    "size": [
-     [
-      0,
-      0
-     ],
-     [
-      0.3,
-      0.6
-     ],
-     [
-      1,
-      0
-     ]
-    ],
-    "transparency": [
-     [
-      0,
-      0
-     ],
-     [
-      1,
-      1
-     ]
-    ],
-    "lifetime": [
-     0.6,
-     1
-    ],
-    "speed": [
-     0,
-     0.3
-    ],
-    "rate": 5,
-    "spread": [
-     180,
-     180
-    ],
-    "light": 1,
-    "rotspeed": [
-     -90,
-     90
-    ]
+     },
+     "Rate": 5,
+     "SpreadAngle": {
+      "v2": [
+       180,
+       180
+      ]
+     },
+     "LightEmission": 1,
+     "RotSpeed": {
+      "nr": [
+       -90,
+       90
+      ]
+     },
+     "Rotation": {
+      "nr": [
+       0,
+       360
+      ]
+     }
+    }
    },
    {
-    "class": "light",
-    "color": [
-     1,
-     0.9,
-     0.6
-    ],
-    "range": 6,
-    "brightness": 1
+    "class": "PointLight",
+    "name": "Light2",
+    "props": {
+     "Color": {
+      "c3": [
+       1,
+       0.9,
+       0.6
+      ]
+     },
+     "Range": 6,
+     "Brightness": 1
+    }
    }
   ],
-  "score": 4
+  "mode": "loop",
+  "source": {
+   "kind": "original",
+   "by": "claude",
+   "set": "seed-2026-10-12"
+  }
  },
  "steal_burst": {
   "tags": [
@@ -325,65 +433,83 @@
   ],
   "use": "on the thief right after a steal: gold and green sparks flying out",
   "sketch": "sparkles",
-  "emitters": [
+  "score": 2,
+  "nodes": [
    {
-    "tex": "spark",
-    "color": [
-     [
-      0,
-      [
-       1,
-       0.9,
-       0.3
+    "class": "ParticleEmitter",
+    "name": "Emitter1",
+    "props": {
+     "Texture": "rbxasset://textures/particles/fire_sparks_main.dds",
+     "Color": {
+      "cs": [
+       [
+        0,
+        1,
+        0.9,
+        0.3
+       ],
+       [
+        1,
+        0.3,
+        1,
+        0.4
+       ]
       ]
-     ],
-     [
-      1,
-      [
-       0.3,
-       1,
-       0.4
+     },
+     "Size": {
+      "ns": [
+       [
+        0,
+        0.8
+       ],
+       [
+        1,
+        0
+       ]
       ]
-     ]
-    ],
-    "size": [
-     [
-      0,
-      0.8
-     ],
-     [
-      1,
-      0
-     ]
-    ],
-    "transparency": [
-     [
-      0,
-      0
-     ],
-     [
-      1,
-      1
-     ]
-    ],
-    "lifetime": [
-     0.4,
-     0.8
-    ],
-    "speed": [
-     10,
-     16
-    ],
-    "rate": 80,
-    "spread": [
-     180,
-     180
-    ],
-    "light": 1,
-    "drag": 4
+     },
+     "Transparency": {
+      "ns": [
+       [
+        0,
+        0
+       ],
+       [
+        1,
+        1
+       ]
+      ]
+     },
+     "Lifetime": {
+      "nr": [
+       0.4,
+       0.8
+      ]
+     },
+     "Speed": {
+      "nr": [
+       10,
+       16
+      ]
+     },
+     "Rate": 80,
+     "SpreadAngle": {
+      "v2": [
+       180,
+       180
+      ]
+     },
+     "LightEmission": 1,
+     "Drag": 4
+    }
    }
   ],
-  "score": 2
+  "mode": "loop",
+  "source": {
+   "kind": "original",
+   "by": "claude",
+   "set": "seed-2026-10-12"
+  }
  },
  "speed_aura": {
   "tags": [
@@ -393,70 +519,92 @@
   ],
   "use": "speed upgrades: blue flames licking up from the feet",
   "sketch": "fire",
-  "emitters": [
+  "score": 1,
+  "nodes": [
    {
-    "tex": "fire",
-    "color": [
-     [
-      0,
-      [
-       0.4,
-       0.9,
-       1
+    "class": "ParticleEmitter",
+    "name": "Emitter1",
+    "props": {
+     "Texture": "rbxasset://textures/particles/fire_main.dds",
+     "Color": {
+      "cs": [
+       [
+        0,
+        0.4,
+        0.9,
+        1
+       ],
+       [
+        1,
+        0.1,
+        0.3,
+        1
+       ]
       ]
-     ],
-     [
-      1,
-      [
-       0.1,
+     },
+     "Size": {
+      "ns": [
+       [
+        0,
+        1.4
+       ],
+       [
+        1,
+        0
+       ]
+      ]
+     },
+     "Transparency": {
+      "ns": [
+       [
+        0,
+        0.3
+       ],
+       [
+        1,
+        1
+       ]
+      ]
+     },
+     "Lifetime": {
+      "nr": [
        0.3,
-       1
+       0.6
       ]
-     ]
-    ],
-    "size": [
-     [
-      0,
-      1.4
-     ],
-     [
-      1,
-      0
-     ]
-    ],
-    "transparency": [
-     [
-      0,
-      0.3
-     ],
-     [
-      1,
-      1
-     ]
-    ],
-    "lifetime": [
-     0.3,
-     0.6
-    ],
-    "speed": [
-     1,
-     3
-    ],
-    "rate": 45,
-    "spread": [
-     10,
-     10
-    ],
-    "light": 1,
-    "accel": [
-     0,
-     10,
-     0
-    ],
-    "shape": "Cylinder"
+     },
+     "Speed": {
+      "nr": [
+       1,
+       3
+      ]
+     },
+     "Rate": 45,
+     "SpreadAngle": {
+      "v2": [
+       10,
+       10
+      ]
+     },
+     "LightEmission": 1,
+     "Acceleration": {
+      "v3": [
+       0,
+       10,
+       0
+      ]
+     },
+     "Shape": {
+      "enum": "ParticleEmitterShape.Cylinder"
+     }
+    }
    }
   ],
-  "score": 1
+  "mode": "loop",
+  "source": {
+   "kind": "original",
+   "by": "claude",
+   "set": "seed-2026-10-12"
+  }
  },
  "speed_trail": {
   "tags": [
@@ -465,64 +613,82 @@
   ],
   "use": "while sprinting: thin white wind streaks left behind",
   "sketch": "sparkles",
-  "emitters": [
+  "score": 1,
+  "nodes": [
    {
-    "tex": "spark",
-    "color": [
-     [
-      0,
-      [
-       0.9,
-       1,
-       1
+    "class": "ParticleEmitter",
+    "name": "Emitter1",
+    "props": {
+     "Texture": "rbxasset://textures/particles/fire_sparks_main.dds",
+     "Color": {
+      "cs": [
+       [
+        0,
+        0.9,
+        1,
+        1
+       ],
+       [
+        1,
+        0.5,
+        0.85,
+        1
+       ]
       ]
-     ],
-     [
-      1,
-      [
-       0.5,
-       0.85,
-       1
+     },
+     "Size": {
+      "ns": [
+       [
+        0,
+        0.5
+       ],
+       [
+        1,
+        0
+       ]
       ]
-     ]
-    ],
-    "size": [
-     [
-      0,
-      0.5
-     ],
-     [
-      1,
-      0
-     ]
-    ],
-    "transparency": [
-     [
-      0,
-      0.3
-     ],
-     [
-      1,
-      1
-     ]
-    ],
-    "lifetime": [
-     0.2,
-     0.4
-    ],
-    "speed": [
-     0,
-     0.5
-    ],
-    "rate": 50,
-    "spread": [
-     5,
-     5
-    ],
-    "light": 1
+     },
+     "Transparency": {
+      "ns": [
+       [
+        0,
+        0.3
+       ],
+       [
+        1,
+        1
+       ]
+      ]
+     },
+     "Lifetime": {
+      "nr": [
+       0.2,
+       0.4
+      ]
+     },
+     "Speed": {
+      "nr": [
+       0,
+       0.5
+      ]
+     },
+     "Rate": 50,
+     "SpreadAngle": {
+      "v2": [
+       5,
+       5
+      ]
+     },
+     "LightEmission": 1
+    }
    }
   ],
-  "score": 1
+  "mode": "loop",
+  "source": {
+   "kind": "original",
+   "by": "claude",
+   "set": "seed-2026-10-12"
+  }
  },
  "money_pop": {
   "tags": [
@@ -532,73 +698,93 @@
   ],
   "use": "a money generator paying out: green glints rising",
   "sketch": "sparkles",
-  "emitters": [
+  "score": 2,
+  "nodes": [
    {
-    "tex": "sparkles",
-    "color": [
-     [
-      0,
-      [
-       0.5,
+    "class": "ParticleEmitter",
+    "name": "Emitter1",
+    "props": {
+     "Texture": "rbxasset://textures/particles/sparkles_main.dds",
+     "Color": {
+      "cs": [
+       [
+        0,
+        0.5,
+        1,
+        0.5
+       ],
+       [
+        1,
+        0.1,
+        0.8,
+        0.3
+       ]
+      ]
+     },
+     "Size": {
+      "ns": [
+       [
+        0,
+        0.7
+       ],
+       [
+        1,
+        0.2
+       ]
+      ]
+     },
+     "Transparency": {
+      "ns": [
+       [
+        0,
+        0
+       ],
+       [
+        0.8,
+        0.2
+       ],
+       [
+        1,
+        1
+       ]
+      ]
+     },
+     "Lifetime": {
+      "nr": [
        1,
-       0.5
+       1.5
       ]
-     ],
-     [
-      1,
-      [
-       0.1,
-       0.8,
-       0.3
+     },
+     "Speed": {
+      "nr": [
+       3,
+       5
       ]
-     ]
-    ],
-    "size": [
-     [
-      0,
-      0.7
-     ],
-     [
-      1,
-      0.2
-     ]
-    ],
-    "transparency": [
-     [
-      0,
-      0
-     ],
-     [
-      0.8,
-      0.2
-     ],
-     [
-      1,
-      1
-     ]
-    ],
-    "lifetime": [
-     1,
-     1.5
-    ],
-    "speed": [
-     3,
-     5
-    ],
-    "rate": 6,
-    "spread": [
-     20,
-     20
-    ],
-    "light": 1,
-    "accel": [
-     0,
-     -2,
-     0
-    ]
+     },
+     "Rate": 6,
+     "SpreadAngle": {
+      "v2": [
+       20,
+       20
+      ]
+     },
+     "LightEmission": 1,
+     "Acceleration": {
+      "v3": [
+       0,
+       -2,
+       0
+      ]
+     }
+    }
    }
   ],
-  "score": 2
+  "mode": "loop",
+  "source": {
+   "kind": "original",
+   "by": "claude",
+   "set": "seed-2026-10-12"
+  }
  },
  "rarity_rare": {
   "tags": [
@@ -608,75 +794,100 @@
   ],
   "use": "rare wheel prize: calm blue sparkle halo",
   "sketch": "glow",
-  "emitters": [
+  "score": 2,
+  "nodes": [
    {
-    "tex": "sparkles",
-    "color": [
-     [
-      0,
-      [
+    "class": "ParticleEmitter",
+    "name": "Emitter1",
+    "props": {
+     "Texture": "rbxasset://textures/particles/sparkles_main.dds",
+     "Color": {
+      "cs": [
+       [
+        0,
+        0.5,
+        0.75,
+        1
+       ],
+       [
+        1,
+        0.2,
+        0.45,
+        1
+       ]
+      ]
+     },
+     "Size": {
+      "ns": [
+       [
+        0,
+        0.5
+       ],
+       [
+        1,
+        0
+       ]
+      ]
+     },
+     "Transparency": {
+      "ns": [
+       [
+        0,
+        0
+       ],
+       [
+        1,
+        1
+       ]
+      ]
+     },
+     "Lifetime": {
+      "nr": [
+       0.8,
+       1.2
+      ]
+     },
+     "Speed": {
+      "nr": [
        0.5,
-       0.75,
        1
       ]
-     ],
-     [
-      1,
-      [
-       0.2,
-       0.45,
-       1
+     },
+     "Rate": 20,
+     "SpreadAngle": {
+      "v2": [
+       180,
+       180
       ]
-     ]
-    ],
-    "size": [
-     [
-      0,
-      0.5
-     ],
-     [
-      1,
-      0
-     ]
-    ],
-    "transparency": [
-     [
-      0,
-      0
-     ],
-     [
-      1,
-      1
-     ]
-    ],
-    "lifetime": [
-     0.8,
-     1.2
-    ],
-    "speed": [
-     0.5,
-     1
-    ],
-    "rate": 20,
-    "spread": [
-     180,
-     180
-    ],
-    "light": 1,
-    "shape": "Sphere"
+     },
+     "LightEmission": 1,
+     "Shape": {
+      "enum": "ParticleEmitterShape.Sphere"
+     }
+    }
    },
    {
-    "class": "light",
-    "color": [
-     0.4,
-     0.6,
-     1
-    ],
-    "range": 10,
-    "brightness": 1.5
+    "class": "PointLight",
+    "name": "Light2",
+    "props": {
+     "Color": {
+      "c3": [
+       0.4,
+       0.6,
+       1
+      ]
+     },
+     "Range": 10,
+     "Brightness": 1.5
+    }
    }
   ],
-  "score": 2
+  "mode": "loop",
+  "source": {
+   "kind": "original",
+   "by": "claude",
+   "set": "seed-2026-10-12"
+  }
  },
  "rarity_epic": {
   "tags": [
@@ -686,134 +897,177 @@
   ],
   "use": "epic wheel prize: purple swirl around the item",
   "sketch": "glow",
-  "emitters": [
+  "score": 2,
+  "nodes": [
    {
-    "tex": "vortex",
-    "color": [
-     [
-      0,
-      [
+    "class": "ParticleEmitter",
+    "name": "Emitter1",
+    "props": {
+     "Texture": "rbxasset://textures/particles/forcefield_vortex_main.dds",
+     "Color": {
+      "cs": [
+       [
+        0,
+        0.8,
+        0.4,
+        1
+       ],
+       [
+        1,
+        0.45,
+        0.1,
+        0.9
+       ]
+      ]
+     },
+     "Size": {
+      "ns": [
+       [
+        0,
+        2
+       ],
+       [
+        1,
+        3.5
+       ]
+      ]
+     },
+     "Transparency": {
+      "ns": [
+       [
+        0,
+        0.4
+       ],
+       [
+        1,
+        1
+       ]
+      ]
+     },
+     "Lifetime": {
+      "nr": [
        0.8,
-       0.4,
-       1
+       1.2
       ]
-     ],
-     [
-      1,
-      [
-       0.45,
-       0.1,
-       0.9
+     },
+     "Speed": {
+      "nr": [
+       0,
+       0
       ]
-     ]
-    ],
-    "size": [
-     [
-      0,
-      2
-     ],
-     [
-      1,
-      3.5
-     ]
-    ],
-    "transparency": [
-     [
-      0,
-      0.4
-     ],
-     [
-      1,
-      1
-     ]
-    ],
-    "lifetime": [
-     0.8,
-     1.2
-    ],
-    "speed": [
-     0,
-     0
-    ],
-    "rate": 6,
-    "spread": [
-     0,
-     0
-    ],
-    "light": 1,
-    "rotspeed": [
-     120,
-     200
-    ],
-    "lock": true
+     },
+     "Rate": 6,
+     "SpreadAngle": {
+      "v2": [
+       0,
+       0
+      ]
+     },
+     "LightEmission": 1,
+     "RotSpeed": {
+      "nr": [
+       120,
+       200
+      ]
+     },
+     "Rotation": {
+      "nr": [
+       0,
+       360
+      ]
+     },
+     "LockedToPart": true
+    }
    },
    {
-    "tex": "sparkles",
-    "color": [
-     [
-      0,
-      [
-       0.9,
+    "class": "ParticleEmitter",
+    "name": "Emitter2",
+    "props": {
+     "Texture": "rbxasset://textures/particles/sparkles_main.dds",
+     "Color": {
+      "cs": [
+       [
+        0,
+        0.9,
+        0.6,
+        1
+       ],
+       [
+        1,
+        0.6,
+        0.2,
+        1
+       ]
+      ]
+     },
+     "Size": {
+      "ns": [
+       [
+        0,
+        0.5
+       ],
+       [
+        1,
+        0
+       ]
+      ]
+     },
+     "Transparency": {
+      "ns": [
+       [
+        0,
+        0
+       ],
+       [
+        1,
+        1
+       ]
+      ]
+     },
+     "Lifetime": {
+      "nr": [
        0.6,
        1
       ]
-     ],
-     [
-      1,
-      [
-       0.6,
-       0.2,
-       1
+     },
+     "Speed": {
+      "nr": [
+       1,
+       2
       ]
-     ]
-    ],
-    "size": [
-     [
-      0,
-      0.5
-     ],
-     [
-      1,
-      0
-     ]
-    ],
-    "transparency": [
-     [
-      0,
-      0
-     ],
-     [
-      1,
-      1
-     ]
-    ],
-    "lifetime": [
-     0.6,
-     1
-    ],
-    "speed": [
-     1,
-     2
-    ],
-    "rate": 15,
-    "spread": [
-     180,
-     180
-    ],
-    "light": 1
+     },
+     "Rate": 15,
+     "SpreadAngle": {
+      "v2": [
+       180,
+       180
+      ]
+     },
+     "LightEmission": 1
+    }
    },
    {
-    "class": "light",
-    "color": [
-     0.7,
-     0.3,
-     1
-    ],
-    "range": 12,
-    "brightness": 2
+    "class": "PointLight",
+    "name": "Light3",
+    "props": {
+     "Color": {
+      "c3": [
+       0.7,
+       0.3,
+       1
+      ]
+     },
+     "Range": 12,
+     "Brightness": 2
+    }
    }
   ],
-  "score": 2
+  "mode": "loop",
+  "source": {
+   "kind": "original",
+   "by": "claude",
+   "set": "seed-2026-10-12"
+  }
  },
  "rarity_legendary": {
   "tags": [
@@ -823,129 +1077,164 @@
   ],
   "use": "legendary prize: gold light pillar shooting up",
   "sketch": "fire",
-  "emitters": [
+  "score": 3,
+  "nodes": [
    {
-    "tex": "glow",
-    "color": [
-     [
-      0,
-      [
-       1,
-       0.95,
-       0.6
+    "class": "ParticleEmitter",
+    "name": "Emitter1",
+    "props": {
+     "Texture": "rbxasset://textures/particles/forcefield_glow_main.dds",
+     "Color": {
+      "cs": [
+       [
+        0,
+        1,
+        0.95,
+        0.6
+       ],
+       [
+        1,
+        1,
+        0.7,
+        0.1
+       ]
       ]
-     ],
-     [
-      1,
-      [
-       1,
-       0.7,
-       0.1
+     },
+     "Size": {
+      "ns": [
+       [
+        0,
+        2.5
+       ],
+       [
+        1,
+        1
+       ]
       ]
-     ]
-    ],
-    "size": [
-     [
-      0,
-      2.5
-     ],
-     [
-      1,
-      1
-     ]
-    ],
-    "transparency": [
-     [
-      0,
-      0.3
-     ],
-     [
-      1,
-      1
-     ]
-    ],
-    "lifetime": [
-     0.8,
-     1.2
-    ],
-    "speed": [
-     10,
-     14
-    ],
-    "rate": 30,
-    "spread": [
-     3,
-     3
-    ],
-    "light": 1
+     },
+     "Transparency": {
+      "ns": [
+       [
+        0,
+        0.3
+       ],
+       [
+        1,
+        1
+       ]
+      ]
+     },
+     "Lifetime": {
+      "nr": [
+       0.8,
+       1.2
+      ]
+     },
+     "Speed": {
+      "nr": [
+       10,
+       14
+      ]
+     },
+     "Rate": 30,
+     "SpreadAngle": {
+      "v2": [
+       3,
+       3
+      ]
+     },
+     "LightEmission": 1
+    }
    },
    {
-    "tex": "sparkles",
-    "color": [
-     [
-      0,
-      [
-       1,
-       0.9,
-       0.5
+    "class": "ParticleEmitter",
+    "name": "Emitter2",
+    "props": {
+     "Texture": "rbxasset://textures/particles/sparkles_main.dds",
+     "Color": {
+      "cs": [
+       [
+        0,
+        1,
+        0.9,
+        0.5
+       ],
+       [
+        1,
+        1,
+        0.6,
+        0.1
+       ]
       ]
-     ],
-     [
-      1,
-      [
-       1,
-       0.6,
-       0.1
+     },
+     "Size": {
+      "ns": [
+       [
+        0,
+        0.6
+       ],
+       [
+        1,
+        0
+       ]
       ]
-     ]
-    ],
-    "size": [
-     [
-      0,
-      0.6
-     ],
-     [
-      1,
-      0
-     ]
-    ],
-    "transparency": [
-     [
-      0,
-      0
-     ],
-     [
-      1,
-      1
-     ]
-    ],
-    "lifetime": [
-     0.8,
-     1.4
-    ],
-    "speed": [
-     2,
-     6
-    ],
-    "rate": 30,
-    "spread": [
-     40,
-     40
-    ],
-    "light": 1
+     },
+     "Transparency": {
+      "ns": [
+       [
+        0,
+        0
+       ],
+       [
+        1,
+        1
+       ]
+      ]
+     },
+     "Lifetime": {
+      "nr": [
+       0.8,
+       1.4
+      ]
+     },
+     "Speed": {
+      "nr": [
+       2,
+       6
+      ]
+     },
+     "Rate": 30,
+     "SpreadAngle": {
+      "v2": [
+       40,
+       40
+      ]
+     },
+     "LightEmission": 1
+    }
    },
    {
-    "class": "light",
-    "color": [
-     1,
-     0.8,
-     0.3
-    ],
-    "range": 16,
-    "brightness": 3
+    "class": "PointLight",
+    "name": "Light3",
+    "props": {
+     "Color": {
+      "c3": [
+       1,
+       0.8,
+       0.3
+      ]
+     },
+     "Range": 16,
+     "Brightness": 3
+    }
    }
   ],
-  "score": 3
+  "mode": "loop",
+  "source": {
+   "kind": "original",
+   "by": "claude",
+   "set": "seed-2026-10-12"
+  }
  },
  "rarity_mythic": {
   "tags": [
@@ -955,166 +1244,201 @@
   ],
   "use": "mythic prize: rainbow swirl with sparkles, the big one",
   "sketch": "glow",
-  "emitters": [
+  "score": 1,
+  "nodes": [
    {
-    "tex": "vortex",
-    "color": [
-     [
-      0,
-      [
+    "class": "ParticleEmitter",
+    "name": "Emitter1",
+    "props": {
+     "Texture": "rbxasset://textures/particles/forcefield_vortex_main.dds",
+     "Color": {
+      "cs": [
+       [
+        0,
+        1,
+        0.3,
+        0.3
+       ],
+       [
+        0.25,
+        1,
+        0.9,
+        0.2
+       ],
+       [
+        0.5,
+        0.3,
+        1,
+        0.4
+       ],
+       [
+        0.75,
+        0.3,
+        0.6,
+        1
+       ],
+       [
+        1,
+        0.9,
+        0.3,
+        1
+       ]
+      ]
+     },
+     "Size": {
+      "ns": [
+       [
+        0,
+        2.5
+       ],
+       [
+        1,
+        4.5
+       ]
+      ]
+     },
+     "Transparency": {
+      "ns": [
+       [
+        0,
+        0.3
+       ],
+       [
+        1,
+        1
+       ]
+      ]
+     },
+     "Lifetime": {
+      "nr": [
        1,
-       0.3,
-       0.3
+       1.5
       ]
-     ],
-     [
-      0.25,
-      [
-       1,
-       0.9,
-       0.2
+     },
+     "Speed": {
+      "nr": [
+       0,
+       0
       ]
-     ],
-     [
-      0.5,
-      [
-       0.3,
-       1,
-       0.4
+     },
+     "Rate": 8,
+     "SpreadAngle": {
+      "v2": [
+       0,
+       0
       ]
-     ],
-     [
-      0.75,
-      [
-       0.3,
-       0.6,
-       1
+     },
+     "LightEmission": 1,
+     "RotSpeed": {
+      "nr": [
+       150,
+       250
       ]
-     ],
-     [
-      1,
-      [
-       0.9,
-       0.3,
-       1
+     },
+     "Rotation": {
+      "nr": [
+       0,
+       360
       ]
-     ]
-    ],
-    "size": [
-     [
-      0,
-      2.5
-     ],
-     [
-      1,
-      4.5
-     ]
-    ],
-    "transparency": [
-     [
-      0,
-      0.3
-     ],
-     [
-      1,
-      1
-     ]
-    ],
-    "lifetime": [
-     1,
-     1.5
-    ],
-    "speed": [
-     0,
-     0
-    ],
-    "rate": 8,
-    "spread": [
-     0,
-     0
-    ],
-    "light": 1,
-    "rotspeed": [
-     150,
-     250
-    ],
-    "lock": true
+     },
+     "LockedToPart": true
+    }
    },
    {
-    "tex": "sparkles",
-    "color": [
-     [
-      0,
-      [
-       1,
-       0.5,
-       0.5
+    "class": "ParticleEmitter",
+    "name": "Emitter2",
+    "props": {
+     "Texture": "rbxasset://textures/particles/sparkles_main.dds",
+     "Color": {
+      "cs": [
+       [
+        0,
+        1,
+        0.5,
+        0.5
+       ],
+       [
+        0.5,
+        0.5,
+        1,
+        0.6
+       ],
+       [
+        1,
+        0.6,
+        0.6,
+        1
+       ]
       ]
-     ],
-     [
-      0.5,
-      [
-       0.5,
-       1,
-       0.6
+     },
+     "Size": {
+      "ns": [
+       [
+        0,
+        0.7
+       ],
+       [
+        1,
+        0
+       ]
       ]
-     ],
-     [
-      1,
-      [
-       0.6,
-       0.6,
-       1
+     },
+     "Transparency": {
+      "ns": [
+       [
+        0,
+        0
+       ],
+       [
+        1,
+        1
+       ]
       ]
-     ]
-    ],
-    "size": [
-     [
-      0,
-      0.7
-     ],
-     [
-      1,
-      0
-     ]
-    ],
-    "transparency": [
-     [
-      0,
-      0
-     ],
-     [
-      1,
-      1
-     ]
-    ],
-    "lifetime": [
-     0.8,
-     1.4
-    ],
-    "speed": [
-     2,
-     5
-    ],
-    "rate": 40,
-    "spread": [
-     180,
-     180
-    ],
-    "light": 1
+     },
+     "Lifetime": {
+      "nr": [
+       0.8,
+       1.4
+      ]
+     },
+     "Speed": {
+      "nr": [
+       2,
+       5
+      ]
+     },
+     "Rate": 40,
+     "SpreadAngle": {
+      "v2": [
+       180,
+       180
+      ]
+     },
+     "LightEmission": 1
+    }
    },
    {
-    "class": "light",
-    "color": [
-     1,
-     1,
-     1
-    ],
-    "range": 18,
-    "brightness": 3
+    "class": "PointLight",
+    "name": "Light3",
+    "props": {
+     "Color": {
+      "c3": [
+       1,
+       1,
+       1
+      ]
+     },
+     "Range": 18,
+     "Brightness": 3
+    }
    }
   ],
-  "score": 1
+  "mode": "loop",
+  "source": {
+   "kind": "original",
+   "by": "claude",
+   "set": "seed-2026-10-12"
+  }
  },
  "aura_dark": {
   "tags": [
@@ -1124,134 +1448,178 @@
   ],
   "use": "an RNG-style rolled aura: dark red smoke with embers",
   "sketch": "smoke",
-  "emitters": [
+  "score": 2,
+  "nodes": [
    {
-    "tex": "smoke",
-    "color": [
-     [
-      0,
-      [
-       0.25,
-       0.02,
-       0.05
+    "class": "ParticleEmitter",
+    "name": "Emitter1",
+    "props": {
+     "Texture": "rbxasset://textures/particles/smoke_main.dds",
+     "Color": {
+      "cs": [
+       [
+        0,
+        0.25,
+        0.02,
+        0.05
+       ],
+       [
+        1,
+        0.05,
+        0,
+        0.02
+       ]
       ]
-     ],
-     [
-      1,
-      [
-       0.05,
+     },
+     "Size": {
+      "ns": [
+       [
+        0,
+        2
+       ],
+       [
+        1,
+        4
+       ]
+      ]
+     },
+     "Transparency": {
+      "ns": [
+       [
+        0,
+        0.4
+       ],
+       [
+        1,
+        1
+       ]
+      ]
+     },
+     "Lifetime": {
+      "nr": [
+       1,
+       1.6
+      ]
+     },
+     "Speed": {
+      "nr": [
+       1,
+       2
+      ]
+     },
+     "Rate": 25,
+     "SpreadAngle": {
+      "v2": [
+       30,
+       30
+      ]
+     },
+     "LightEmission": 0,
+     "Acceleration": {
+      "v3": [
        0,
-       0.02
+       2,
+       0
       ]
-     ]
-    ],
-    "size": [
-     [
-      0,
-      2
-     ],
-     [
-      1,
-      4
-     ]
-    ],
-    "transparency": [
-     [
-      0,
-      0.4
-     ],
-     [
-      1,
-      1
-     ]
-    ],
-    "lifetime": [
-     1,
-     1.6
-    ],
-    "speed": [
-     1,
-     2
-    ],
-    "rate": 25,
-    "spread": [
-     30,
-     30
-    ],
-    "light": 0,
-    "accel": [
-     0,
-     2,
-     0
-    ],
-    "rotspeed": [
-     -60,
-     60
-    ],
-    "shape": "Cylinder"
+     },
+     "RotSpeed": {
+      "nr": [
+       -60,
+       60
+      ]
+     },
+     "Rotation": {
+      "nr": [
+       0,
+       360
+      ]
+     },
+     "Shape": {
+      "enum": "ParticleEmitterShape.Cylinder"
+     }
+    }
    },
    {
-    "tex": "spark",
-    "color": [
-     [
-      0,
-      [
-       1,
-       0.3,
-       0.1
+    "class": "ParticleEmitter",
+    "name": "Emitter2",
+    "props": {
+     "Texture": "rbxasset://textures/particles/fire_sparks_main.dds",
+     "Color": {
+      "cs": [
+       [
+        0,
+        1,
+        0.3,
+        0.1
+       ],
+       [
+        1,
+        0.8,
+        0,
+        0.1
+       ]
       ]
-     ],
-     [
-      1,
-      [
+     },
+     "Size": {
+      "ns": [
+       [
+        0,
+        0.4
+       ],
+       [
+        1,
+        0
+       ]
+      ]
+     },
+     "Transparency": {
+      "ns": [
+       [
+        0,
+        0
+       ],
+       [
+        1,
+        1
+       ]
+      ]
+     },
+     "Lifetime": {
+      "nr": [
        0.8,
-       0,
-       0.1
+       1.2
       ]
-     ]
-    ],
-    "size": [
-     [
-      0,
-      0.4
-     ],
-     [
-      1,
-      0
-     ]
-    ],
-    "transparency": [
-     [
-      0,
-      0
-     ],
-     [
-      1,
-      1
-     ]
-    ],
-    "lifetime": [
-     0.8,
-     1.2
-    ],
-    "speed": [
-     2,
-     4
-    ],
-    "rate": 20,
-    "spread": [
-     25,
-     25
-    ],
-    "light": 1,
-    "accel": [
-     0,
-     3,
-     0
-    ]
+     },
+     "Speed": {
+      "nr": [
+       2,
+       4
+      ]
+     },
+     "Rate": 20,
+     "SpreadAngle": {
+      "v2": [
+       25,
+       25
+      ]
+     },
+     "LightEmission": 1,
+     "Acceleration": {
+      "v3": [
+       0,
+       3,
+       0
+      ]
+     }
+    }
    }
   ],
-  "score": 2
+  "mode": "loop",
+  "source": {
+   "kind": "original",
+   "by": "claude",
+   "set": "seed-2026-10-12"
+  }
  },
  "stolen_alert": {
   "tags": [
@@ -1261,74 +1629,97 @@
   ],
   "use": "over a victim's base when its card is stolen: pulsing red",
   "sketch": "glow",
-  "emitters": [
+  "score": 1,
+  "nodes": [
    {
-    "tex": "glow",
-    "color": [
-     [
-      0,
-      [
-       1,
-       0.15,
-       0.1
+    "class": "ParticleEmitter",
+    "name": "Emitter1",
+    "props": {
+     "Texture": "rbxasset://textures/particles/forcefield_glow_main.dds",
+     "Color": {
+      "cs": [
+       [
+        0,
+        1,
+        0.15,
+        0.1
+       ],
+       [
+        1,
+        1,
+        0,
+        0
+       ]
       ]
-     ],
-     [
-      1,
-      [
-       1,
+     },
+     "Size": {
+      "ns": [
+       [
+        0,
+        3
+       ],
+       [
+        1,
+        6
+       ]
+      ]
+     },
+     "Transparency": {
+      "ns": [
+       [
+        0,
+        0.3
+       ],
+       [
+        1,
+        1
+       ]
+      ]
+     },
+     "Lifetime": {
+      "nr": [
+       0.8,
+       0.8
+      ]
+     },
+     "Speed": {
+      "nr": [
        0,
        0
       ]
-     ]
-    ],
-    "size": [
-     [
-      0,
-      3
-     ],
-     [
-      1,
-      6
-     ]
-    ],
-    "transparency": [
-     [
-      0,
-      0.3
-     ],
-     [
-      1,
-      1
-     ]
-    ],
-    "lifetime": [
-     0.8,
-     0.8
-    ],
-    "speed": [
-     0,
-     0
-    ],
-    "rate": 2,
-    "spread": [
-     0,
-     0
-    ],
-    "light": 1,
-    "lock": true
+     },
+     "Rate": 2,
+     "SpreadAngle": {
+      "v2": [
+       0,
+       0
+      ]
+     },
+     "LightEmission": 1,
+     "LockedToPart": true
+    }
    },
    {
-    "class": "light",
-    "color": [
-     1,
-     0.1,
-     0.1
-    ],
-    "range": 14,
-    "brightness": 2
+    "class": "PointLight",
+    "name": "Light2",
+    "props": {
+     "Color": {
+      "c3": [
+       1,
+       0.1,
+       0.1
+      ]
+     },
+     "Range": 14,
+     "Brightness": 2
+    }
    }
   ],
-  "score": 1
+  "mode": "loop",
+  "source": {
+   "kind": "original",
+   "by": "claude",
+   "set": "seed-2026-10-12"
+  }
  }
 }
