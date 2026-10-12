@@ -311,6 +311,13 @@ class Asset:
         self._save()
         return self.build()
 
+    def preview(self, size: int = 256) -> Path:
+        """Render a 2x2 tile (front, right, back, 3/4) of the current export. Returns the PNG path."""
+        exp = self.cur("export")["files"]["main"]
+        out = self.root / "preview.png"
+        run_steps([{"op": "preview", "files": [str(self.path(exp))], "out": str(out), "size": size}])
+        return out
+
     def history(self) -> str:
         cur = ", ".join(f"{k}@v{r['current']}" for k, r in self.m["layers"].items())
         return "\n".join(self.m["history"] + [f"current: {cur}"])

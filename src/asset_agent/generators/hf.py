@@ -37,6 +37,7 @@ def _one_line(e: Exception) -> str:
 
 class HFSpaces(Generator):
     name = "hf"
+    shape_space = SHAPE_SPACE
 
     def __init__(self, token: str | None = None):
         self.token = token or os.environ.get("HF_TOKEN")
@@ -54,7 +55,7 @@ class HFSpaces(Generator):
                 prompt=prompt + PROMPT_SUFFIX, seed=seed, randomize_seed=False, width=1024, height=1024,
                 num_inference_steps=4, api_name="/infer")
             image = _path(out)
-        res = self._client(SHAPE_SPACE).predict(
+        res = self._client(self.shape_space).predict(
             caption=None, image=handle_file(image), mv_image_front=None, mv_image_back=None,
             mv_image_left=None, mv_image_right=None, steps=steps, guidance_scale=5.0, seed=seed,
             octree_resolution=octree_resolution, check_box_rembg=True, num_chunks=8000, randomize_seed=False,
@@ -81,3 +82,20 @@ class HFSpaces(Generator):
         i = dest / f"image{Path(image).suffix}"
         shutil.copy(image, i)
         return GenResult(m, i, textured, {"faces": stats.get("number_of_faces") if isinstance(stats, dict) else None})
+
+
+class LocalHunyuan(HFSpaces):
+    """Your own GPU: Hunyuan3D-2's gradio_app.py running locally (same API as the Space).
+
+    Set HUNYUAN_URL (default http://127.0.0.1:8080). Text prompts still make their image on the free
+    FLUX Space; pass image= to stay fully offline.
+    """
+    name = "local"
+
+    def __init__(self, token: str | None = None):
+        super().__init__(token)
+        self.shape_space = os.environ.get("HUNYUAN_URL", "http://127.0.0.1:8080")
+
+    def _client(self, space):
+        from gradio_client import Client
+        return Client(space, token=None if space == self.shape_space else self.token, verbose=False)

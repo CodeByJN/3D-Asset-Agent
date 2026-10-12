@@ -462,6 +462,56 @@ def op_export(s):
     return {**report, "files": files}
 
 
+PREVIEW_VIEWS = [(0, -1, 0.25), (1, 0, 0.25), (0, 1, 0.25), (1, -1, 0.9)]  # front, right, back, 3/4
+
+
+def op_preview(s):
+    """Render one square tile of 4 views (2x2) with Workbench, textured, to s["out"]."""
+    size = s.get("size", 256)
+    half = size // 2
+    objs = []
+    for f in s["files"]:
+        objs.append(import_any(f))
+    scene = bpy.context.scene
+    try:
+        scene.render.engine = "BLENDER_WORKBENCH"
+    except TypeError as e:
+        raise RuntimeError(f"no workbench engine: {e}")
+    scene.display.shading.light = "STUDIO"
+    scene.display.shading.color_type = "TEXTURE"
+    scene.render.resolution_x = scene.render.resolution_y = half
+    scene.render.resolution_percentage = 100
+    scene.render.image_settings.file_format = "PNG"
+    cam = bpy.data.objects.new("cam", bpy.data.cameras.new("cam"))
+    scene.collection.objects.link(cam)
+    scene.camera = cam
+    cam.data.type = "ORTHO"
+    lo, hi = bbox(objs)
+    c, ext = (lo + hi) / 2, max(hi - lo)
+    cam.data.ortho_scale = ext * 1.5
+    cam.data.clip_end = ext * 10
+    tile = np.zeros((size, size, 4), dtype=np.float32)
+    tmp = Path(s["out"]).with_suffix(".view.png")
+    for i, d in enumerate(PREVIEW_VIEWS):
+        d = Vector(d).normalized()
+        cam.location = c + d * ext * 3
+        cam.rotation_euler = d.to_track_quat("Z", "Y").to_euler()
+        scene.render.filepath = str(tmp)
+        bpy.ops.render.render(write_still=True)
+        img = bpy.data.images.load(str(tmp))
+        px = pixels(img).reshape(half, half, 4)
+        bpy.data.images.remove(img)
+        row, col = 1 - i // 2, i % 2  # pixel rows start at the bottom
+        tile[row * half:(row + 1) * half, col * half:(col + 1) * half] = px
+    tmp.unlink()
+    out = bpy.data.images.new("preview", size, size, alpha=False)
+    out.pixels.foreach_set(tile.ravel())
+    out.filepath_raw = s["out"]
+    out.file_format = "PNG"
+    out.save()
+    return {"size": size}
+
+
 def op_validate(s):
     o = import_any(s["src"])
     return validate([o], s["budget"])

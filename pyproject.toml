@@ -5,7 +5,11 @@ description = "Low-token 3D asset harness: Blender + AI generators -> Roblox/gam
 requires-python = ">=3.12"
 dependencies = [
     "gradio-client>=2.7.2",
+    "mcp>=1.2",
 ]
+
+[project.scripts]
+asset-agent-mcp = "asset_agent.server:main"
 
 [dependency-groups]
 dev = ["pytest>=8"]

@@ -26,3 +26,13 @@ a.revise("topology", part="main", target_tris=2000)
 - `style="project"` paints the generated reference image onto the front; `style="flat"` is one colour × ambient occlusion, and recolouring is a finish-only change.
 - Works anonymously. Set `HF_TOKEN` (a free Hugging Face account) for more daily GPU time.
 - Generations are cached in `library/cache/`, so the same request is never run twice.
+
+## MCP server
+`.mcp.json` registers `asset-agent` (run with `uv run asset-agent-mcp`). It has 8 tools, about 1k tokens of definitions:
+- `make_asset`, `import_mesh`
+- `revise`, `rollback`, `history`
+- `validate`
+- `preview` (opt-in 256px 4-view tile)
+- `library`
+
+`backend="local"` uses your own GPU running Hunyuan3D-2. See [docs/HOME_PC_SETUP.md](docs/HOME_PC_SETUP.md).

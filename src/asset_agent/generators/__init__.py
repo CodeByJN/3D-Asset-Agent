@@ -1,7 +1,7 @@
 from .base import GenResult, Generator, GeneratorError, generate
-from .hf import HFSpaces
+from .hf import HFSpaces, LocalHunyuan
 
-BACKENDS = {"hf": HFSpaces}
+BACKENDS = {"hf": HFSpaces, "local": LocalHunyuan}
 
 
 def get(name: str) -> Generator:

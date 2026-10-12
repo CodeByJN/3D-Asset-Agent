@@ -6,3 +6,4 @@ __pycache__/
 assets/*/export/
 library/cache/
 .pytest_cache/
+assets/

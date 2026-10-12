@@ -8,6 +8,15 @@
         "UV_CACHE_DIR": "C:\\Users\\Jordan\\.uv\\cache",
         "UV_TOOL_DIR": "C:\\Users\\Jordan\\.uv\\tools"
       }
+    },
+    "asset-agent": {
+      "command": "uv",
+      "args": ["run", "--python", "3.12", "asset-agent-mcp"],
+      "env": {
+        "UV_PYTHON_INSTALL_DIR": "C:\\Users\\Jordan\\.uv\\python",
+        "UV_CACHE_DIR": "C:\\Users\\Jordan\\.uv\\cache",
+        "UV_TOOL_DIR": "C:\\Users\\Jordan\\.uv\\tools"
+      }
     }
   }
 }
