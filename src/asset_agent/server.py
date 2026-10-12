@@ -12,11 +12,15 @@ from mcp.server.mcpserver import Image, MCPServer
 from . import generators
 from .asset import Asset
 from .make import make_asset as _make_asset
+from .project import Project
 
 server = MCPServer("asset-agent", instructions=(
-    "Game-ready 3D assets (Roblox first). make_asset generates (free or on your GPU) and returns one line. "
-    "Fix things with revise (only that layer and what depends on it rebuilds), not by regenerating. "
-    "preview only when you must see it."))
+    "Game-ready 3D assets (Roblox first). For a game, call plan(project) first: its style guide, roster "
+    "and what past ratings liked/avoided; pass project= to make_asset. make_asset generates (free or on "
+    "your GPU) and returns one line. Fix things with revise (only that layer and what depends on it "
+    "rebuilds), not by regenerating. preview only when you must see it (layer='breakdown' shows geometry, "
+    "topology, colour, texture). After each make_asset or revise the user looks at, ask for a 1-10 "
+    "rating and call rate."))
 
 
 def home() -> Path:
@@ -47,14 +51,15 @@ def tool(fn):
 
 
 @tool
-def make_asset(name: str, prompt: str | None = None, image: str | None = None, style: str = "project",
-               color: list[float] | None = None, budget: str = "roblox_prop", textured: bool = False,
-               backend: str = "auto") -> str:
+def make_asset(name: str, prompt: str | None = None, image: str | None = None, style: str | None = None,
+               color: list[float] | None = None, budget: str | None = None, textured: bool = False,
+               backend: str = "auto", project: str | None = None) -> str:
     """Generate a game-ready asset from a text prompt or an image path (free, ~1-2 min).
     style: project (paint the generated image on) | flat (one colour, set via color [r,g,b] 0-1).
-    budget: roblox_prop | roblox_hero | mobile_prop | godot_lod. backend: auto (your GPU server if up, else free hf) | hf | local."""
-    return _make_asset(home() / name, prompt=prompt, image=image, budget=budget, style=style,
-                       color=color, backend=backend, textured=textured)
+    budget: roblox_prop | roblox_hero | mobile_prop | godot_lod. backend: auto (your GPU server if up, else free hf) | hf | local.
+    project: a game from plan; fills unset args from its style guide (prompt too, if on the roster)."""
+    return _make_asset(home() / name, prompt=prompt, image=image, budget=budget, style=style, color=color,
+                       backend=backend, textured=textured, project=Project.open(home(), project) if project else None)
 
 
 @tool
@@ -70,7 +75,8 @@ def import_mesh(name: str, path: str, image: str | None = None, style: str = "au
 @tool
 def revise(name: str, layer: str, change: dict, part: str | None = None) -> str:
     """Change one layer; only it and what depends on it rebuild. Layers and keys:
-    finish {roughness, metallic, tint} | geometry {scale [x,y,z], offset, source} |
+    finish {roughness, metallic, tint} | geometry {scale [x,y,z], offset, or a new shape: source
+    (mesh path) | prompt | image, keep [scale, texture] (default both)} |
     topology {target_tris} | uv {angle, margin} | surface {mode, image, ao, tex_size} |
     collision {max_tris} | export {scale_to (m), target roblox|godot|unity}."""
     return _asset(name).revise(layer, part=part, **change)
@@ -95,10 +101,11 @@ def validate(name: str) -> str:
 
 
 @server.tool(structured_output=False)
-def preview(name: str, size: int = 256):
-    """Image of 4 views (front, right, back, 3/4). Costs image tokens: use sparingly."""
+def preview(name: str, size: int = 256, layer: str = "final"):
+    """Image, 2x2. layer: final | geometry | topology | colour | texture (4 views each) |
+    breakdown (those 4 layers, 3/4 view). Costs image tokens: use sparingly."""
     try:
-        return Image(path=str(_asset(name).preview(min(size, 512))))
+        return Image(path=str(_asset(name).preview(min(size, 512), layer)))
     except Exception as e:
         return f"error: {type(e).__name__}: {' '.join(str(e).split())}"[:300]
 
@@ -117,6 +124,35 @@ def library(query: str = "") -> str:
         if q in (d.get("prompt") or "").lower():
             lines.append(f"cached {d['backend']}: {d.get('prompt')!r} -> {meta.parent / d['mesh']}")
     return "\n".join(lines) or "nothing found"
+
+
+@tool
+def plan(project: str, brief: str | None = None, references: list[str] | None = None,
+         assets: dict[str, str] | None = None, style: dict | None = None) -> str:
+    """Create or update a game's style guide; returns it with the roster and what ratings taught.
+    brief: look appended to every prompt. references: image paths. assets: {name: prompt} to make.
+    style: budget, style (project|flat), palette [[r,g,b]], sizes {word: metres}, target_tris,
+    tex_size, ao, roughness, metallic."""
+    p = Project.open(home(), project, create=True)
+    if brief is not None or references or assets or style or not (p.root / "project.json").exists():
+        p.update(references=references, assets=assets, **({"brief": brief} if brief is not None else {}),
+                 **(style or {}))
+    return p.summary()
+
+
+@tool
+def rate(name: str, stars: int, note: str = "") -> str:
+    """Rate the asset's current version 1-10 with a short note on what's good or wrong.
+    Ratings tune the project's defaults and show up in plan()."""
+    if not 1 <= stars <= 10:
+        raise ValueError("stars must be 1-10")
+    a = _asset(name)
+    a.m.setdefault("ratings", []).append({"v": a.m["version"], "stars": stars, "note": note})
+    a._save()
+    if not a.m.get("project"):
+        return f"rated {name} v{a.m['version']} {stars}/10 (no project, so nothing learned)"
+    return Project.open(home(), a.m["project"]).rate(name, a.m["version"], stars, note, a.params_snapshot(),
+                                                     a.m.get("prompt"))
 
 
 def main():

@@ -32,7 +32,7 @@ def test_tool_definitions_fit_token_budget():
     tools = run(server.server.list_tools())
     payload = json.dumps([t.model_dump(exclude_none=True) for t in tools])
     approx_tokens = len(payload) / 4
-    assert len(tools) <= 9
+    assert len(tools) <= 10
     assert approx_tokens < TOOL_TOKEN_BUDGET, f"{approx_tokens:.0f} tokens"
 
 
@@ -64,3 +64,18 @@ def test_preview_is_an_image(home):
     img = [b for b in blocks if getattr(b, "type", "") == "image"]
     assert img and img[0].mime_type == "image/png"
     assert (home / "crate" / "preview.png").stat().st_size > 1000
+
+
+def test_plan_and_rate(home):
+    out = text(call("plan", project="obby", brief="chunky low poly", assets={"crate": "a wooden crate"},
+                    style={"target_tris": 900}))
+    assert out.startswith("project obby: brief 'chunky low poly'") and "target_tris=900" in out, out
+    assert "no project" in text(call("rate", name="crate", stars=6))
+    a = Asset(home / "crate")
+    a.m["project"] = "obby"
+    a._save()
+    line = text(call("rate", name="crate", stars=8, note="nice planks"))
+    assert line.startswith("rated crate v") and "8/10" in line and "\n" not in line, line
+    assert "roster 1/1 made: crate(made 8/10)" in text(call("plan", project="obby"))
+    assert text(call("rate", name="crate", stars=11)).startswith("error: ValueError")
+    assert text(call("plan", project="obby", style={"bogus": 1})).startswith("error: KeyError")
