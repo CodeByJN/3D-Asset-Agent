@@ -84,36 +84,57 @@ def upload(fbx: Path, name: str, asset_id: str | None = None, timeout: float = 1
 
 # ---------------------------------------------------------------- Studio script
 
+TEXTURES = {"fire": "fire_main", "smoke": "smoke_main", "sparkles": "sparkles_main", "spark": "fire_sparks_main",
+            "glow": "forcefield_glow_main", "vortex": "forcefield_vortex_main"}
+
+
 def _c3(rgb):
     return "Color3.new(" + ",".join(f"{x:.3g}" for x in rgb) + ")"
 
 
-def _effect_lua(fx) -> str:
-    """One effect as Luau statements; `h` is the host part, `s` the model's size in studs."""
-    c, z, r = fx["color"], fx["size"], fx["rate"]
-    dark = [x * 0.55 for x in c]
-    if fx["type"] == "glow":
-        return (f"local e=Instance.new('PointLight') e.Color={_c3(c)} e.Range=math.min(60,s*1.5*{z:g}) "
-                f"e.Brightness=2*{r:g}")
-    tex, life, speed, rate, size, light, accel, trans = {
-        "fire": ("fire_main", "0.6,1.2", "2,5", 60, "s*0.12,0", 1, "0,6,0", "0.2,1"),
-        "smoke": ("smoke_main", "2,4", "1,2", 8, "s*0.1,s*0.25", 0, "0,1,0", "0.5,1"),
-        "sparkles": ("sparkles_main", "0.5,1", "0.5,1.5", 25, "s*0.03,0", 1, "0,0,0", "0,1"),
-    }[fx["type"]]
-    s0, s1 = size.split(",")
-    t0, t1 = trans.split(",")
-    return (f"local e=Instance.new('ParticleEmitter') e.Texture='rbxasset://textures/particles/{tex}.dds' "
-            f"e.Color=ColorSequence.new({_c3(c)},{_c3(dark)}) e.LightEmission={light} "
-            f"e.Lifetime=NumberRange.new({life}) e.Speed=NumberRange.new({speed}) e.Rate={rate}*{r:g} "
-            f"e.Size=NumberSequence.new({s0}*{z:g},{s1}*{z:g}) e.Transparency=NumberSequence.new({t0},{t1}) "
-            f"e.Acceleration=Vector3.new({accel}) e.SpreadAngle=Vector2.new(15,15)")
+def _colors(keys):
+    if len(keys) == 1:
+        return f"ColorSequence.new({_c3(keys[0][1])})"
+    return "ColorSequence.new({" + ",".join(f"ColorSequenceKeypoint.new({t:g},{_c3(c)})" for t, c in keys) + "})"
+
+
+def _numbers(keys):
+    return "NumberSequence.new({" + ",".join(f"NumberSequenceKeypoint.new({t:g},{v:.3g})" for t, v in keys) + "})"
+
+
+def _range(r):
+    return f"NumberRange.new({r[0]:g},{r[1]:g})"
+
+
+def _emitter_lua(e) -> str:
+    """One emitter (ParticleEmitter or PointLight) as Luau statements creating `e`."""
+    if e.get("class") == "light":
+        return (f"local e=Instance.new('PointLight') e.Color={_c3(e['color'])} e.Range={min(60, e['range']):g} "
+                f"e.Brightness={e['brightness']:g}")
+    spread = e.get("spread", [0, 0])
+    out = [f"local e=Instance.new('ParticleEmitter') e.Texture='rbxasset://textures/particles/{TEXTURES[e['tex']]}.dds'",
+           f"e.Color={_colors(e['color'])} e.Size={_numbers(e['size'])}",
+           f"e.Transparency={_numbers(e.get('transparency', [[0, 0], [1, 1]]))}",
+           f"e.Lifetime={_range(e['lifetime'])} e.Speed={_range(e['speed'])} e.Rate={e['rate']:.3g}",
+           f"e.SpreadAngle=Vector2.new({spread[0]:g},{spread[1]:g}) e.LightEmission={e.get('light', 0):g}"]
+    if e.get("accel"):
+        out.append("e.Acceleration=Vector3.new(" + ",".join(f"{x:g}" for x in e["accel"]) + ")")
+    if e.get("rotspeed"):
+        out.append(f"e.RotSpeed={_range(e['rotspeed'])} e.Rotation=NumberRange.new(0,360)")
+    if e.get("drag"):
+        out.append(f"e.Drag={e['drag']:g}")
+    if e.get("shape"):
+        out.append(f"e.Shape=Enum.ParticleEmitterShape.{e['shape']}")
+    if e.get("lock"):
+        out.append("e.LockedToPart=true")
+    return " ".join(out)
 
 
 def studio_script(name: str, asset_id: str, revision: str, effects: dict) -> str:
     """Compact Luau for Studio's execute_luau. Returns a one-line status string when run."""
     fx_lua = "\n".join(
-        f"do {_effect_lua(fx)} e.Name='{n}' e:SetAttribute('AssetAgentVFX',true) e.Parent=h end"
-        for n, fx in vfx.resolve(effects).items())
+        f"do {_emitter_lua(e)} e.Name='{n}' e:SetAttribute('AssetAgentVFX',true) e.Parent=h end"
+        for n, fx in vfx.resolve(effects).items() for e in fx["emitters"])
     return f"""local NAME,ID,REV='{name}',{asset_id},'{revision}'
 local m=workspace:FindFirstChild(NAME) local loaded=false
 if not(m and m:GetAttribute('AssetAgentRev')==REV) then
@@ -129,6 +150,5 @@ if not(m and m:GetAttribute('AssetAgentRev')==REV) then
  n.Parent=workspace m=n loaded=true end
 for _,d in m:GetDescendants() do if d:GetAttribute('AssetAgentVFX') then d:Destroy() end end
 local h=m.PrimaryPart or m:FindFirstChildWhichIsA('BasePart',true)
-local _,bs=m:GetBoundingBox() local s=bs.Magnitude
 {fx_lua}
 return (loaded and 'loaded ' or 'kept model, ')..NAME..' with {len(effects)} effect(s)'"""

@@ -79,3 +79,8 @@ def test_plan_and_rate(home):
     assert "roster 1/1 made: crate(made 8/10)" in text(call("plan", project="obby"))
     assert text(call("rate", name="crate", stars=11)).startswith("error: ValueError")
     assert text(call("plan", project="obby", style={"bogus": 1})).startswith("error: KeyError")
+
+
+def test_library_lists_vfx_presets(home):
+    out = text(call("library", query="rarity"))
+    assert "vfx rarity_mythic [rarity,wheel,aura]" in out, out

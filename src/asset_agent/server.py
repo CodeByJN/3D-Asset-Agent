@@ -12,6 +12,7 @@ from mcp.server.mcpserver import Image, MCPServer
 from . import generators
 from .asset import Asset
 from .make import make_asset as _make_asset
+from . import vfx
 from .project import Project
 
 server = MCPServer("asset-agent", instructions=(
@@ -76,7 +77,7 @@ def import_mesh(name: str, path: str, image: str | None = None, style: str = "au
 @tool
 def revise(name: str, layer: str, change: dict, part: str | None = None) -> str:
     """Change one layer; only it and what depends on it rebuild. Layers and keys:
-    finish {roughness, metallic, tint} | vfx {effect_name: {type fire|smoke|sparkles|glow, color,
+    finish {roughness, metallic, tint} | vfx {effect_name: {type (vfx preset: see library), color,
     size, rate} or null} | geometry {scale [x,y,z], offset, or a new shape: source
     (mesh path) | prompt | image, keep [scale, texture] (default both)} |
     topology {target_tris} | uv {angle, margin} | surface {mode, image, ao, tex_size} |
@@ -114,7 +115,7 @@ def preview(name: str, size: int = 256, layer: str = "final"):
 
 @tool
 def library(query: str = "") -> str:
-    """List assets (and cached generations) whose name or prompt contains query."""
+    """List assets, cached generations and VFX presets whose name, prompt or tags contain query."""
     q = query.lower()
     lines = []
     for m in sorted(home().glob("*/manifest.json")):
@@ -125,6 +126,7 @@ def library(query: str = "") -> str:
         d = json.loads(meta.read_text())
         if q in (d.get("prompt") or "").lower():
             lines.append(f"cached {d['backend']}: {d.get('prompt')!r} -> {meta.parent / d['mesh']}")
+    lines += [f"vfx {x}" for x in vfx.catalog().splitlines() if q in x.lower()]
     return "\n".join(lines) or "nothing found"
 
 

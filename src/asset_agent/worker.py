@@ -630,14 +630,15 @@ def vfx_blobs(effects, lo, hi):
     size, base = hi - lo, Vector(((lo.x + hi.x) / 2, (lo.y + hi.y) / 2, lo.z))
     model = max(size)
     for k, (name, fx) in enumerate(sorted(effects.items())):
-        n, r, (spread, z0, z1) = VFX_SKETCH.get(fx.get("type"), VFX_SKETCH["sparkles"])
+        sketch = fx.get("sketch", fx.get("type"))
+        n, r, (spread, z0, z1) = VFX_SKETCH.get(sketch, VFX_SKETCH["sparkles"])
         rng = np.random.default_rng(k)
         n = max(1, int(n * fx.get("rate", 1.0) ** 0.5))
         bm = bmesh.new()
         for _ in range(n):
             t = rng.uniform()  # 0 = bottom of the effect, 1 = top
             z = lo.z + size.z * (z0 + (z1 - z0) * t)
-            fire = fx.get("type") == "fire"
+            fire = sketch == "fire"
             taper = 1 - 0.5 * t if fire else 1.0
             x = base.x + size.x / 2 * spread * taper * rng.uniform(-1, 1)
             y = base.y + size.y / 2 * spread * taper * rng.uniform(-1, 1)
@@ -652,15 +653,11 @@ def vfx_blobs(effects, lo, hi):
         bm.free()
         o = bpy.data.objects.new(f"vfx_{name}", me)
         bpy.context.scene.collection.objects.link(o)
-        rgb = fx.get("color") or VFX_DEFAULT_COLOUR.get(fx.get("type"), (1, 1, 1))
+        rgb = fx.get("color") or (1, 1, 1)
         o.color = (*rgb, 1.0)
         me.materials.append(flat_material(f"vfx_{name}", rgb))
         objs.append(o)
     return objs
-
-
-VFX_DEFAULT_COLOUR = {"fire": (1.0, 0.45, 0.1), "smoke": (0.45, 0.45, 0.45), "sparkles": (1.0, 0.9, 0.4),
-                      "glow": (1.0, 0.85, 0.55)}
 
 
 CLAY = (0.72, 0.72, 0.72)
