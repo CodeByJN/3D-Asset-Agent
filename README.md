@@ -35,4 +35,13 @@ a.revise("topology", part="main", target_tris=2000)
 - `preview` (opt-in 256px 4-view tile)
 - `library`
 
-`backend="local"` uses your own GPU running Hunyuan3D-2. See [docs/HOME_PC_SETUP.md](docs/HOME_PC_SETUP.md).
+## Your own GPU (optional)
+With an NVIDIA GPU (6 GB+ of VRAM), shape generation runs on your own machine: unlimited and private. The GPU can also be in another machine, such as a home desktop serving your laptop.
+```
+uv run asset-agent setup            # on the GPU machine: installs Hunyuan3D-2 for your card
+uv run asset-agent serve            # this machine only
+uv run asset-agent serve --remote   # or let other machines connect; prints a key
+uv run asset-agent connect http://<gpu-machine>:8080 --key <key>   # on the other machine
+uv run asset-agent status           # what is installed and which backend is in use
+```
+`backend="auto"`, the default, uses your server when it's up and the free Spaces when it isn't. See [docs/GPU_SERVER.md](docs/GPU_SERVER.md).

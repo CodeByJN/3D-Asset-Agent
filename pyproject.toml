@@ -9,6 +9,7 @@ dependencies = [
 ]
 
 [project.scripts]
+asset-agent = "asset_agent.cli:main"
 asset-agent-mcp = "asset_agent.server:main"
 
 [dependency-groups]
