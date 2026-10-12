@@ -150,7 +150,26 @@ def coin():
     img.save(OUT / "coin.png", optimize=True)
 
 
-ALL = [glow, glow_hot, rays, ring, shockwave, sparkle, smoke, slash, bolts, coin]
+def cash():
+    """A green banknote (coloured: use Color white)."""
+    w, h = N, N // 2
+    img = Image.new("RGBA", (N, N), (0, 0, 0, 0))
+    bill = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    d = ImageDraw.Draw(bill)
+    d.rounded_rectangle((8, 8, w - 8, h - 8), 26, fill=(46, 150, 72, 255))
+    d.rounded_rectangle((26, 26, w - 26, h - 26), 18, outline=(180, 240, 170, 255), width=6)
+    d.ellipse((w / 2 - 62, h / 2 - 62, w / 2 + 62, h / 2 + 62), fill=(120, 205, 120, 255))
+    try:
+        font = ImageFont.truetype("C:/Windows/Fonts/arialbd.ttf", 120)
+    except OSError:
+        font = ImageFont.load_default()
+    d.text((w / 2, h / 2 + 4), "$", font=font, anchor="mm", fill=(30, 105, 50, 255))
+    img.alpha_composite(bill, (0, (N - h) // 2))
+    OUT.mkdir(parents=True, exist_ok=True)
+    img.save(OUT / "cash.png", optimize=True)
+
+
+ALL = [glow, glow_hot, rays, ring, shockwave, sparkle, smoke, slash, bolts, coin, cash]
 
 if __name__ == "__main__":
     for fn in ALL:

@@ -16578,7 +16578,17 @@
      "LockedToPart": true
     }
    }
-  ]
+  ],
+  "version": 1,
+  "history": [
+   {
+    "v": 1,
+    "score": 8,
+    "note": "looks good"
+   }
+  ],
+  "score": 8,
+  "note": "looks good"
  },
  "cc_steal_burst": {
   "tags": [
@@ -16586,7 +16596,7 @@
    "steal",
    "burst"
   ],
-  "use": "On the thief at the moment of a steal: white flash, gold shockwave, rays, flying stars and coins",
+  "use": "On the thief at the moment of a steal: white flash, double shockwave, rays, stars, a coin shower and gold dust",
   "source": {
    "kind": "original",
    "by": "claude",
@@ -16649,12 +16659,12 @@
           1
          ],
          [
-          0.15,
-          7
+          0.12,
+          10
          ],
          [
           1,
-          9
+          12
          ]
         ]
        },
@@ -16676,8 +16686,8 @@
        },
        "Lifetime": {
         "nr": [
-         0.45,
-         0.45
+         0.5,
+         0.5
         ]
        },
        "Rate": 0,
@@ -16688,7 +16698,7 @@
         ]
        },
        "LightEmission": 1,
-       "Brightness": 5,
+       "Brightness": 6,
        "Rotation": {
         "nr": [
          -180,
@@ -16717,9 +16727,9 @@
          ],
          [
           1,
-          0.45,
           1,
-          0.5
+          0.62,
+          0.12
          ]
         ]
        },
@@ -16731,7 +16741,7 @@
          ],
          [
           1,
-          15
+          17
          ]
         ]
        },
@@ -16761,7 +16771,7 @@
         ]
        },
        "LightEmission": 1,
-       "Brightness": 3,
+       "Brightness": 4,
        "Rotation": {
         "nr": [
          -180,
@@ -16773,6 +16783,80 @@
       },
       "attrs": {
        "EmitCount": 1
+      }
+     },
+     {
+      "class": "ParticleEmitter",
+      "name": "Shockwave2",
+      "props": {
+       "Texture": "texture://shockwave",
+       "Color": {
+        "cs": [
+         [
+          0,
+          0.45,
+          1,
+          0.5
+         ],
+         [
+          1,
+          0.1,
+          0.8,
+          0.3
+         ]
+        ]
+       },
+       "Size": {
+        "ns": [
+         [
+          0,
+          1
+         ],
+         [
+          1,
+          22
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0.2
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "Lifetime": {
+        "nr": [
+         0.65,
+         0.65
+        ]
+       },
+       "Rate": 0,
+       "Speed": {
+        "nr": [
+         0,
+         0
+        ]
+       },
+       "LightEmission": 1,
+       "Brightness": 3,
+       "Rotation": {
+        "nr": [
+         -180,
+         180
+        ]
+       },
+       "LockedToPart": true,
+       "Enabled": false
+      },
+      "attrs": {
+       "EmitCount": 1,
+       "EmitDelay": 0.12
       }
      },
      {
@@ -16800,11 +16884,11 @@
         "ns": [
          [
           0,
-          2
+          3
          ],
          [
           1,
-          11
+          14
          ]
         ]
        },
@@ -16812,7 +16896,7 @@
         "ns": [
          [
           0,
-          0.1
+          0.05
          ],
          [
           1,
@@ -16822,8 +16906,8 @@
        },
        "Lifetime": {
         "nr": [
-         0.4,
-         0.45
+         0.5,
+         0.55
         ]
        },
        "Rate": 0,
@@ -16834,7 +16918,7 @@
         ]
        },
        "LightEmission": 1,
-       "Brightness": 4,
+       "Brightness": 5,
        "Rotation": {
         "nr": [
          -180,
@@ -16843,8 +16927,8 @@
        },
        "RotSpeed": {
         "nr": [
-         -60,
-         60
+         -90,
+         90
         ]
        },
        "LockedToPart": true,
@@ -16864,6 +16948,12 @@
          [
           0,
           1,
+          1,
+          1
+         ],
+         [
+          0.4,
+          1,
           0.86,
           0.42
          ],
@@ -16879,8 +16969,8 @@
         "ns": [
          [
           0,
-          1.6,
-          0.3
+          2,
+          0.4
          ],
          [
           1,
@@ -16902,19 +16992,19 @@
        },
        "Lifetime": {
         "nr": [
-         0.55,
-         0.85
+         0.6,
+         1
         ]
        },
        "Rate": 0,
        "Speed": {
         "nr": [
-         14,
-         24
+         16,
+         28
         ]
        },
        "LightEmission": 1,
-       "Brightness": 4,
+       "Brightness": 5,
        "Rotation": {
         "nr": [
          -180,
@@ -16923,8 +17013,8 @@
        },
        "RotSpeed": {
         "nr": [
-         -90,
-         90
+         -120,
+         120
         ]
        },
        "SpreadAngle": {
@@ -16938,7 +17028,7 @@
        "Enabled": false
       },
       "attrs": {
-       "EmitCount": 18
+       "EmitCount": 30
       }
      },
      {
@@ -16966,11 +17056,13 @@
         "ns": [
          [
           0,
-          1.1
+          1.2,
+          0.2
          ],
          [
           1,
-          1.1
+          1.2,
+          0.2
          ]
         ]
        },
@@ -16981,7 +17073,7 @@
           0
          ],
          [
-          0.8,
+          0.85,
           0
          ],
          [
@@ -16992,15 +17084,15 @@
        },
        "Lifetime": {
         "nr": [
-         0.9,
-         1.2
+         1.1,
+         1.5
         ]
        },
        "Rate": 0,
        "Speed": {
         "nr": [
-         14,
-         18
+         16,
+         22
         ]
        },
        "LightEmission": 0,
@@ -17013,31 +17105,119 @@
        },
        "RotSpeed": {
         "nr": [
-         -200,
-         200
+         -220,
+         220
         ]
        },
        "SpreadAngle": {
         "v2": [
-         35,
-         35
+         40,
+         40
         ]
        },
        "Acceleration": {
         "v3": [
          0,
-         -45,
+         -48,
          0
         ]
        },
-       "LockedToPart": true,
        "Enabled": false
       },
       "attrs": {
-       "EmitCount": 8
+       "EmitCount": 14
+      }
+     },
+     {
+      "class": "ParticleEmitter",
+      "name": "Dust",
+      "props": {
+       "Texture": "texture://glow",
+       "Color": {
+        "cs": [
+         [
+          0,
+          1,
+          0.86,
+          0.42
+         ],
+         [
+          1,
+          1,
+          0.62,
+          0.12
+         ]
+        ]
+       },
+       "Size": {
+        "ns": [
+         [
+          0,
+          0.6,
+          0.2
+         ],
+         [
+          1,
+          0
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0.2
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "Lifetime": {
+        "nr": [
+         1.2,
+         1.8
+        ]
+       },
+       "Rate": 0,
+       "Speed": {
+        "nr": [
+         2,
+         6
+        ]
+       },
+       "LightEmission": 1,
+       "Brightness": 3,
+       "Rotation": {
+        "nr": [
+         -180,
+         180
+        ]
+       },
+       "SpreadAngle": {
+        "v2": [
+         180,
+         180
+        ]
+       },
+       "Drag": 2,
+       "Enabled": false
+      },
+      "attrs": {
+       "EmitCount": 26,
+       "EmitDelay": 0.1
       }
      }
     ]
+   }
+  ],
+  "version": 2,
+  "history": [
+   {
+    "v": 1,
+    "score": 7,
+    "note": "not bad but could do more"
    }
   ]
  },
@@ -17048,7 +17228,7 @@
    "generator",
    "money"
   ],
-  "use": "Money generator paying out: coins hop out and fall, with a green shimmer",
+  "use": "Money generator paying out: coins and cash hop out and fall, a green ring pulses at the base",
   "source": {
    "kind": "original",
    "by": "claude",
@@ -17112,11 +17292,13 @@
          ],
          [
           0.15,
-          1.2
+          1.3,
+          0.2
          ],
          [
           1,
-          1.1
+          1.2,
+          0.2
          ]
         ]
        },
@@ -17139,14 +17321,14 @@
        "Lifetime": {
         "nr": [
          0.9,
-         1
+         1.1
         ]
        },
-       "Rate": 2.5,
+       "Rate": 3,
        "Speed": {
         "nr": [
-         10,
-         13
+         11,
+         14
         ]
        },
        "LightEmission": 0,
@@ -17159,14 +17341,14 @@
        },
        "RotSpeed": {
         "nr": [
-         -150,
-         150
+         -160,
+         160
         ]
        },
        "SpreadAngle": {
         "v2": [
-         15,
-         15
+         18,
+         18
         ]
        },
        "Acceleration": {
@@ -17176,6 +17358,102 @@
          0
         ]
        }
+      }
+     },
+     {
+      "class": "ParticleEmitter",
+      "name": "Cash",
+      "props": {
+       "Texture": "texture://cash",
+       "Color": {
+        "cs": [
+         [
+          0,
+          1,
+          1,
+          1
+         ],
+         [
+          1,
+          1,
+          1,
+          1
+         ]
+        ]
+       },
+       "Size": {
+        "ns": [
+         [
+          0,
+          0.6
+         ],
+         [
+          0.15,
+          1.8
+         ],
+         [
+          1,
+          1.6
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0
+         ],
+         [
+          0.75,
+          0
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "Lifetime": {
+        "nr": [
+         1.1,
+         1.4
+        ]
+       },
+       "Rate": 1.2,
+       "Speed": {
+        "nr": [
+         9,
+         12
+        ]
+       },
+       "LightEmission": 0,
+       "Brightness": 1,
+       "Rotation": {
+        "nr": [
+         -180,
+         180
+        ]
+       },
+       "RotSpeed": {
+        "nr": [
+         -90,
+         90
+        ]
+       },
+       "SpreadAngle": {
+        "v2": [
+         22,
+         22
+        ]
+       },
+       "Acceleration": {
+        "v3": [
+         0,
+         -26,
+         0
+        ]
+       },
+       "Drag": 0.6
       }
      },
      {
@@ -17207,7 +17485,7 @@
          ],
          [
           0.3,
-          1.1
+          1.2
          ],
          [
           1,
@@ -17229,19 +17507,19 @@
        },
        "Lifetime": {
         "nr": [
-         0.5,
-         0.6
+         0.6,
+         0.8
         ]
        },
-       "Rate": 4,
+       "Rate": 6,
        "Speed": {
         "nr": [
-         2,
-         4
+         3,
+         6
         ]
        },
        "LightEmission": 1,
-       "Brightness": 4,
+       "Brightness": 5,
        "Rotation": {
         "nr": [
          -15,
@@ -17250,10 +17528,97 @@
        },
        "SpreadAngle": {
         "v2": [
-         40,
-         40
+         30,
+         30
         ]
        }
+      }
+     }
+    ]
+   },
+   {
+    "class": "Attachment",
+    "name": "Base",
+    "props": {
+     "CFrame": {
+      "cf": [
+       0,
+       -1,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "children": [
+     {
+      "class": "ParticleEmitter",
+      "name": "Ring",
+      "props": {
+       "Texture": "texture://ring",
+       "Color": {
+        "cs": [
+         [
+          0,
+          0.45,
+          1,
+          0.5
+         ],
+         [
+          1,
+          0.1,
+          0.8,
+          0.3
+         ]
+        ]
+       },
+       "Size": {
+        "ns": [
+         [
+          0,
+          2
+         ],
+         [
+          1,
+          7
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0.2
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "Lifetime": {
+        "nr": [
+         0.9,
+         0.9
+        ]
+       },
+       "Rate": 1.4,
+       "Speed": {
+        "nr": [
+         0,
+         0
+        ]
+       },
+       "LightEmission": 1,
+       "Brightness": 3,
+       "Rotation": {
+        "nr": [
+         -180,
+         180
+        ]
+       },
+       "LockedToPart": true
       }
      },
      {
@@ -17281,11 +17646,11 @@
         "ns": [
          [
           0,
-          2
+          3
          ],
          [
           1,
-          3.6
+          4.5
          ]
         ]
        },
@@ -17311,7 +17676,7 @@
          1.3
         ]
        },
-       "Rate": 1.2,
+       "Rate": 1.4,
        "Speed": {
         "nr": [
          0,
@@ -17330,6 +17695,14 @@
       }
      }
     ]
+   }
+  ],
+  "version": 2,
+  "history": [
+   {
+    "v": 1,
+    "score": 7,
+    "note": "we arent doing bad but still could be better"
    }
   ]
  },
@@ -17606,7 +17979,17 @@
      }
     ]
    }
-  ]
+  ],
+  "version": 1,
+  "history": [
+   {
+    "v": 1,
+    "score": 8,
+    "note": "I like this one"
+   }
+  ],
+  "score": 8,
+  "note": "I like this one"
  },
  "cc_stolen_alert": {
   "tags": [
@@ -17949,7 +18332,17 @@
      }
     ]
    }
-  ]
+  ],
+  "version": 1,
+  "history": [
+   {
+    "v": 1,
+    "score": 8,
+    "note": "Really clean too"
+   }
+  ],
+  "score": 8,
+  "note": "Really clean too"
  },
  "cc_rarity_rare": {
   "tags": [
@@ -18250,7 +18643,17 @@
      }
     ]
    }
-  ]
+  ],
+  "version": 1,
+  "history": [
+   {
+    "v": 1,
+    "score": 9,
+    "note": "I really like this. Feels rare"
+   }
+  ],
+  "score": 9,
+  "note": "I really like this. Feels rare"
  },
  "cc_rarity_epic": {
   "tags": [
@@ -18259,7 +18662,7 @@
    "aura",
    "epic"
   ],
-  "use": "Epic prize: purple orb with crackling lightning and orbiting sparks",
+  "use": "Epic prize: purple orb with a few fine crackles of lightning and orbiting sparks",
   "source": {
    "kind": "original",
    "by": "claude",
@@ -18559,13 +18962,13 @@
         "ns": [
          [
           0,
-          5,
-          0.4
+          2.6,
+          0.3
          ],
          [
           1,
-          5,
-          0.4
+          2.6,
+          0.3
          ]
         ]
        },
@@ -18577,71 +18980,71 @@
          ],
          [
           0.056,
-          0.302
+          0.536
          ],
          [
           0.111,
-          0.563
+          0.71
          ],
          [
           0.167,
-          0.414
+          0.611
          ],
          [
           0.222,
-          0.613
+          0.744
          ],
          [
           0.278,
-          0.632
+          0.757
          ],
          [
           0.333,
-          0.156
+          0.437
          ],
          [
           0.389,
-          0.111
+          0.408
          ],
          [
           0.444,
-          0.812
+          0.877
          ],
          [
           0.5,
-          0.32
+          0.548
          ],
          [
           0.556,
-          0.299
+          0.534
          ],
          [
           0.611,
-          0.946
+          0.968
          ],
          [
           0.667,
-          0.5
+          0.668
          ],
          [
           0.722,
-          0.811
+          0.877
          ],
          [
           0.778,
-          0.505
+          0.672
          ],
          [
           0.833,
-          0.643
+          0.764
          ],
          [
           0.889,
-          0.228
+          0.486
          ],
          [
           0.944,
-          0.64
+          0.762
          ],
          [
           1,
@@ -18651,11 +19054,11 @@
        },
        "Lifetime": {
         "nr": [
-         0.33,
-         0.33
+         0.25,
+         0.3
         ]
        },
-       "Rate": 7,
+       "Rate": 2.5,
        "Speed": {
         "nr": [
          0,
@@ -18663,7 +19066,7 @@
         ]
        },
        "LightEmission": 1,
-       "Brightness": 5,
+       "Brightness": 4,
        "Rotation": {
         "nr": [
          -180,
@@ -18675,7 +19078,7 @@
         "enum": "ParticleFlipbookLayout.Grid4x4"
        },
        "FlipbookMode": {
-        "enum": "ParticleFlipbookMode.Loop"
+        "enum": "ParticleFlipbookMode.Random"
        },
        "FlipbookFramerate": {
         "nr": [
@@ -18781,6 +19184,14 @@
      }
     ]
    }
+  ],
+  "version": 2,
+  "history": [
+   {
+    "v": 1,
+    "score": 6,
+    "note": "Okay I like the concept but the lighting is doing a bit too much. This has potential for a 10 but lightning is too big and doing too much"
+   }
   ]
  },
  "cc_rarity_legendary": {
@@ -18790,7 +19201,7 @@
    "aura",
    "legendary"
   ],
-  "use": "Legendary prize: gold orb, a light pillar shooting up and a slow shockwave",
+  "use": "Legendary prize: big gold orb, counter-spinning rays, a tall light pillar, a flash and halo rings",
   "source": {
    "kind": "original",
    "by": "claude",
@@ -18850,16 +19261,16 @@
         "ns": [
          [
           0,
-          3.5999999999999996
+          4.2
          ],
          [
           0.5,
-          5.4,
+          6.3,
           0.3
          ],
          [
           1,
-          6,
+          7,
           0.3
          ]
         ]
@@ -18935,11 +19346,11 @@
         "ns": [
          [
           0,
-          3.75
+          4.5
          ],
          [
           1,
-          7.5,
+          9,
           0.4
          ]
         ]
@@ -19067,6 +19478,86 @@
      },
      {
       "class": "ParticleEmitter",
+      "name": "Rays2",
+      "props": {
+       "Texture": "texture://rays",
+       "Color": {
+        "cs": [
+         [
+          0,
+          1,
+          0.95,
+          0.7
+         ],
+         [
+          1,
+          1,
+          0.62,
+          0.12
+         ]
+        ]
+       },
+       "Size": {
+        "ns": [
+         [
+          0,
+          6.3
+         ],
+         [
+          1,
+          11.700000000000001,
+          0.5
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          1
+         ],
+         [
+          0.5,
+          0.7
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "Lifetime": {
+        "nr": [
+         3.5,
+         4.5
+        ]
+       },
+       "Rate": 0.6,
+       "Speed": {
+        "nr": [
+         0,
+         0
+        ]
+       },
+       "LightEmission": 1,
+       "Brightness": 2,
+       "Rotation": {
+        "nr": [
+         -180,
+         180
+        ]
+       },
+       "RotSpeed": {
+        "nr": [
+         12,
+         20
+        ]
+       },
+       "LockedToPart": true
+      }
+     },
+     {
+      "class": "ParticleEmitter",
       "name": "Pillar",
       "props": {
        "Texture": "texture://glow",
@@ -19079,7 +19570,7 @@
           1
          ],
          [
-          0.3,
+          0.25,
           1,
           0.86,
           0.42
@@ -19096,11 +19587,11 @@
         "ns": [
          [
           0,
-          2.6
+          3.4
          ],
          [
           1,
-          1.2
+          1.6
          ]
         ]
        },
@@ -19108,11 +19599,11 @@
         "ns": [
          [
           0,
-          0.6
+          0.5
          ],
          [
           0.2,
-          0.3
+          0.2
          ],
          [
           1,
@@ -19122,19 +19613,19 @@
        },
        "Lifetime": {
         "nr": [
-         1,
-         1.2
+         1.3,
+         1.6
         ]
        },
-       "Rate": 26,
+       "Rate": 34,
        "Speed": {
         "nr": [
-         9,
-         13
+         14,
+         18
         ]
        },
        "LightEmission": 1,
-       "Brightness": 3,
+       "Brightness": 4,
        "Rotation": {
         "nr": [
          -180,
@@ -19151,9 +19642,86 @@
      },
      {
       "class": "ParticleEmitter",
-      "name": "Wave",
+      "name": "Flash",
       "props": {
-       "Texture": "texture://shockwave",
+       "Texture": "texture://glow_hot",
+       "Color": {
+        "cs": [
+         [
+          0,
+          1,
+          1,
+          1
+         ],
+         [
+          1,
+          1,
+          0.86,
+          0.42
+         ]
+        ]
+       },
+       "Size": {
+        "ns": [
+         [
+          0,
+          4
+         ],
+         [
+          0.2,
+          10
+         ],
+         [
+          1,
+          12
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          1
+         ],
+         [
+          0.1,
+          0.2
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "Lifetime": {
+        "nr": [
+         0.7,
+         0.7
+        ]
+       },
+       "Rate": 0.5,
+       "Speed": {
+        "nr": [
+         0,
+         0
+        ]
+       },
+       "LightEmission": 1,
+       "Brightness": 5,
+       "Rotation": {
+        "nr": [
+         -180,
+         180
+        ]
+       },
+       "LockedToPart": true
+      }
+     },
+     {
+      "class": "ParticleEmitter",
+      "name": "Halo",
+      "props": {
+       "Texture": "texture://ring",
        "Color": {
         "cs": [
          [
@@ -19174,11 +19742,11 @@
         "ns": [
          [
           0,
-          2
+          3
          ],
          [
           1,
-          12
+          11
          ]
         ]
        },
@@ -19186,7 +19754,11 @@
         "ns": [
          [
           0,
-          0.2
+          0.4
+         ],
+         [
+          0.3,
+          0.3
          ],
          [
           1,
@@ -19196,11 +19768,11 @@
        },
        "Lifetime": {
         "nr": [
-         1.2,
-         1.2
+         2,
+         2.2
         ]
        },
-       "Rate": 0.7,
+       "Rate": 0.6,
        "Speed": {
         "nr": [
          0,
@@ -19220,7 +19792,7 @@
      },
      {
       "class": "ParticleEmitter",
-      "name": "Sparks",
+      "name": "Embers",
       "props": {
        "Texture": "texture://sparkle",
        "Color": {
@@ -19246,8 +19818,9 @@
           0
          ],
          [
-          0.3,
-          1.1
+          0.25,
+          1.1,
+          0.3
          ],
          [
           1,
@@ -19263,35 +19836,42 @@
          ],
          [
           1,
-          0.3
+          0.4
          ]
         ]
        },
        "Lifetime": {
         "nr": [
-         0.8,
-         1.2
+         1.4,
+         2
         ]
        },
-       "Rate": 8,
+       "Rate": 10,
        "Speed": {
         "nr": [
          2,
-         5
+         4
         ]
        },
        "LightEmission": 1,
        "Brightness": 5,
        "Rotation": {
         "nr": [
-         -180,
-         180
+         -20,
+         20
         ]
        },
        "SpreadAngle": {
         "v2": [
-         60,
-         60
+         25,
+         25
+        ]
+       },
+       "Acceleration": {
+        "v3": [
+         0,
+         1.5,
+         0
         ]
        }
       }
@@ -19307,11 +19887,19 @@
          0.42
         ]
        },
-       "Range": 16,
+       "Range": 20,
        "Brightness": 3
       }
      }
     ]
+   }
+  ],
+  "version": 2,
+  "history": [
+   {
+    "v": 1,
+    "score": 7,
+    "note": "Good vfx but doesn't scream legendary too me"
    }
   ]
  },
@@ -19322,7 +19910,7 @@
    "aura",
    "mythic"
   ],
-  "use": "Mythic prize: rainbow orb with white lightning, a rainbow pillar and shockwaves: the big one",
+  "use": "Mythic prize: the legendary orb in shifting rainbow, with a rainbow pillar and halo rings: the big one",
   "source": {
    "kind": "original",
    "by": "claude",
@@ -19406,16 +19994,16 @@
         "ns": [
          [
           0,
-          3.9
+          4.5
          ],
          [
           0.5,
-          5.8500000000000005,
+          6.75,
           0.3
          ],
          [
           1,
-          6.5,
+          7.5,
           0.3
          ]
         ]
@@ -19515,11 +20103,11 @@
         "ns": [
          [
           0,
-          4.0
+          5.0
          ],
          [
           1,
-          8,
+          10,
           0.4
          ]
         ]
@@ -19647,22 +20235,46 @@
      },
      {
       "class": "ParticleEmitter",
-      "name": "Bolts",
+      "name": "Rays2",
       "props": {
-       "Texture": "texture://bolts",
+       "Texture": "texture://rays",
        "Color": {
         "cs": [
          [
           0,
           1,
-          1,
+          0.4,
+          0.85
+         ],
+         [
+          0.2,
+          0.6,
+          0.45,
           1
+         ],
+         [
+          0.4,
+          0.35,
+          0.8,
+          1
+         ],
+         [
+          0.6,
+          0.4,
+          1,
+          0.45
+         ],
+         [
+          0.8,
+          1,
+          0.8,
+          0.25
          ],
          [
           1,
           1,
-          1,
-          1
+          0.35,
+          0.35
          ]
         ]
        },
@@ -19670,12 +20282,11 @@
         "ns": [
          [
           0,
-          6,
-          0.5
+          7.0
          ],
          [
           1,
-          6,
+          13.0,
           0.5
          ]
         ]
@@ -19687,72 +20298,8 @@
           1
          ],
          [
-          0.056,
-          0.485
-         ],
-         [
-          0.111,
-          0.576
-         ],
-         [
-          0.167,
-          0.886
-         ],
-         [
-          0.222,
-          0.496
-         ],
-         [
-          0.278,
-          0.532
-         ],
-         [
-          0.333,
-          0.599
-         ],
-         [
-          0.389,
-          0.257
-         ],
-         [
-          0.444,
-          0.535
-         ],
-         [
           0.5,
-          0.635
-         ],
-         [
-          0.556,
-          0.774
-         ],
-         [
-          0.611,
-          0.18
-         ],
-         [
-          0.667,
-          0.358
-         ],
-         [
-          0.722,
-          0.177
-         ],
-         [
-          0.778,
-          0.788
-         ],
-         [
-          0.833,
-          0.689
-         ],
-         [
-          0.889,
-          0.136
-         ],
-         [
-          0.944,
-          0.935
+          0.7
          ],
          [
           1,
@@ -19762,11 +20309,11 @@
        },
        "Lifetime": {
         "nr": [
-         0.33,
-         0.33
+         3.5,
+         4.5
         ]
        },
-       "Rate": 9,
+       "Rate": 0.6,
        "Speed": {
         "nr": [
          0,
@@ -19774,27 +20321,20 @@
         ]
        },
        "LightEmission": 1,
-       "Brightness": 6,
+       "Brightness": 2,
        "Rotation": {
         "nr": [
          -180,
          180
         ]
        },
-       "LockedToPart": true,
-       "FlipbookLayout": {
-        "enum": "ParticleFlipbookLayout.Grid4x4"
-       },
-       "FlipbookMode": {
-        "enum": "ParticleFlipbookMode.Loop"
-       },
-       "FlipbookFramerate": {
+       "RotSpeed": {
         "nr": [
-         24,
-         30
+         12,
+         20
         ]
        },
-       "FlipbookStartRandom": true
+       "LockedToPart": true
       }
      },
      {
@@ -19846,11 +20386,11 @@
         "ns": [
          [
           0,
-          2.8
+          3.4
          ],
          [
           1,
-          1.2
+          1.6
          ]
         ]
        },
@@ -19858,11 +20398,11 @@
         "ns": [
          [
           0,
-          0.6
+          0.5
          ],
          [
           0.2,
-          0.3
+          0.2
          ],
          [
           1,
@@ -19872,19 +20412,19 @@
        },
        "Lifetime": {
         "nr": [
-         1,
-         1.2
+         1.3,
+         1.6
         ]
        },
-       "Rate": 30,
+       "Rate": 34,
        "Speed": {
         "nr": [
-         10,
-         14
+         14,
+         18
         ]
        },
        "LightEmission": 1,
-       "Brightness": 3,
+       "Brightness": 4,
        "Rotation": {
         "nr": [
          -180,
@@ -19901,9 +20441,86 @@
      },
      {
       "class": "ParticleEmitter",
-      "name": "Wave",
+      "name": "Flash",
       "props": {
-       "Texture": "texture://shockwave",
+       "Texture": "texture://glow_hot",
+       "Color": {
+        "cs": [
+         [
+          0,
+          1,
+          1,
+          1
+         ],
+         [
+          1,
+          1,
+          0.85,
+          1
+         ]
+        ]
+       },
+       "Size": {
+        "ns": [
+         [
+          0,
+          4
+         ],
+         [
+          0.2,
+          10
+         ],
+         [
+          1,
+          12
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          1
+         ],
+         [
+          0.1,
+          0.2
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "Lifetime": {
+        "nr": [
+         0.7,
+         0.7
+        ]
+       },
+       "Rate": 0.5,
+       "Speed": {
+        "nr": [
+         0,
+         0
+        ]
+       },
+       "LightEmission": 1,
+       "Brightness": 5,
+       "Rotation": {
+        "nr": [
+         -180,
+         180
+        ]
+       },
+       "LockedToPart": true
+      }
+     },
+     {
+      "class": "ParticleEmitter",
+      "name": "Halo",
+      "props": {
+       "Texture": "texture://ring",
        "Color": {
         "cs": [
          [
@@ -19948,11 +20565,11 @@
         "ns": [
          [
           0,
-          2
+          3
          ],
          [
           1,
-          14
+          11
          ]
         ]
        },
@@ -19960,7 +20577,11 @@
         "ns": [
          [
           0,
-          0.2
+          0.4
+         ],
+         [
+          0.3,
+          0.3
          ],
          [
           1,
@@ -19970,11 +20591,11 @@
        },
        "Lifetime": {
         "nr": [
-         1.2,
-         1.2
+         2,
+         2.2
         ]
        },
-       "Rate": 0.9,
+       "Rate": 0.6,
        "Speed": {
         "nr": [
          0,
@@ -19993,6 +20614,268 @@
       }
      },
      {
+      "class": "ParticleEmitter",
+      "name": "Embers",
+      "props": {
+       "Texture": "texture://sparkle",
+       "Color": {
+        "cs": [
+         [
+          0,
+          1,
+          0.35,
+          0.35
+         ],
+         [
+          0.2,
+          1,
+          0.8,
+          0.25
+         ],
+         [
+          0.4,
+          0.4,
+          1,
+          0.45
+         ],
+         [
+          0.6,
+          0.35,
+          0.8,
+          1
+         ],
+         [
+          0.8,
+          0.6,
+          0.45,
+          1
+         ],
+         [
+          1,
+          1,
+          0.4,
+          0.85
+         ]
+        ]
+       },
+       "Size": {
+        "ns": [
+         [
+          0,
+          0
+         ],
+         [
+          0.25,
+          1.1,
+          0.3
+         ],
+         [
+          1,
+          0
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0
+         ],
+         [
+          1,
+          0.4
+         ]
+        ]
+       },
+       "Lifetime": {
+        "nr": [
+         1.4,
+         2
+        ]
+       },
+       "Rate": 10,
+       "Speed": {
+        "nr": [
+         2,
+         4
+        ]
+       },
+       "LightEmission": 1,
+       "Brightness": 5,
+       "Rotation": {
+        "nr": [
+         -20,
+         20
+        ]
+       },
+       "SpreadAngle": {
+        "v2": [
+         25,
+         25
+        ]
+       },
+       "Acceleration": {
+        "v3": [
+         0,
+         1.5,
+         0
+        ]
+       }
+      }
+     },
+     {
+      "class": "ParticleEmitter",
+      "name": "Crackle",
+      "props": {
+       "Texture": "texture://bolts",
+       "Color": {
+        "cs": [
+         [
+          0,
+          1,
+          1,
+          1
+         ],
+         [
+          1,
+          1,
+          1,
+          1
+         ]
+        ]
+       },
+       "Size": {
+        "ns": [
+         [
+          0,
+          2.2,
+          0.3
+         ],
+         [
+          1,
+          2.2,
+          0.3
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          1
+         ],
+         [
+          0.056,
+          0.713
+         ],
+         [
+          0.111,
+          0.763
+         ],
+         [
+          0.167,
+          0.934
+         ],
+         [
+          0.222,
+          0.719
+         ],
+         [
+          0.278,
+          0.739
+         ],
+         [
+          0.333,
+          0.776
+         ],
+         [
+          0.389,
+          0.587
+         ],
+         [
+          0.444,
+          0.741
+         ],
+         [
+          0.5,
+          0.796
+         ],
+         [
+          0.556,
+          0.873
+         ],
+         [
+          0.611,
+          0.544
+         ],
+         [
+          0.667,
+          0.643
+         ],
+         [
+          0.722,
+          0.543
+         ],
+         [
+          0.778,
+          0.881
+         ],
+         [
+          0.833,
+          0.826
+         ],
+         [
+          0.889,
+          0.52
+         ],
+         [
+          0.944,
+          0.962
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "Lifetime": {
+        "nr": [
+         0.2,
+         0.25
+        ]
+       },
+       "Rate": 2,
+       "Speed": {
+        "nr": [
+         0,
+         0
+        ]
+       },
+       "LightEmission": 1,
+       "Brightness": 4,
+       "Rotation": {
+        "nr": [
+         -180,
+         180
+        ]
+       },
+       "LockedToPart": true,
+       "FlipbookLayout": {
+        "enum": "ParticleFlipbookLayout.Grid4x4"
+       },
+       "FlipbookMode": {
+        "enum": "ParticleFlipbookMode.Random"
+       },
+       "FlipbookFramerate": {
+        "nr": [
+         24,
+         30
+        ]
+       },
+       "FlipbookStartRandom": true
+      }
+     },
+     {
       "class": "PointLight",
       "name": "Light",
       "props": {
@@ -20003,11 +20886,19 @@
          1
         ]
        },
-       "Range": 18,
+       "Range": 22,
        "Brightness": 3
       }
      }
     ]
+   }
+  ],
+  "version": 2,
+  "history": [
+   {
+    "v": 1,
+    "score": 7,
+    "note": "Same thing yhere"
    }
   ]
  },
@@ -20017,7 +20908,7 @@
    "lightning",
    "orb"
   ],
-  "use": "HD lightning orb: hot cyan core with crackling bolts and a thin ring",
+  "use": "HD lightning orb: many tiny, very bright crackles flickering around a small hot core",
   "source": {
    "kind": "original",
    "by": "claude",
@@ -20077,12 +20968,12 @@
         "ns": [
          [
           0,
-          2,
+          1.6,
           0.2
          ],
          [
           1,
-          2,
+          1.6,
           0.2
          ]
         ]
@@ -20105,11 +20996,11 @@
        },
        "Lifetime": {
         "nr": [
-         0.3,
-         0.5
+         0.25,
+         0.4
         ]
        },
-       "Rate": 14,
+       "Rate": 16,
        "Speed": {
         "nr": [
          0,
@@ -20129,7 +21020,7 @@
      },
      {
       "class": "ParticleEmitter",
-      "name": "Bolts",
+      "name": "Crackle",
       "props": {
        "Texture": "texture://bolts",
        "Color": {
@@ -20152,13 +21043,13 @@
         "ns": [
          [
           0,
-          5,
-          0.5
+          2.2,
+          0.4
          ],
          [
           1,
-          5,
-          0.5
+          2.2,
+          0.4
          ]
         ]
        },
@@ -20170,71 +21061,71 @@
          ],
          [
           0.056,
-          0.629
+          0.655
          ],
          [
           0.111,
-          0.731
+          0.732
          ],
          [
           0.167,
-          0.776
+          0.767
          ],
          [
           0.222,
-          0.901
+          0.863
          ],
          [
           0.278,
-          0.729
+          0.731
          ],
          [
           0.333,
-          0.884
+          0.85
          ],
          [
           0.389,
-          0.125
+          0.269
          ],
          [
           0.444,
-          0.496
+          0.553
          ],
          [
           0.5,
-          0.902
+          0.863
          ],
          [
           0.556,
-          0.652
+          0.672
          ],
          [
           0.611,
-          0.866
+          0.836
          ],
          [
           0.667,
-          0.196
+          0.324
          ],
          [
           0.722,
-          0.499
+          0.555
          ],
          [
           0.778,
-          0.31
+          0.41
          ],
          [
           0.833,
-          0.562
+          0.603
          ],
          [
           0.889,
-          0.588
+          0.623
          ],
          [
           0.944,
-          0.111
+          0.259
          ],
          [
           1,
@@ -20244,11 +21135,11 @@
        },
        "Lifetime": {
         "nr": [
-         0.33,
-         0.33
+         0.15,
+         0.22
         ]
        },
-       "Rate": 10,
+       "Rate": 40,
        "Speed": {
         "nr": [
          0,
@@ -20256,7 +21147,7 @@
         ]
        },
        "LightEmission": 1,
-       "Brightness": 6,
+       "Brightness": 8,
        "Rotation": {
         "nr": [
          -180,
@@ -20268,7 +21159,7 @@
         "enum": "ParticleFlipbookLayout.Grid4x4"
        },
        "FlipbookMode": {
-        "enum": "ParticleFlipbookMode.Loop"
+        "enum": "ParticleFlipbookMode.Random"
        },
        "FlipbookFramerate": {
         "nr": [
@@ -20277,6 +21168,80 @@
         ]
        },
        "FlipbookStartRandom": true
+      }
+     },
+     {
+      "class": "ParticleEmitter",
+      "name": "Spits",
+      "props": {
+       "Texture": "texture://glow_hot",
+       "Color": {
+        "cs": [
+         [
+          0,
+          1,
+          1,
+          1
+         ],
+         [
+          1,
+          0.6,
+          0.95,
+          1
+         ]
+        ]
+       },
+       "Size": {
+        "ns": [
+         [
+          0,
+          0.5
+         ],
+         [
+          1,
+          0
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0
+         ],
+         [
+          1,
+          0.4
+         ]
+        ]
+       },
+       "Lifetime": {
+        "nr": [
+         0.2,
+         0.35
+        ]
+       },
+       "Rate": 30,
+       "Speed": {
+        "nr": [
+         2,
+         5
+        ]
+       },
+       "LightEmission": 1,
+       "Brightness": 6,
+       "Rotation": {
+        "nr": [
+         -180,
+         180
+        ]
+       },
+       "SpreadAngle": {
+        "v2": [
+         180,
+         180
+        ]
+       }
       }
      },
      {
@@ -20304,11 +21269,11 @@
         "ns": [
          [
           0,
-          4.5
+          3.5
          ],
          [
           1,
-          5.5
+          4.2
          ]
         ]
        },
@@ -20330,8 +21295,8 @@
        },
        "Lifetime": {
         "nr": [
-         1,
-         1.2
+         0.8,
+         1
         ]
        },
        "Rate": 3,
@@ -20342,144 +21307,7 @@
         ]
        },
        "LightEmission": 1,
-       "Brightness": 2,
-       "Rotation": {
-        "nr": [
-         -180,
-         180
-        ]
-       },
-       "LockedToPart": true
-      }
-     },
-     {
-      "class": "ParticleEmitter",
-      "name": "Ring",
-      "props": {
-       "Texture": "texture://ring",
-       "Color": {
-        "cs": [
-         [
-          0,
-          0.6,
-          0.95,
-          1
-         ],
-         [
-          1,
-          0.6,
-          0.95,
-          1
-         ]
-        ]
-       },
-       "Size": {
-        "ns": [
-         [
-          0,
-          4.5
-         ],
-         [
-          1,
-          5
-         ]
-        ]
-       },
-       "Transparency": {
-        "ns": [
-         [
-          0,
-          1
-         ],
-         [
-          0.056,
-          0.708
-         ],
-         [
-          0.111,
-          0.668
-         ],
-         [
-          0.167,
-          0.562
-         ],
-         [
-          0.222,
-          0.89
-         ],
-         [
-          0.278,
-          0.503
-         ],
-         [
-          0.333,
-          0.726
-         ],
-         [
-          0.389,
-          0.904
-         ],
-         [
-          0.444,
-          0.536
-         ],
-         [
-          0.5,
-          0.749
-         ],
-         [
-          0.556,
-          0.777
-         ],
-         [
-          0.611,
-          0.518
-         ],
-         [
-          0.667,
-          0.671
-         ],
-         [
-          0.722,
-          0.817
-         ],
-         [
-          0.778,
-          0.703
-         ],
-         [
-          0.833,
-          0.826
-         ],
-         [
-          0.889,
-          0.571
-         ],
-         [
-          0.944,
-          0.607
-         ],
-         [
-          1,
-          1
-         ]
-        ]
-       },
-       "Lifetime": {
-        "nr": [
-         0.5,
-         0.5
-        ]
-       },
-       "Rate": 2,
-       "Speed": {
-        "nr": [
-         0,
-         0
-        ]
-       },
-       "LightEmission": 1,
-       "Brightness": 3,
+       "Brightness": 1.5,
        "Rotation": {
         "nr": [
          -180,
@@ -20505,6 +21333,14 @@
       }
      }
     ]
+   }
+  ],
+  "version": 2,
+  "history": [
+   {
+    "v": 1,
+    "score": 5,
+    "note": ""
    }
   ]
  }

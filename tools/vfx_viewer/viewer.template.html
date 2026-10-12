@@ -433,10 +433,15 @@ document.addEventListener("keydown", e => {
 
 (async () => {
   try {
-    db = window.claude ? await window.claude.use("db") : null;
+    // the viewer injects `claude` a moment after load: wait for it rather than giving up at once
+    for (let i = 0; i < 100 && !(window.claude && window.claude.use); i++) await new Promise(r => setTimeout(r, 100));
+    db = window.claude && window.claude.use ? await window.claude.use("db") : null;
+    statusEl.dataset.store = db ? "shared" : "local";
     if (db) {
       const snap = await db.collection("grades").get();
       snap.docs.forEach(d => { const v = d.data(); if (v && v.stars) grades[d.id] = { stars: v.stars, note: v.note || "" }; });
+      // grades made before the store connected (kept in this browser) get copied up once
+      for (const [n, g] of Object.entries(grades)) if (g.stars && !snap.docs.some(d => d.id === n)) await save(n);
       renderList(); showGrade();
     }
   } catch (e) { db = null; }
