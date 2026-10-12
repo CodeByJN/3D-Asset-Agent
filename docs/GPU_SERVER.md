@@ -66,6 +66,7 @@ uv run asset-agent connect http://192.168.1.50:8080 --key <key>
 - Text prompts still make their reference image on the free FLUX Space. To stay fully offline, pass `image=` instead.
 
 ## Troubleshooting
+- **`Error(s) in loading state_dict for SingleImageEncoder`:** `transformers` is too new. Re-run `asset-agent setup`, which pins it below 5.18.
 - **`--enable_flashvdm` errors:** run `asset-agent serve --no-flashvdm`.
 - **Out of memory:** something else is using VRAM, or try `--model mini`.
 - **`wrong key`:** run `connect` again with the key printed by `serve --remote`.

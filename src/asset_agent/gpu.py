@@ -18,6 +18,8 @@ MODELS = {  # name -> (model_path, subfolder); shape VRAM ~5 GB (mini) / ~6 GB (
     "full": ("tencent/Hunyuan3D-2", "hunyuan3d-dit-v2-0-turbo"),
 }
 MIN_VRAM_GB = 6
+# transformers 5.18 renamed DINOv2's layers (q_proj, gate_proj...), so Hunyuan's checkpoints no longer load.
+PINS = ["transformers<5.18"]
 LAUNCHER = Path(__file__).with_name("hy_serve.py")
 
 
@@ -99,7 +101,7 @@ def setup(d: Path | None = None, model: str | None = None) -> str:
         _run([uv, "venv", "--python", "3.10", d / ".venv"])
     pip = [uv, "pip", "install", "--python", py]
     _run([*pip, "torch", "torchvision", "--index-url", f"https://download.pytorch.org/whl/{torch_index(gpu.cap)}"])
-    _run([*pip, "-r", d / "requirements.txt"])  # torch is already satisfied, so it stays on the wheels above
+    _run([*pip, "-r", d / "requirements.txt", *PINS])  # torch is already satisfied, so it stays on the wheels above
     _run([*pip, "-e", d])
     _run([py, "-c", "import torch; assert torch.cuda.is_available(), 'CUDA not available'; "
                     "print('torch sees', torch.cuda.get_device_name(0))"])
