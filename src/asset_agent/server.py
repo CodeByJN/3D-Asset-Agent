@@ -194,7 +194,7 @@ def vfx_lab(preset: str, color: list[float] | None = None, size: float = 1.0, ra
         async def go(s):
             import asyncio
             cam, look = ([float(x) for x in v.split(",")] for v in (await s.luau(code)).strip().split("|"))
-            await asyncio.sleep(0.35)  # let bursts and tweens get going
+            await asyncio.sleep(0.3 if vfx.presets()[preset].get('mode') == 'burst' else 1.5)  # bursts peak early; loops need to fill in
             return await s.capture(out, cam, look)
         return Image(path=str(studio_client.run(go)))
     except Exception as e:

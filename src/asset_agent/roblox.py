@@ -112,27 +112,58 @@ LAB_AT = (0, 200, 600)  # out of the way of the game: a floating stage above the
 STAND_INS = {"character": (2, 5, 1), "item": (3, 2, 0.3), "rarity": (2, 2, 2), "base": (4, 3, 4), "default": (3, 3, 3)}
 
 
+def reach(nodes) -> float:
+    """Rough radius in studs an effect fills: biggest particle plus how far particles travel."""
+    best = 0.0
+
+    def walk(n):
+        nonlocal best
+        pr = n.get("props", {})
+        if n["class"] == "ParticleEmitter":
+            size = max((k[1] + (k[2] if len(k) > 2 else 0) for k in pr.get("Size", {}).get("ns", [[0, 1]])), default=1)
+            speed = pr.get("Speed", {}).get("nr", [5, 5])[1]
+            life = pr.get("Lifetime", {}).get("nr", [1, 1])[1]
+            drag = pr.get("Drag", 0)
+            travel = speed * (min(life, 1 / drag) if drag else life)
+            best = max(best, size / 2 + travel)
+        elif n["class"] == "Beam":
+            best = max(best, pr.get("Width0", 1), pr.get("Width1", 1))
+        for c in n.get("children") or []:
+            walk(c)
+    for n in nodes:
+        walk(n)
+    return best
+
+
 def lab_script(preset: str, effect: dict | None = None, stand_in: str | None = None) -> str:
-    """Luau that (re)builds a dark lab stage with a stand-in object, applies one preset and plays it.
-    Returns the camera position and look-at point for a screenshot as 'x,y,z|x,y,z'."""
+    """Luau that (re)builds a dark lab stage, applies one preset and plays it. Imported presets play on
+    an invisible part the size of their original host (its volume shapes where particles spawn); others
+    on a visible stand-in. Returns the camera position and look-at point as 'x,y,z|x,y,z'."""
     p = vfx.presets()[preset]
-    if stand_in is None:
+    host = p.get("host", {}).get("size", {}).get("v3")
+    if stand_in is None and not host:
         tags = p.get("tags", [])
         stand_in = next((t for t in ("character", "item", "rarity", "base") if t in tags), "default")
-    size = STAND_INS[stand_in]
+    k = (effect or {}).get("size", 1.0)
+    size = [x * k for x in host] if host and stand_in is None else STAND_INS[stand_in]
+    hidden = 1 if host and stand_in is None else 0
     fx = vfx.resolve({preset: {"type": preset, **(effect or {})}})[preset]
     x, y, z = LAB_AT
-    return luau.BUILD + f"""local AT,SZ,FX=Vector3.new({x},{y},{z}),Vector3.new({size[0]},{size[1]},{size[2]}),HS:JSONDecode({luau.data(fx["nodes"])})
+    return luau.BUILD + f"""local AT,SZ,FX=Vector3.new({x},{y},{z}),Vector3.new({size[0]:g},{size[1]:g},{size[2]:g}),HS:JSONDecode({luau.data(fx["nodes"])})
 local lab=workspace:FindFirstChild('AssetAgentLab') if lab then lab:Destroy() end
 lab=Instance.new('Model') lab.Name='AssetAgentLab'
-local floor=Instance.new('Part') floor.Name='Floor' floor.Anchored=true floor.Size=Vector3.new(60,1,60)
-floor.CFrame=CFrame.new(AT-Vector3.new(0,0.5,0)) floor.Color=Color3.fromRGB(28,30,40) floor.Material=Enum.Material.SmoothPlastic floor.Parent=lab
-local h=Instance.new('Part') h.Name='StandIn' h.Anchored=true h.Size=SZ h.CFrame=CFrame.new(AT+Vector3.new(0,SZ.Y/2,0))
-h.Color=Color3.fromRGB(120,128,160) h.Material=Enum.Material.SmoothPlastic h.Parent=lab
+local floor=Instance.new('Part') floor.Name='Floor' floor.Anchored=true floor.Size=Vector3.new(1,1,1)
+floor.CFrame=CFrame.new(AT-Vector3.new(0,0.5,0)) floor.Color=Color3.fromRGB(22,24,32) floor.Material=Enum.Material.SmoothPlastic floor.Parent=lab
+local h=Instance.new('Part') h.Name='Host' h.Anchored=true h.CanCollide=false h.Size=SZ h.Transparency={hidden}
+h.CFrame=CFrame.new(AT+Vector3.new(0,math.max(SZ.Y/2,1),0)) h.Color=Color3.fromRGB(120,128,160) h.Material=Enum.Material.SmoothPlastic h.Parent=lab
+local e=math.max(SZ.X,SZ.Y,SZ.Z,6,{min(reach(fx["nodes"]), 150):.3g})
+floor.Size=Vector3.new(math.max(80,e*8),1,math.max(80,e*8))
+local dir=Vector3.new(1.6,0.7,2.6).Unit
+local look=h.Position+Vector3.new(0,e*0.25,0) local cam=look+dir*e*2.4
+local wall=Instance.new('Part') wall.Name='Backdrop' wall.Anchored=true wall.CanCollide=false wall.Size=Vector3.new(e*8,e*5,1)
+wall.CFrame=CFrame.lookAt(look-dir*e*3+Vector3.new(0,e*1.5,0),cam+Vector3.new(0,e*1.5,0)) wall.Color=Color3.fromRGB(14,16,24) wall.Material=Enum.Material.SmoothPlastic wall.Parent=lab
 lab.Parent=workspace
 play(build(h,'{preset}',FX))
-local e=math.max(SZ.X,SZ.Y,SZ.Z)
-local look=h.Position local cam=look+Vector3.new(e*1.6,e*0.9,e*2.6)
 return string.format('%g,%g,%g|%g,%g,%g',cam.X,cam.Y,cam.Z,look.X,look.Y,look.Z)"""
 
 
@@ -176,5 +207,8 @@ def import_preset(serialized: dict, *, use: str, tags: list[str], source: dict) 
     nodes = serialized["nodes"]
     for n in nodes:
         walk(n)
-    return {"tags": tags, "use": use, "source": source, "mode": "burst" if burst else "loop",
-            "sketch": "sparkles", "stats": serialized.get("stats", {}), "nodes": nodes}
+    out = {"tags": tags, "use": use, "source": source, "mode": "burst" if burst else "loop",
+           "sketch": "sparkles", "stats": serialized.get("stats", {}), "nodes": nodes}
+    if serialized.get("host"):  # the part it was built on: particles spawn through its volume
+        out["host"] = serialized["host"]
+    return out

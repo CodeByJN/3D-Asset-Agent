@@ -61,7 +61,12 @@ class Studio:
     async def _studio(self):
         """The connected Studio's id, looked up on first use."""
         if self.studio_id is None and "list_roblox_studios" in self.tools:
-            self.studio_id = self._pick_studio(_text(await self.s.call_tool("list_roblox_studios", {})))
+            for _ in range(20):  # Studio registers with a fresh proxy a second or two after it starts
+                text = _text(await self.s.call_tool("list_roblox_studios", {}))
+                if '"studios":[]' not in text.replace(" ", ""):
+                    break
+                await asyncio.sleep(0.5)
+            self.studio_id = self._pick_studio(text)
         return self.studio_id
 
     async def __aexit__(self, *exc):

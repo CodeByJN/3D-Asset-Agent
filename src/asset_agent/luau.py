@@ -135,13 +135,15 @@ local function walk(i)
  return out
 end
 local function serialize(root)
+ stats={scripts=0}
  ROOT=root
  ORIGIN=root:IsA('BasePart') and root.CFrame or (root:IsA('Model') and root:GetPivot()) or CFrame.new()
  local nodes
  if root:IsA('Attachment') or root:IsA('ParticleEmitter') or root:IsA('Beam') or root:IsA('Trail') then
   ROOT=root.Parent local n=node(root) local k=walk(root) if #k>0 then n.children=k end nodes={n}
  else nodes=walk(root) end
- return HS:JSONEncode({name=root.Name,class=root.ClassName,nodes=nodes,stats=stats})
+ local host=root:IsA('BasePart') and {size=E(root.Size),shape=E(root:IsA('Part') and root.Shape or nil)} or nil
+ return HS:JSONEncode({name=root.Name,class=root.ClassName,nodes=nodes,stats=stats,host=host})
 end
 """
 
