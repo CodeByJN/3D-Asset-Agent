@@ -517,16 +517,20 @@ PREVIEW_VIEWS = [(0, -1, 0.25), (1, 0, 0.25), (0, 1, 0.25), (1, -1, 0.9)]  # fro
 
 
 def op_preview(s):
-    """Render one square tile of 4 panels (2x2) with Workbench to s["out"].
+    """Render panels with Workbench into one PNG at s["out"].
 
-    s["panels"]: up to 4 of {files, shade, view}; default is s["files"] textured from 4 views.
+    s["panels"]: list of {files, shade, view, label, vfx}; default is s["files"] textured from 4 views.
     shade: texture | clay (grey) | wire (grey + edges) | colour (each face one flat colour sampled
     from its texture, x the file's tint in s["tints"]: the low-poly palette view).
-    view: index into PREVIEW_VIEWS. Each panel is framed on its own objects.
+    view: index into PREVIEW_VIEWS. vfx: effects drawn as coloured particle blobs (see vfx_blobs).
+    layout: grid (2x2, s["size"] square) | strip (one row, each panel s["size"] square).
+    Each panel is framed on its own objects.
     """
-    size = s.get("size", 256)
-    half = size // 2
+    strip = s.get("layout") == "strip"
     panels = s.get("panels") or [{"files": s["files"], "shade": "texture", "view": i} for i in range(4)]
+    panels = panels if strip else panels[:4]
+    px_n = s.get("size", 256) if strip else s.get("size", 256) // 2
+    cols_n, rows_n = (len(panels), 1) if strip else (2, 2)
     tints = s.get("tints", {})
     scene = bpy.context.scene
     try:
@@ -534,22 +538,24 @@ def op_preview(s):
     except TypeError as e:
         raise RuntimeError(f"no workbench engine: {e}")
     scene.display.shading.light = "STUDIO"
-    scene.render.resolution_x = scene.render.resolution_y = half
+    scene.render.resolution_x = scene.render.resolution_y = px_n
     scene.render.resolution_percentage = 100
     scene.render.image_settings.file_format = "PNG"
     cam = bpy.data.objects.new("cam", bpy.data.cameras.new("cam"))
     scene.collection.objects.link(cam)
     scene.camera = cam
     cam.data.type = "ORTHO"
-    tile = np.zeros((size, size, 4), dtype=np.float32)
+    tile = np.zeros((rows_n * px_n, cols_n * px_n, 4), dtype=np.float32)
     tmp = Path(s["out"]).with_suffix(".view.png")
-    for i, pn in enumerate(panels[:4]):
+    for i, pn in enumerate(panels):
         objs = [import_any(f) for f in pn["files"]]
         lo, hi = bbox(objs)
-        c, ext = (lo + hi) / 2, max(hi - lo)
         shade = pn.get("shade", "texture")
         scene.display.shading.color_type = {"texture": "TEXTURE", "colour": "VERTEX"}.get(shade, "OBJECT")
-        extra = []
+        extra = vfx_blobs(pn.get("vfx") or {}, lo, hi)
+        if extra:  # frame the effects too
+            lo, hi = bbox(objs + extra)
+        c, ext = (lo + hi) / 2, max(hi - lo)
         for o, f in zip(objs, pn["files"]):
             o.color = (*CLAY, 1.0)
             if shade == "colour":
@@ -558,30 +564,103 @@ def op_preview(s):
                 w = bpy.data.objects.new(o.name + "_wire", o.data)
                 scene.collection.objects.link(w)
                 mod = w.modifiers.new("wire", "WIREFRAME")
-                mod.thickness = ext * 1.5 / half * 0.6  # ~half a pixel: dense meshes read as shading
+                mod.thickness = ext * 1.5 / px_n * 0.6  # ~half a pixel: dense meshes read as shading
                 w.color = (0.12, 0.22, 0.45, 1.0)
                 extra.append(w)
-        cam.data.ortho_scale = ext * 1.5
+        ortho = ext * (1.7 if pn.get("label") else 1.5)
+        cam.data.ortho_scale = ortho
         cam.data.clip_end = ext * 10
         d = Vector(PREVIEW_VIEWS[pn.get("view", 3)]).normalized()
         cam.location = c + d * ext * 3
         cam.rotation_euler = d.to_track_quat("Z", "Y").to_euler()
+        if pn.get("label"):
+            extra.append(label(pn["label"], cam, ortho, ext))
         scene.render.filepath = str(tmp)
         bpy.ops.render.render(write_still=True)
         img = bpy.data.images.load(str(tmp))
-        px = pixels(img).reshape(half, half, 4)
+        px = pixels(img).reshape(px_n, px_n, 4)
         bpy.data.images.remove(img)
-        row, col = 1 - i // 2, i % 2  # pixel rows start at the bottom
-        tile[row * half:(row + 1) * half, col * half:(col + 1) * half] = px
+        row, col = (0, i) if strip else (1 - i // 2, i % 2)  # pixel rows start at the bottom
+        tile[row * px_n:(row + 1) * px_n, col * px_n:(col + 1) * px_n] = px
         for o in extra + objs:
             bpy.data.objects.remove(o)
     tmp.unlink()
-    out = bpy.data.images.new("preview", size, size, alpha=False)
+    if strip:  # thin dark separators between panels
+        for k in range(1, cols_n):
+            tile[:, k * px_n - 1:k * px_n + 1, :3] = 0.08
+    h, w = tile.shape[:2]
+    out = bpy.data.images.new("preview", w, h, alpha=False)
     out.pixels.foreach_set(tile.ravel())
     out.filepath_raw = s["out"]
     out.file_format = "PNG"
     out.save()
-    return {"size": size}
+    return {"size": [w, h]}
+
+
+def flat_material(name, rgb):
+    mat = bpy.data.materials.new(name)
+    mat.diffuse_color = (*rgb, 1.0)  # what Workbench shows for untextured surfaces
+    return mat
+
+
+def label(text, cam, ortho, ext):
+    """White caption in the top margin of the camera view."""
+    cu = bpy.data.curves.new("label", "FONT")
+    cu.body = text
+    cu.align_x = "CENTER"
+    cu.size = ortho * 0.09
+    o = bpy.data.objects.new("label", cu)
+    bpy.context.scene.collection.objects.link(o)
+    o.parent = cam
+    o.location = (0, ortho * 0.40, -ext)
+    o.color = (0.95, 0.95, 0.95, 1.0)
+    cu.materials.append(flat_material("label", (0.95, 0.95, 0.95)))
+    return o
+
+
+# How each effect type is sketched in previews: blob count, radius (x model size), and where they go
+# as (x/y spread, z from, z to) in units of the model's half-width / height above its base.
+VFX_SKETCH = {"fire": (90, 0.07, (0.9, 0.3, 1.3)), "smoke": (25, 0.10, (0.5, 0.9, 1.6)),
+              "sparkles": (40, 0.025, (1.2, 0.0, 1.15)), "glow": (60, 0.03, (1.25, -0.05, 1.1))}
+
+
+def vfx_blobs(effects, lo, hi):
+    """Approximate each effect as a cloud of coloured icospheres (Roblox renders the real thing)."""
+    objs = []
+    size, base = hi - lo, Vector(((lo.x + hi.x) / 2, (lo.y + hi.y) / 2, lo.z))
+    model = max(size)
+    for k, (name, fx) in enumerate(sorted(effects.items())):
+        n, r, (spread, z0, z1) = VFX_SKETCH.get(fx.get("type"), VFX_SKETCH["sparkles"])
+        rng = np.random.default_rng(k)
+        n = max(1, int(n * fx.get("rate", 1.0) ** 0.5))
+        bm = bmesh.new()
+        for _ in range(n):
+            t = rng.uniform()  # 0 = bottom of the effect, 1 = top
+            z = lo.z + size.z * (z0 + (z1 - z0) * t)
+            fire = fx.get("type") == "fire"
+            taper = 1 - 0.5 * t if fire else 1.0
+            x = base.x + size.x / 2 * spread * taper * rng.uniform(-1, 1)
+            y = base.y + size.y / 2 * spread * taper * rng.uniform(-1, 1)
+            rad = model * r * fx.get("size", 1.0) * rng.uniform(0.5, 1.2) * taper
+            if fire:  # flame tongues: upright cones
+                bmesh.ops.create_cone(bm, cap_ends=True, segments=5, radius1=rad, radius2=0, depth=rad * 3,
+                                      matrix=Matrix.Translation((x, y, z)))
+            else:
+                bmesh.ops.create_icosphere(bm, subdivisions=1, radius=rad, matrix=Matrix.Translation((x, y, z)))
+        me = bpy.data.meshes.new(f"vfx_{name}")
+        bm.to_mesh(me)
+        bm.free()
+        o = bpy.data.objects.new(f"vfx_{name}", me)
+        bpy.context.scene.collection.objects.link(o)
+        rgb = fx.get("color") or VFX_DEFAULT_COLOUR.get(fx.get("type"), (1, 1, 1))
+        o.color = (*rgb, 1.0)
+        me.materials.append(flat_material(f"vfx_{name}", rgb))
+        objs.append(o)
+    return objs
+
+
+VFX_DEFAULT_COLOUR = {"fire": (1.0, 0.45, 0.1), "smoke": (0.45, 0.45, 0.45), "sparkles": (1.0, 0.9, 0.4),
+                      "glow": (1.0, 0.85, 0.55)}
 
 
 CLAY = (0.72, 0.72, 0.72)

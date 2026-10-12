@@ -71,3 +71,47 @@ def test_project_defaults_and_learning(tmp_path):
     assert "roster 2/2 made" in s, s
     with pytest.raises(KeyError):
         Project.open(tmp_path, "missing")
+
+
+def test_vfx_only_change_touches_nothing_else(fixtures, tmp_path, monkeypatch):  # noqa: F811
+    from asset_agent import roblox
+    from .test_pipeline import snapshot
+
+    a = Asset.create(tmp_path / "torch", {"body": fixtures / "body.glb"}, max_tris=800, tex_size=128)
+    a.build()
+    uploads = []
+    monkeypatch.setattr(roblox, "upload", lambda fbx, name, asset_id=None: uploads.append(asset_id) or "777")
+    line, script = a.to_studio()
+    assert line.startswith("asset 777 created") and "LoadAsset(ID)" in script and uploads == [None]
+
+    files = snapshot(a)
+    export_hash = a.cur("export")["hash"]
+    line = a.revise("vfx", flames={"type": "fire", "color": [1, 0.4, 0]})
+    assert "rebuilt vfx;" in line and "export" not in line.split(";")[0], line
+    line = a.revise("vfx", flames={"color": [0, 0.3, 1]})  # only the colour changes
+    assert snapshot(a) == files and a.cur("export")["hash"] == export_hash
+    line, script = a.to_studio()
+    assert line.startswith("asset 777 unchanged") and uploads == [None], line  # no re-upload
+    assert "Color3.new(0,0.3,1)" in script and "fire_main" in script and "flames=fire" in line
+
+    a.rollback("vfx", 2)  # back to orange
+    assert a.effects["flames"]["color"] == [1, 0.4, 0]
+    a.revise("vfx", flames=None)
+    assert a.effects == {}
+    with pytest.raises(KeyError):
+        a.revise("vfx", boom={"type": "nuke"})
+
+    a.revise("geometry", part="body", scale=[1, 1, 1.5])  # model changed: uploads a new version
+    line, _ = a.to_studio()
+    assert line.startswith("asset 777 new version uploaded") and uploads == [None, "777"], line
+
+
+def test_breakdown_strip(fixtures, tmp_path):  # noqa: F811
+    a = Asset.create(tmp_path / "s", {"body": fixtures / "body.glb"}, max_tris=800, tex_size=128)
+    a.build()
+    a.revise("vfx", sparkle={"type": "sparkles"})
+    out = a.preview(256, "breakdown")
+    png = out.read_bytes()
+    w, h = int.from_bytes(png[16:20], "big"), int.from_bytes(png[20:24], "big")
+    assert (w, h) == (5 * 128, 128)
+    assert a.preview(128, "vfx").stat().st_size > 1000

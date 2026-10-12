@@ -5,6 +5,7 @@ Layer graph (per part unless noted):
     geometry ----------------------^ (bake source)
     geometry -> collision -> export
     finish(global, params only) -> export
+    vfx(global, params only): nothing depends on it; it only changes the Studio script (roblox.py)
 
 Each layer version has a *key* (hash of its params + its inputs' keys, plus the source file
 hash for geometry) and a content *hash* of its output file. A layer rebuilds only when its key
@@ -16,6 +17,7 @@ import json
 import shutil
 from pathlib import Path
 
+from . import vfx
 from .blender import BlenderError, run_steps
 
 BUDGETS = json.loads(Path(__file__).with_name("budgets.json").read_text())
@@ -111,6 +113,10 @@ class Asset:
     @property
     def finish(self) -> dict:
         return json.loads((self.root / "finish.json").read_text())
+
+    @property
+    def effects(self) -> dict:
+        return self.m["params"].setdefault("vfx", {})
 
     def cur(self, layer: str) -> dict:
         rec = self.m["layers"][layer]
@@ -232,6 +238,7 @@ class Asset:
             self._resolve_targets()
             self._run([self._plan_part(k, p) for k in ("topology", "collision", "uv", "surface") for p in parts]
                       + [self._plan_finish_export()])
+            self._plan("vfx", "vfx", self.effects, [], {}, None)
         except BlenderError:
             self.m = json.loads((self.root / "manifest.json").read_text())  # discard the plan
             raise
@@ -267,6 +274,7 @@ class Asset:
         surface:   mode (auto|bake|project|flat), image (reference image path), ao (0-1), tex_size
         collision: max_tris
         export:    scale_to (metres, longest side), target (roblox|godot|unity)
+        vfx:       {effect_name: {type fire|smoke|sparkles|glow, color, size, rate} | None to remove}
         """
         if layer == "finish":
             fin = self.finish
@@ -274,6 +282,8 @@ class Asset:
             (self.root / "finish.json").write_text(json.dumps(fin, indent=2))
         elif layer == "export":
             self.m["params"]["export"].update(change)
+        elif layer == "vfx":
+            self.m["params"]["vfx"] = vfx.merge(self.effects, change)
         elif layer in PART_LAYERS:
             for p in [part] if part else list(self.m["parts"]):
                 if p not in self.m["parts"]:
@@ -345,8 +355,8 @@ class Asset:
         params = copy.deepcopy(ver["params"])
         if layer == "finish":
             (self.root / "finish.json").write_text(json.dumps(params, indent=2))
-        elif layer == "export":
-            self.m["params"]["export"] = params
+        elif layer in ("export", "vfx"):
+            self.m["params"][layer] = params
         else:
             if layer == "surface" and ver["inputs"][0] != self.cur(lk("uv", part))["key"]:
                 params["from_version"] = version
@@ -366,7 +376,8 @@ class Asset:
         topology  - the game mesh with its edges, 4 views
         colour    - each face in one flat colour from its texture x tint (the palette), 4 views
         texture   - the baked texture on the game mesh (before finish tint), 4 views
-        breakdown - geometry | topology / colour | texture, each from 3/4
+        vfx       - the export with its effects sketched in, 4 views
+        breakdown - one labelled row in pipeline order: mesh, topology, colour, texture, vfx (or final)
         """
         layer = {"color": "colour"}.get(layer, layer)
         parts = list(self.m["parts"])
@@ -382,14 +393,46 @@ class Asset:
         elif layer in shades:
             kind, shade = shades[layer]
             step["panels"] = [{"files": files(kind), "shade": shade, "view": i} for i in range(4)]
+        elif layer == "vfx":
+            fx = vfx.resolve(self.effects)
+            step["panels"] = [{"files": [str(self.path(self.cur("export")["files"]["main"]))], "shade": "texture",
+                               "view": i, "vfx": fx} for i in range(4)]
         elif layer == "breakdown":
-            step["panels"] = [{"files": files(k), "shade": sh, "view": 3} for k, sh in shades.values()]
+            names = {"geometry": "Mesh", "topology": "Topology", "colour": "Colour", "texture": "Texture"}
+            step["panels"] = [{"files": files(k), "shade": sh, "view": 3, "label": names[n]}
+                              for n, (k, sh) in shades.items()]
+            step["panels"].append({"files": [str(self.path(self.cur("export")["files"]["main"]))],
+                                   "shade": "texture", "view": 3, "vfx": vfx.resolve(self.effects),
+                                   "label": "VFX" if self.effects else "Final"})
+            step["layout"], step["size"] = "strip", max(96, size // 2)
         else:
-            raise KeyError(f"unknown preview layer {layer!r}; have final, breakdown, {', '.join(shades)}")
+            raise KeyError(f"unknown preview layer {layer!r}; have final, breakdown, vfx, {', '.join(shades)}")
         tints = self.tints()
         step["tints"] = {f: tints[p] for p, f in zip(parts, files("surface"))}
         run_steps([step])
         return Path(step["out"])
+
+    def to_studio(self) -> tuple[str, str]:
+        """Upload the export FBX to Roblox if it changed since the last upload, then write the Studio
+        script that places it and adds its effects. Returns (one-line status, Luau script)."""
+        from . import roblox
+        name = self.m["name"]
+        fbx = self.root / "export" / f"{name}.fbx"
+        if not fbx.exists():
+            raise FileNotFoundError(f"no {fbx.name}: export target must be roblox or unity (revise export target)")
+        rev = _filehash(fbx)
+        rb = self.m.setdefault("roblox", {})
+        if rb.get("rev") == rev:
+            status = f"asset {rb['asset_id']} unchanged (no upload)"
+        else:
+            new = not rb.get("asset_id")
+            rb["asset_id"] = roblox.upload(fbx, name, rb.get("asset_id"))
+            rb["rev"] = rev
+            self._save()
+            status = f"asset {rb['asset_id']} {'created' if new else 'new version uploaded'}"
+        script = roblox.studio_script(name, rb["asset_id"], rev, self.effects)
+        (self.root / "studio.luau").write_text(script)
+        return f"{status} | effects: {vfx.describe(self.effects)}", script
 
     def params_snapshot(self) -> dict:
         """The settings ratings learn from (first part for per-part ones)."""
