@@ -692,6 +692,39 @@ def face_colours(o, tint):
     me.color_attributes.active_color = attr
 
 
+def op_video(s):
+    """Encode an image sequence (s["frames"], in order) to an H.264 MP4 at s["fps"] with Blender's ffmpeg."""
+    frames = [Path(f) for f in s["frames"]]
+    scene = bpy.context.scene
+    scene.sequence_editor_create()
+    first = bpy.data.images.load(str(frames[0]))
+    w, h = first.size
+    bpy.data.images.remove(first)
+    seqs = scene.sequence_editor
+    coll = seqs.strips if hasattr(seqs, "strips") else seqs.sequences  # renamed in Blender 4.4
+    try:
+        strip = coll.new_image("frames", str(frames[0]), 1, 1, fit_method="FIT")
+    except TypeError:
+        strip = coll.new_image("frames", str(frames[0]), 1, 1)
+    for f in frames[1:]:
+        strip.elements.append(f.name)
+    scene.frame_start, scene.frame_end = 1, len(frames)
+    scene.render.fps = int(s.get("fps", 15))
+    k = s.get("width", w) / w  # even dimensions for H.264
+    scene.render.resolution_x, scene.render.resolution_y = int(w * k) // 2 * 2, int(h * k) // 2 * 2
+    scene.render.resolution_percentage = 100
+    if hasattr(scene.render.image_settings, "media_type"):  # Blender 5: pick video before the format
+        scene.render.image_settings.media_type = "VIDEO"
+    scene.render.image_settings.file_format = "FFMPEG"
+    scene.render.ffmpeg.format = "MPEG4"
+    scene.render.ffmpeg.codec = "H264"
+    scene.render.ffmpeg.constant_rate_factor = "MEDIUM"
+    scene.render.filepath = s["out"]
+    scene.render.use_file_extension = False
+    bpy.ops.render.render(animation=True)
+    return {"frames": len(frames), "fps": scene.render.fps}
+
+
 def op_validate(s):
     o = import_any(s["src"])
     return validate([o], s["budget"])

@@ -156,7 +156,7 @@ local floor=Instance.new('Part') floor.Name='Floor' floor.Anchored=true floor.Si
 floor.CFrame=CFrame.new(AT-Vector3.new(0,0.5,0)) floor.Color=Color3.fromRGB(22,24,32) floor.Material=Enum.Material.SmoothPlastic floor.Parent=lab
 local h=Instance.new('Part') h.Name='Host' h.Anchored=true h.CanCollide=false h.Size=SZ h.Transparency={hidden}
 h.CFrame=CFrame.new(AT+Vector3.new(0,math.max(SZ.Y/2,1),0)) h.Color=Color3.fromRGB(120,128,160) h.Material=Enum.Material.SmoothPlastic h.Parent=lab
-local e=math.max(SZ.X,SZ.Y,SZ.Z,6,{min(reach(fx["nodes"]), 150):.3g})
+local e=math.max(SZ.X,SZ.Y,SZ.Z,5,{min(reach(fx["nodes"]) * 0.5, 80):.3g})  -- particles fade well before full reach
 floor.Size=Vector3.new(math.max(80,e*8),1,math.max(80,e*8))
 local dir=Vector3.new(1.6,0.7,2.6).Unit
 local look=h.Position+Vector3.new(0,e*0.25,0) local cam=look+dir*e*2.4
@@ -165,6 +165,15 @@ wall.CFrame=CFrame.lookAt(look-dir*e*3+Vector3.new(0,e*1.5,0),cam+Vector3.new(0,
 lab.Parent=workspace
 play(build(h,'{preset}',FX))
 return string.format('%g,%g,%g|%g,%g,%g',cam.X,cam.Y,cam.Z,look.X,look.Y,look.Z)"""
+
+
+def replay_script(slow: float = 1.0) -> str:
+    """Luau that replays the lab's current effect: bursts and tweens fire again, at 1/slow speed."""
+    return luau.BUILD + f"""SLOW={slow:g}
+local lab=workspace:FindFirstChild('AssetAgentLab') if not lab then return 'no lab' end
+local l={{}} for _,d in lab:GetDescendants() do if d:GetAttribute('AssetAgentVFX') then table.insert(l,d) end end
+for _,d in l do if d:IsA('ParticleEmitter') and d:GetAttribute('EmitCount') then d:Clear() end end
+play(l) return 'ok'"""
 
 
 def serialize_script(path: str) -> str:

@@ -142,3 +142,12 @@ def test_vfx_transforms_and_import():
                              source={"kind": "creator_store", "asset_id": "1"})
     assert p["mode"] == "burst" and p["nodes"][0]["children"][0]["attrs"]["EmitCount"] == 5
     assert roblox.luau.data({"s": "x"}).startswith("[=[") and roblox.luau.data({"s": "]=]"}).startswith("[==[")
+
+
+def test_video_from_frames(fixtures, tmp_path):  # noqa: F811
+    from asset_agent.blender import run_steps
+    out = tmp_path / "clip.mp4"
+    frames = [str(fixtures / f) for f in ("body.png", "lid.png", "body.png", "lid.png")]
+    res = run_steps([{"op": "video", "frames": frames, "fps": 4, "width": 128, "out": str(out)}])
+    assert res[0]["stats"] == {"frames": 4, "fps": 4}
+    assert out.stat().st_size > 1000 and out.read_bytes()[4:8] == b"ftyp"  # an MP4 container

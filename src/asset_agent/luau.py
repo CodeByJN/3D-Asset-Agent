@@ -50,18 +50,20 @@ local function build(H,tag,nodes)
  for _,r in refs do r[1][r[2]]=made[r[3]] end
  return all
 end
+local SLOW=1 -- >1 plays effects in slow motion (for recording): particle TimeScale 1/SLOW, timings x SLOW
 local function play(list)
  for _,i in list do
+  if i:IsA('ParticleEmitter') then i.TimeScale=1/SLOW end
   local n=i:GetAttribute('EmitCount')
-  if n and i:IsA('ParticleEmitter') then task.delay(i:GetAttribute('EmitDelay') or 0,function() i:Emit(n) end) end
+  if n and i:IsA('ParticleEmitter') then task.delay((i:GetAttribute('EmitDelay') or 0)*SLOW,function() i:Emit(n) end) end
   local tw=i:GetAttribute('AssetAgentTween')
   if tw then
    local t=HS:JSONDecode(tw) local goal={}
    for k,v in t.props do goal[k]=V(v) end
    local start={} for k in goal do start[k]=i[k] end
-   task.delay(t.delay or 0,function()
+   task.delay((t.delay or 0)*SLOW,function()
     for k,v in start do i[k]=v end
-    TS:Create(i,TweenInfo.new(t.time or 0.5,Enum.EasingStyle[t.style or 'Quad'],Enum.EasingDirection.Out),goal):Play()
+    TS:Create(i,TweenInfo.new((t.time or 0.5)*SLOW,Enum.EasingStyle[t.style or 'Quad'],Enum.EasingDirection.Out),goal):Play()
    end)
   end
  end
