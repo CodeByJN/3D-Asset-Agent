@@ -49,7 +49,7 @@ def lk(kind: str, part: str | None = None) -> str:
 
 class Asset:
     def __init__(self, root: Path):
-        self.root = Path(root)
+        self.root = Path(root).resolve()  # Blender resolves relative image paths differently
         self.m = json.loads((self.root / "manifest.json").read_text())
 
     # ------------------------------------------------------------ create / io
