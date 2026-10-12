@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "blender": {
+      "command": "uvx",
+      "args": ["--python", "3.12", "mcp-for-blender"],
+      "env": {
+        "UV_PYTHON_INSTALL_DIR": "C:\\Users\\Jordan\\.uv\\python",
+        "UV_CACHE_DIR": "C:\\Users\\Jordan\\.uv\\cache",
+        "UV_TOOL_DIR": "C:\\Users\\Jordan\\.uv\\tools"
+      }
+    }
+  }
+}
