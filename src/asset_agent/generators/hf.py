@@ -7,10 +7,13 @@ Works anonymously; set HF_TOKEN (free account) for a larger daily GPU quota.
 """
 import os
 import shutil
+import urllib.error
+import urllib.request
 import uuid
 from concurrent.futures import Future, ThreadPoolExecutor
 from pathlib import Path
 
+from .. import config
 from .base import GenResult, Generator
 
 IMAGE_SPACE = "black-forest-labs/FLUX.1-schnell"
@@ -85,17 +88,35 @@ class HFSpaces(Generator):
 
 
 class LocalHunyuan(HFSpaces):
-    """Your own GPU: Hunyuan3D-2's gradio_app.py running locally (same API as the Space).
+    """Your own GPU, on this machine or another one: Hunyuan3D-2's gradio_app.py (same API as the Space).
 
-    Set HUNYUAN_URL (default http://127.0.0.1:8080). Text prompts still make their image on the free
-    FLUX Space; pass image= to stay fully offline.
+    Start it with `asset-agent serve`; point other machines at it with `asset-agent connect URL --key KEY`
+    (or HUNYUAN_URL / HUNYUAN_KEY). Text prompts still make their image on the free FLUX Space;
+    pass image= to stay fully offline.
     """
     name = "local"
 
     def __init__(self, token: str | None = None):
         super().__init__(token)
-        self.shape_space = os.environ.get("HUNYUAN_URL", "http://127.0.0.1:8080")
+        self.shape_space = config.hunyuan_url()
+        self.key = config.hunyuan_key()
 
     def _client(self, space):
+        if space != self.shape_space:
+            return super()._client(space)
         from gradio_client import Client
-        return Client(space, token=None if space == self.shape_space else self.token, verbose=False)
+        return Client(space, verbose=False, headers={"Authorization": f"Bearer {self.key}"} if self.key else None)
+
+
+def local_status(url: str | None = None, key: str | None = None, timeout: float = 3) -> str:
+    """'ok' | 'wrong key' | 'offline' for the local/remote Hunyuan server."""
+    url = url or config.hunyuan_url()
+    key = key if key is not None else config.hunyuan_key()
+    req = urllib.request.Request(url + "/", headers={"Authorization": f"Bearer {key}"} if key else {})
+    try:
+        with urllib.request.urlopen(req, timeout=timeout):
+            return "ok"
+    except urllib.error.HTTPError as e:
+        return "wrong key" if e.code == 401 else f"error {e.code}"
+    except (OSError, ValueError):
+        return "offline"

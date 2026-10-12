@@ -6,7 +6,7 @@ from .asset import Asset
 
 
 def make_asset(root, prompt: str | None = None, image: str | None = None, budget: str = "roblox_prop",
-               style: str = "project", color: list[float] | None = None, backend: str = "hf",
+               style: str = "project", color: list[float] | None = None, backend: str = "auto",
                textured: bool = False, seed: int = 1234, **overrides) -> str:
     """Make a game-ready asset from a text prompt or an image.
 
@@ -14,6 +14,7 @@ def make_asset(root, prompt: str | None = None, image: str | None = None, budget
               Ignored when textured=True, which asks the generator for its own texture (more GPU quota).
     color:    RGB 0-1 tint for flat style.
     textured: use the generator's texture and bake it (slower, uses more free quota).
+    backend:  auto (your Hunyuan server if it is up, else free hf) | hf | local.
     """
     gen = generators.generate(generators.get(backend), prompt=prompt, image=image, textured=textured, seed=seed)
     mode = "bake" if textured else style

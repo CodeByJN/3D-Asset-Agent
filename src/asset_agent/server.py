@@ -14,7 +14,7 @@ from .asset import Asset
 from .make import make_asset as _make_asset
 
 server = MCPServer("asset-agent", instructions=(
-    "Game-ready 3D assets (Roblox first). make_asset generates for free and returns one line. "
+    "Game-ready 3D assets (Roblox first). make_asset generates (free or on your GPU) and returns one line. "
     "Fix things with revise (only that layer and what depends on it rebuilds), not by regenerating. "
     "preview only when you must see it."))
 
@@ -49,10 +49,10 @@ def tool(fn):
 @tool
 def make_asset(name: str, prompt: str | None = None, image: str | None = None, style: str = "project",
                color: list[float] | None = None, budget: str = "roblox_prop", textured: bool = False,
-               backend: str = "hf") -> str:
+               backend: str = "auto") -> str:
     """Generate a game-ready asset from a text prompt or an image path (free, ~1-2 min).
     style: project (paint the generated image on) | flat (one colour, set via color [r,g,b] 0-1).
-    budget: roblox_prop | roblox_hero | mobile_prop | godot_lod. backend: hf (free) | local."""
+    budget: roblox_prop | roblox_hero | mobile_prop | godot_lod. backend: auto (your GPU server if up, else free hf) | hf | local."""
     return _make_asset(home() / name, prompt=prompt, image=image, budget=budget, style=style,
                        color=color, backend=backend, textured=textured)
 
