@@ -13,3 +13,6 @@ A low-token 3D asset harness: Blender MCP plus AI generators, producing Roblox a
 - Use `--python 3.12` with uv.
 - Blender 5.0 is at `C:\Program Files\Blender Foundation\Blender 5.0`. Install Blender add-ons through Blender's own UI, not by copying files into `AppData`.
 - The GitHub CLI is at `C:\Program Files\GitHub CLI\gh.exe`.
+
+## Running tests
+- `uv run --python 3.12 pytest -q` (with the UV_* env vars above). Tests drive real headless Blender (`BLENDER_EXE` overrides the default path) and take ~25s.
