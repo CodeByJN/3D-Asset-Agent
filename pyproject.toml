@@ -6,6 +6,7 @@ requires-python = ">=3.12"
 dependencies = [
     "gradio-client>=2.7.2",
     "mcp>=1.2",
+    "pillow>=12.3.0",
 ]
 
 [project.scripts]

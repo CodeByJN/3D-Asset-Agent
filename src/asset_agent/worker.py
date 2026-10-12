@@ -725,6 +725,31 @@ def op_video(s):
     return {"frames": len(frames), "fps": scene.render.fps}
 
 
+def op_unpack_video(s):
+    """Decode a video (s["src"]) to PNG frames in s["out_dir"] at s["width"] pixels wide."""
+    scene = bpy.context.scene
+    scene.sequence_editor_create()
+    seqs = scene.sequence_editor
+    coll = seqs.strips if hasattr(seqs, "strips") else seqs.sequences
+    try:
+        strip = coll.new_movie("clip", s["src"], 1, 1, fit_method="FIT")
+    except TypeError:
+        strip = coll.new_movie("clip", s["src"], 1, 1)
+    n = strip.frame_final_duration
+    w, h = strip.elements[0].orig_width, strip.elements[0].orig_height
+    k = s.get("width", w) / w
+    scene.render.resolution_x, scene.render.resolution_y = int(w * k) // 2 * 2, int(h * k) // 2 * 2
+    scene.render.resolution_percentage = 100
+    scene.frame_start, scene.frame_end = 1, n
+    if hasattr(scene.render.image_settings, "media_type"):
+        scene.render.image_settings.media_type = "IMAGE"
+    scene.render.image_settings.file_format = "PNG"
+    scene.render.filepath = str(Path(s["out_dir"]) / "####")
+    bpy.ops.render.render(animation=True)
+    fps = scene.render.fps / scene.render.fps_base
+    return {"frames": n, "fps": round(fps, 3)}
+
+
 def op_validate(s):
     o = import_any(s["src"])
     return validate([o], s["budget"])
