@@ -48,4 +48,5 @@ def make_part(name, scale, z, cuts, grid):
 
 make_part("body", (1.0, 1.0, 1.2), 0.6, 12, "COLOR_GRID")
 make_part("lid", (1.05, 1.05, 0.2), 1.3, 8, "UV_GRID")
+make_part("body2", (2.0, 2.0, 2.6), 1.3, 6, "UV_GRID")  # body-like shape at another scale
 print("FIXTURES_OK")

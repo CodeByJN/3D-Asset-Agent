@@ -170,6 +170,7 @@ class Asset:
                                          "target": str(self.path(self.cur(lk("uv", part))["files"]["glb"])),
                                          "out": str(self.path(f["glb"])), "png": str(self.path(f["png"])),
                                          "image": str(self.path(params["image"])) if params.get("image") else None,
+                                         "transfer": bool(params.get("from_version")),
                                          "params": params})
         dep = lk(DEPS[kind][0], part)
         inputs = [self.cur(dep)["key"]]
@@ -259,7 +260,8 @@ class Asset:
         """Change one layer's params (optionally for one part) and rebuild what's out of date.
 
         finish:    roughness, metallic, tint
-        geometry:  source (new mesh file), scale [x,y,z], pivot, offset, merge_distance
+        geometry:  source (new mesh file) or prompt/image (regenerate), keep ["scale","texture"],
+                   stretch, scale [x,y,z], pivot, offset, merge_distance
         topology:  target_tris
         uv:        angle, margin
         surface:   mode (auto|bake|project|flat), image (reference image path), ao (0-1), tex_size
@@ -277,8 +279,8 @@ class Asset:
                 if p not in self.m["parts"]:
                     raise KeyError(f"no part {p!r}; parts: {', '.join(self.m['parts'])}")
                 ch = dict(change)
-                if layer == "geometry" and "source" in ch:
-                    self._set_source(p, ch.pop("source"))
+                if layer == "geometry":
+                    self._swap_geometry(p, ch)
                 if layer == "surface":
                     self.m["params"]["surface"][p].pop("from_version", None)
                     if "image" in ch:
@@ -288,6 +290,47 @@ class Asset:
             raise KeyError(f"unknown layer {layer!r}")
         self._save()
         return self.build()
+
+    def _swap_geometry(self, part, ch):
+        """New shape for a part from `source` (a mesh file) or a fresh generation (`prompt` and/or
+        `image`, optional `backend`). keep: "scale" fits it to the old shape's box ("stretch": true
+        matches every axis, else proportions are kept); "texture" bakes the old texture onto it.
+        Default keeps both. Pops the swap keys from ch."""
+        keep = ch.pop("keep", ["scale", "texture"])
+        stretch = ch.pop("stretch", False)
+        backend = ch.pop("backend", "auto")
+        prompt, image = ch.pop("prompt", None), ch.pop("image", None)
+        if prompt or image:
+            from . import generators
+            gen = generators.generate(generators.get(backend), prompt=prompt, image=image)
+            ch["source"] = gen.mesh
+            if "texture" not in keep and gen.image:
+                self._set_image(part, gen.image)
+        if "source" not in ch:
+            return
+        geo = self.m["params"]["geometry"][part]
+        if "scale" in keep and lk("geometry", part) in self.m["layers"]:
+            if geo.get("fit") and not (geo.get("scale") or geo.get("offset")):
+                lo, hi = geo["fit"]["lo"], geo["fit"]["hi"]  # swapped before: keep the original box
+            else:
+                lo, hi = self._bbox(part)  # already includes the old scale/offset, so drop them
+            for k in ("scale", "offset", "fit"):
+                geo.pop(k, None)
+            ch["fit"] = {"lo": lo, "hi": hi, "mode": "stretch" if stretch else "uniform"}
+        else:
+            geo.pop("fit", None)
+        surf = self.m["params"]["surface"][part]
+        if "texture" in keep and lk("surface", part) in self.m["layers"]:
+            surf.setdefault("from_version", self.m["layers"][lk("surface", part)]["current"])
+        else:
+            surf.pop("from_version", None)
+        self._set_source(part, ch.pop("source"))
+
+    def _bbox(self, part):
+        ver = self.cur(lk("geometry", part))
+        if "bbox" not in ver["stats"]:  # built before bboxes were recorded
+            ver["stats"]["bbox"] = run_steps([{"op": "measure", "src": str(self.path(ver["files"]["glb"]))}])[0]["stats"]["bbox"]
+        return ver["stats"]["bbox"]
 
     def rollback(self, layer: str, version: int, part: str | None = None) -> str:
         """Restore one layer's params from an earlier version and rebuild downstream.
@@ -311,12 +354,52 @@ class Asset:
         self._save()
         return self.build()
 
-    def preview(self, size: int = 256) -> Path:
-        """Render a 2x2 tile (front, right, back, 3/4) of the current export. Returns the PNG path."""
-        exp = self.cur("export")["files"]["main"]
-        out = self.root / "preview.png"
-        run_steps([{"op": "preview", "files": [str(self.path(exp))], "out": str(out), "size": size}])
-        return out
+    def tints(self) -> dict[str, list[float]]:
+        """Each part's finish tint (the part's own, else the asset's)."""
+        fin = self.finish
+        return {p: fin["parts"].get(p, {}).get("tint") or fin.get("tint") or [1, 1, 1] for p in self.m["parts"]}
+
+    def preview(self, size: int = 256, layer: str = "final") -> Path:
+        """Render a 2x2 tile. Returns the PNG path. layer:
+        final     - the export, textured, from front, right, back, 3/4
+        geometry  - the cleaned source shape in clay, 4 views
+        topology  - the game mesh with its edges, 4 views
+        colour    - each face in one flat colour from its texture x tint (the palette), 4 views
+        texture   - the baked texture on the game mesh (before finish tint), 4 views
+        breakdown - geometry | topology / colour | texture, each from 3/4
+        """
+        layer = {"color": "colour"}.get(layer, layer)
+        parts = list(self.m["parts"])
+
+        def files(kind):
+            return [str(self.path(self.cur(lk(kind, p))["files"]["glb"])) for p in parts]
+
+        shades = {"geometry": ("geometry", "clay"), "topology": ("topology", "wire"),
+                  "colour": ("surface", "colour"), "texture": ("surface", "texture")}
+        step = {"op": "preview", "size": size, "out": str(self.root / f"preview{'' if layer == 'final' else '-' + layer}.png")}
+        if layer == "final":
+            step["files"] = [str(self.path(self.cur("export")["files"]["main"]))]
+        elif layer in shades:
+            kind, shade = shades[layer]
+            step["panels"] = [{"files": files(kind), "shade": shade, "view": i} for i in range(4)]
+        elif layer == "breakdown":
+            step["panels"] = [{"files": files(k), "shade": sh, "view": 3} for k, sh in shades.values()]
+        else:
+            raise KeyError(f"unknown preview layer {layer!r}; have final, breakdown, {', '.join(shades)}")
+        tints = self.tints()
+        step["tints"] = {f: tints[p] for p, f in zip(parts, files("surface"))}
+        run_steps([step])
+        return Path(step["out"])
+
+    def params_snapshot(self) -> dict:
+        """The settings ratings learn from (first part for per-part ones)."""
+        p = next(iter(self.m["parts"]))
+        fin = self.finish
+        surf = self.m["params"]["surface"][p]
+        return {"target_tris": self.m["params"]["topology"][p]["target_tris"],
+                "tex_size": surf.get("tex_size"), "ao": surf.get("ao"),
+                "roughness": fin.get("roughness"), "metallic": fin.get("metallic"),
+                "style": surf.get("mode"), "budget": self.m.get("budget_name")}
 
     def history(self) -> str:
         cur = ", ".join(f"{k}@v{r['current']}" for k, r in self.m["layers"].items())

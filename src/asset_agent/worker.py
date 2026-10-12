@@ -15,6 +15,7 @@ import bmesh
 import bpy
 import numpy as np
 from mathutils import Matrix, Vector
+from mathutils.bvhtree import BVHTree
 
 
 # ---------------------------------------------------------------- helpers
@@ -142,6 +143,8 @@ def op_geometry(s):
     bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context="VERTS")
     if p.get("recalc_normals", True):
         bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+    if p.get("fit"):  # a swapped-in source takes the old shape's size and base position
+        fit_to(bm, p["fit"])
     scale = p.get("scale")
     if scale:
         xs, ys, zs = ([v.co[i] for v in bm.verts] for i in range(3))
@@ -154,7 +157,32 @@ def op_geometry(s):
     bm.to_mesh(o.data)
     bm.free()
     export_glb(s["out"], [o])
-    return {"tris": tris(o.data), "verts": len(o.data.vertices)}
+    return {"tris": tris(o.data), "verts": len(o.data.vertices), "bbox": [list(map(rnd, c)) for c in bbox([o])]}
+
+
+def rnd(x):
+    return round(float(x), 5)
+
+
+def fit_to(bm, fit):
+    """Scale and move bm so its box matches fit {lo, hi, mode}: uniform keeps proportions
+    (largest side matches), stretch matches every axis. Bases line up at the box bottom-centre."""
+    xs, ys, zs = ([v.co[i] for v in bm.verts] for i in range(3))
+    lo, hi = Vector((min(xs), min(ys), min(zs))), Vector((max(xs), max(ys), max(zs)))
+    t_lo, t_hi = Vector(fit["lo"]), Vector(fit["hi"])
+    size, t_size = hi - lo, t_hi - t_lo
+    if fit.get("mode") == "stretch":
+        sc = Vector(tuple(t / (n or 1.0) for t, n in zip(t_size, size)))
+    else:
+        sc = Vector((max(t_size) / (max(size) or 1.0),) * 3)
+    base = Vector(((lo.x + hi.x) / 2, (lo.y + hi.y) / 2, lo.z))
+    t_base = Vector(((t_lo.x + t_hi.x) / 2, (t_lo.y + t_hi.y) / 2, t_lo.z))
+    for v in bm.verts:
+        v.co = t_base + Vector(tuple(a * b for a, b in zip(v.co - base, sc)))
+
+
+def op_measure(s):
+    return {"bbox": [list(map(rnd, c)) for c in bbox([import_any(s["src"])])]}
 
 
 def op_topology(s):
@@ -285,7 +313,9 @@ def projection_source(lo, image_path):
     return hi
 
 
-AO_DEFAULT = {"bake": 0.0, "project": 0.35, "flat": 0.75}
+AO_DEFAULT = {"bake": 0.0, "project": 0.35, "flat": 0.75, "transfer": 0.0}  # a transferred texture has its AO
+TRANSFER_MIN_COVER = 0.85  # share of new verts that must lie near the old surface to bake from it
+TRANSFER_TOL = 0.03  # 'near' = within this x the new part's diagonal
 
 
 def op_surface(s):
@@ -295,6 +325,8 @@ def op_surface(s):
               reshaped or re-decimated part keeps its texture without regenerating it.
     project - planar-project the reference image from the front (shape-only generators).
     flat    - white x ambient occlusion; the colour comes from finish tint (cheap to change).
+    (s["transfer"]) - bake the old textured surface onto new geometry/UVs; falls back to project
+              when the shapes differ too much (cover < TRANSFER_MIN_COVER) and there's an image.
     auto    - bake if the geometry has a texture, else project if there's an image, else flat.
     """
     p = s["params"]
@@ -302,7 +334,11 @@ def op_surface(s):
     hi = import_any(s["src"])
     lo = import_any(s["target"])
     mode = p.get("mode", "auto")
-    if mode == "auto":
+    cover = None
+    if s.get("transfer"):  # keep the old texture on new geometry / new UVs
+        cover = coverage(hi, lo)
+        mode = "transfer" if cover >= TRANSFER_MIN_COVER or not s.get("image") else "project"
+    elif mode == "auto":
         mode = "bake" if any(True for _ in image_nodes(hi)) else "project" if s.get("image") else "flat"
     if mode == "project":
         if not s.get("image"):
@@ -323,9 +359,11 @@ def op_surface(s):
     if mode == "flat":
         base = np.ones((size * size, 4), dtype=np.float32)
     else:
-        near = mode == "project"  # projection source coincides with the target
+        # (cage, max ray) x diagonal. project: the source coincides with the target. transfer: the old
+        # surface may sit up to TRANSFER_TOL outside the new one, so the cage must reach past it.
+        cage, ray = {"project": (0.01, 0.03), "transfer": (TRANSFER_TOL + 0.01, 0.12)}.get(mode, (0.02, 0.1))
         bake([hi], lo, "DIFFUSE", pass_filter={"COLOR"}, margin=margin,
-             cage_extrusion=(0.01 if near else 0.02) * diag, max_ray_distance=(0.03 if near else 0.1) * diag)
+             cage_extrusion=cage * diag, max_ray_distance=ray * diag)
         base = pixels(img)
     bpy.data.objects.remove(hi)
     ao = p.get("ao", AO_DEFAULT[mode])
@@ -341,7 +379,20 @@ def op_surface(s):
     img.save()
     mean = base[:, :3].mean(axis=0)
     export_glb(s["out"], [lo])
-    return {"tex": size, "mode": mode, "mean_rgb": [round(float(c), 3) for c in mean]}
+    stats = {"tex": size, "mode": mode, "mean_rgb": [round(float(c), 3) for c in mean]}
+    if cover is not None:
+        stats["cover"] = round(cover, 3)
+    return stats
+
+
+def coverage(src, target, tol=TRANSFER_TOL):
+    """Share of target verts within tol x (target diagonal) of the src surface."""
+    tree = BVHTree.FromObject(src, bpy.context.evaluated_depsgraph_get())
+    b0, b1 = bbox([target])
+    lim = tol * ((b1 - b0).length or 1.0)
+    vs = target.data.vertices
+    near = sum(1 for v in vs if (hit := tree.find_nearest(v.co))[0] is not None and hit[3] <= lim)
+    return near / (len(vs) or 1)
 
 
 def op_collision(s):
@@ -466,19 +517,23 @@ PREVIEW_VIEWS = [(0, -1, 0.25), (1, 0, 0.25), (0, 1, 0.25), (1, -1, 0.9)]  # fro
 
 
 def op_preview(s):
-    """Render one square tile of 4 views (2x2) with Workbench, textured, to s["out"]."""
+    """Render one square tile of 4 panels (2x2) with Workbench to s["out"].
+
+    s["panels"]: up to 4 of {files, shade, view}; default is s["files"] textured from 4 views.
+    shade: texture | clay (grey) | wire (grey + edges) | colour (each face one flat colour sampled
+    from its texture, x the file's tint in s["tints"]: the low-poly palette view).
+    view: index into PREVIEW_VIEWS. Each panel is framed on its own objects.
+    """
     size = s.get("size", 256)
     half = size // 2
-    objs = []
-    for f in s["files"]:
-        objs.append(import_any(f))
+    panels = s.get("panels") or [{"files": s["files"], "shade": "texture", "view": i} for i in range(4)]
+    tints = s.get("tints", {})
     scene = bpy.context.scene
     try:
         scene.render.engine = "BLENDER_WORKBENCH"
     except TypeError as e:
         raise RuntimeError(f"no workbench engine: {e}")
     scene.display.shading.light = "STUDIO"
-    scene.display.shading.color_type = "TEXTURE"
     scene.render.resolution_x = scene.render.resolution_y = half
     scene.render.resolution_percentage = 100
     scene.render.image_settings.file_format = "PNG"
@@ -486,14 +541,29 @@ def op_preview(s):
     scene.collection.objects.link(cam)
     scene.camera = cam
     cam.data.type = "ORTHO"
-    lo, hi = bbox(objs)
-    c, ext = (lo + hi) / 2, max(hi - lo)
-    cam.data.ortho_scale = ext * 1.5
-    cam.data.clip_end = ext * 10
     tile = np.zeros((size, size, 4), dtype=np.float32)
     tmp = Path(s["out"]).with_suffix(".view.png")
-    for i, d in enumerate(PREVIEW_VIEWS):
-        d = Vector(d).normalized()
+    for i, pn in enumerate(panels[:4]):
+        objs = [import_any(f) for f in pn["files"]]
+        lo, hi = bbox(objs)
+        c, ext = (lo + hi) / 2, max(hi - lo)
+        shade = pn.get("shade", "texture")
+        scene.display.shading.color_type = {"texture": "TEXTURE", "colour": "VERTEX"}.get(shade, "OBJECT")
+        extra = []
+        for o, f in zip(objs, pn["files"]):
+            o.color = (*CLAY, 1.0)
+            if shade == "colour":
+                face_colours(o, tints.get(f, (1, 1, 1)))
+            if shade == "wire":
+                w = bpy.data.objects.new(o.name + "_wire", o.data)
+                scene.collection.objects.link(w)
+                mod = w.modifiers.new("wire", "WIREFRAME")
+                mod.thickness = ext * 1.5 / half * 0.6  # ~half a pixel: dense meshes read as shading
+                w.color = (0.12, 0.22, 0.45, 1.0)
+                extra.append(w)
+        cam.data.ortho_scale = ext * 1.5
+        cam.data.clip_end = ext * 10
+        d = Vector(PREVIEW_VIEWS[pn.get("view", 3)]).normalized()
         cam.location = c + d * ext * 3
         cam.rotation_euler = d.to_track_quat("Z", "Y").to_euler()
         scene.render.filepath = str(tmp)
@@ -503,6 +573,8 @@ def op_preview(s):
         bpy.data.images.remove(img)
         row, col = 1 - i // 2, i % 2  # pixel rows start at the bottom
         tile[row * half:(row + 1) * half, col * half:(col + 1) * half] = px
+        for o in extra + objs:
+            bpy.data.objects.remove(o)
     tmp.unlink()
     out = bpy.data.images.new("preview", size, size, alpha=False)
     out.pixels.foreach_set(tile.ravel())
@@ -510,6 +582,38 @@ def op_preview(s):
     out.file_format = "PNG"
     out.save()
     return {"size": size}
+
+
+CLAY = (0.72, 0.72, 0.72)
+
+
+def face_colours(o, tint):
+    """Give every face one colour: its texture sampled at the face's UV centre, x tint."""
+    me = o.data
+    n = len(me.polygons)
+    img = next((nd.image for _, nd in image_nodes(o)), None)
+    cols = np.tile(np.array([*CLAY, 1.0], dtype=np.float32), (n, 1))
+    start, total = np.empty(n, dtype=np.int32), np.empty(n, dtype=np.int32)
+    me.polygons.foreach_get("loop_start", start)
+    me.polygons.foreach_get("loop_total", total)
+    if img is not None and me.uv_layers:
+        w, h = img.size
+        px = pixels(img).reshape(h, w, 4)
+        uv = np.empty(len(me.loops) * 2, dtype=np.float32)
+        me.uv_layers.active.data.foreach_get("uv", uv)
+        c = np.add.reduceat(uv.reshape(-1, 2), start) / total[:, None]
+        x = np.clip((c[:, 0] % 1.0) * w, 0, w - 1).astype(int)
+        y = np.clip((c[:, 1] % 1.0) * h, 0, h - 1).astype(int)
+        cols = px[y, x].copy()
+        rgb = cols[:, :3]  # texture pixels are sRGB; colour attributes are linear
+        cols[:, :3] = np.where(rgb <= 0.04045, rgb / 12.92, ((rgb + 0.055) / 1.055) ** 2.4)
+    cols[:, :3] *= np.array(tint, dtype=np.float32)
+    cols[:, 3] = 1.0
+    order = np.argsort(start)  # colour attributes live on corners, not faces: repeat per corner
+    per_loop = cols[np.repeat(order, total[order])]
+    attr = me.color_attributes.new("face_colour", "FLOAT_COLOR", "CORNER")
+    attr.data.foreach_set("color", per_loop.ravel())
+    me.color_attributes.active_color = attr
 
 
 def op_validate(s):
