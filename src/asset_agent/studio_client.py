@@ -23,11 +23,11 @@ def launcher() -> StdioServerParameters:
     if os.environ.get("ASSET_AGENT_STUDIO_MCP"):
         return StdioServerParameters(command=os.environ["ASSET_AGENT_STUDIO_MCP"])
     root = Path(os.environ.get("LOCALAPPDATA", "")) / "Roblox"
+    exes = sorted(root.glob("Versions/*/StudioMCP.exe"), key=lambda p: p.stat().st_mtime)
+    if exes:  # newest Studio's proxy (Roblox's mcp.bat does the same, noisily)
+        return StdioServerParameters(command=str(exes[-1]))
     if (root / "mcp.bat").exists():
         return StdioServerParameters(command="cmd.exe", args=["/c", str(root / "mcp.bat")])
-    exes = sorted(root.glob("Versions/*/StudioMCP.exe"), key=lambda p: p.stat().st_mtime)
-    if exes:
-        return StdioServerParameters(command=str(exes[-1]))
     raise StudioError("Roblox Studio MCP not found: open Studio > Assistant > ... > Manage MCP Servers > "
                       "Enable Studio as MCP server")
 
@@ -54,10 +54,15 @@ class Studio:
         self._sess_cm = ClientSession(read, write)
         self.s = await self._sess_cm.__aenter__()
         await asyncio.wait_for(self.s.initialize(), 30)
-        self.tools = {t.name: t.inputSchema or {} for t in (await self.s.list_tools()).tools}
-        if "list_roblox_studios" in self.tools:
-            self.studio_id = self._pick_studio(_text(await self.s.call_tool("list_roblox_studios", {})))
+        self.tools = {t.name: getattr(t, "input_schema", None) or getattr(t, "inputSchema", None) or {}
+                      for t in (await self.s.list_tools()).tools}
         return self
+
+    async def _studio(self):
+        """The connected Studio's id, looked up on first use."""
+        if self.studio_id is None and "list_roblox_studios" in self.tools:
+            self.studio_id = self._pick_studio(_text(await self.s.call_tool("list_roblox_studios", {})))
+        return self.studio_id
 
     async def __aexit__(self, *exc):
         await self._sess_cm.__aexit__(*exc)
@@ -82,16 +87,15 @@ class Studio:
 
     def _args(self, tool: str, **kw) -> dict:
         props = self.tools.get(tool, {}).get("properties", {})
-        out = {k: v for k, v in kw.items() if k in props}
-        if "studio_id" in props and self.studio_id is not None:
-            out["studio_id"] = self.studio_id
-        return out
+        return {k: v for k, v in kw.items() if k in props}
 
     async def call(self, tool: str, **kw):
         if tool not in self.tools:
             raise StudioError(f"Studio MCP has no {tool}; it has {', '.join(self.tools)}")
+        if "studio_id" in self.tools[tool].get("properties", {}) and "studio_id" not in kw:
+            kw["studio_id"] = await self._studio()
         res = await asyncio.wait_for(self.s.call_tool(tool, kw), self.timeout)
-        if getattr(res, "isError", False):
+        if getattr(res, "is_error", None) or getattr(res, "isError", None):
             raise StudioError(f"{tool}: {' '.join(_text(res).split())[:250]}")
         return res
 
@@ -107,7 +111,8 @@ class Studio:
     async def capture(self, out: Path, camera=None, look_at=None) -> Path:
         """Viewport screenshot to `out`. camera/look_at: [x,y,z] (argument names from the schema)."""
         props = self.tools.get("screen_capture", {}).get("properties", {})
-        args = self._args("screen_capture")
+        self._captures = getattr(self, "_captures", 0) + 1
+        args = self._args("screen_capture", capture_id=f"ScreenCapture_{self._captures}")
         for want, val in (("camera", camera), ("look", look_at)):
             if val is None:
                 continue
