@@ -82,7 +82,10 @@ def revise(name: str, layer: str, change: dict, part: str | None = None) -> str:
     size, rate} or null} | geometry {scale [x,y,z], offset, or a new shape: source
     (mesh path) | prompt | image, keep [scale, texture] (default both)} |
     topology {target_tris} | uv {angle, margin} | surface {mode, image, ao, tex_size} |
-    collision {max_tris} | export {scale_to (m), target roblox|godot|unity}."""
+    collision {max_tris} | export {scale_to (m), target roblox|godot|unity}.
+    A VFX preset or aura: layer "preset" {recolor [r,g,b] or null to undo} (keeps whites, new version)."""
+    if layer == "preset":
+        return vfx.revise_preset(name, **change)
     return _asset(name).revise(layer, part=part, **change)
 
 

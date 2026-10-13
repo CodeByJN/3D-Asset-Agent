@@ -95,3 +95,14 @@ def test_rate_scores_vfx_presets(home, tmp_path, monkeypatch):
     assert text(call("rate", name="card_glint", stars=6, note="ok")) == "vfx preset card_glint scored 6/10"
     assert vfx.presets()["card_glint"]["score"] == 6
     assert "card_glint [item,pickup,steal] 6/10" in text(call("library", query="glint"))
+
+
+def test_revise_recolors_a_preset(home, tmp_path, monkeypatch):
+    import shutil
+    from asset_agent import vfx
+    lib = tmp_path / "presets.json"
+    shutil.copy(vfx.library_path(), lib)
+    monkeypatch.setenv("ASSET_AGENT_VFX", str(lib))
+    line = text(call("revise", name="aura_black_card", layer="preset", change={"recolor": [0.2, 0.4, 1]}))
+    assert line.startswith("aura_black_card v") and "\n" not in line, line
+    assert vfx.raw_presets()["aura_black_card"]["recolor"] == [0.2, 0.4, 1]
