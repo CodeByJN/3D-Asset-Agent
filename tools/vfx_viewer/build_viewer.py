@@ -2,7 +2,11 @@
 import json, shutil, sys
 from pathlib import Path
 lib, texdir, out = Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3])
-presets = {k: v for k, v in json.loads(lib.read_text()).items() if not k.startswith("_")}
+sys.path.insert(0, str(Path(__file__).parents[2] / "src"))
+import os  # noqa: E402
+os.environ["ASSET_AGENT_VFX"] = str(lib.resolve())
+from asset_agent import vfx  # noqa: E402
+presets = vfx.presets()  # revisions (e.g. recolor) applied
 order = sorted(presets, key=lambda k: (0 if k.startswith("cc_") else 1 if k.startswith("rei_") else 2))
 presets = {k: presets[k] for k in order}
 mapping = json.loads((texdir / "map.json").read_text())

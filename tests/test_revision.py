@@ -74,7 +74,7 @@ def test_project_defaults_and_learning(tmp_path):
 
 
 def test_vfx_only_change_touches_nothing_else(fixtures, tmp_path, monkeypatch):  # noqa: F811
-    from asset_agent import roblox
+    from asset_agent import roblox, vfx
     from .test_pipeline import snapshot
 
     a = Asset.create(tmp_path / "torch", {"body": fixtures / "body.glb"}, max_tris=800, tex_size=128)
@@ -92,7 +92,10 @@ def test_vfx_only_change_touches_nothing_else(fixtures, tmp_path, monkeypatch): 
     assert snapshot(a) == files and a.cur("export")["hash"] == export_hash
     line, script = a.to_studio()
     assert line.startswith("asset 777 unchanged") and uploads == [None], line  # no re-upload
-    assert '"cs":[[0,0.0,0.3,1.0]' in script and "fire_main" in script and "flames=fire" in line
+    import colorsys
+    blue = vfx.resolve({"f": {"type": "fire", "color": [0, 0.3, 1]}})["f"]["color"]
+    assert abs(colorsys.rgb_to_hsv(*blue)[0] - colorsys.rgb_to_hsv(0, 0.3, 1)[0]) < 0.01, blue  # flames turned blue
+    assert "fire_main" in script and "flames=fire" in line
 
     a.rollback("vfx", 2)  # back to orange
     assert a.effects["flames"]["color"] == [1, 0.4, 0]
@@ -169,3 +172,23 @@ def test_aura_scaling_and_textures():
     assert vfx.resolve_textures(nodes, {})[1]["props"]["Image"] == ""
     script = roblox.lab_script("aura_black_card")
     assert "StandIn" in script and "HumanoidRootPart" in script and "animate(rig" in script
+
+
+def test_recolor_revision(tmp_path, monkeypatch):
+    import colorsys
+    import shutil
+    from asset_agent import vfx
+    lib = tmp_path / "presets.json"
+    shutil.copy(vfx.library_path(), lib)
+    monkeypatch.setenv("ASSET_AGENT_VFX", str(lib))
+    before = vfx.raw_presets()["aura_black_card"]
+    line = vfx.revise_preset("aura_black_card", "make it red", recolor=[1, 0.12, 0.1])
+    assert line.startswith("aura_black_card v") and "recolor" in line
+    raw, red = vfx.raw_presets()["aura_black_card"], vfx.presets()["aura_black_card"]
+    assert raw["nodes"] == before["nodes"] and raw["history"][-1]["v"] == before["version"]  # recipe untouched
+    crown = next(n for n in red["nodes"] if n.get("name") == "Crown")["props"]["Color"]["c3"]
+    assert colorsys.rgb_to_hsv(*crown)[0] < 0.03 or colorsys.rgb_to_hsv(*crown)[0] > 0.97, crown  # red now
+    title = red["nodes"][0]["children"][1]["children"][0]["props"]["Color"]["cs"]
+    assert title[0][1:] == [1, 1, 1]  # white highlight stays white
+    vfx.revise_preset("aura_black_card", "back to gold", recolor=None)
+    assert vfx.presets()["aura_black_card"]["nodes"] == before["nodes"]  # rolled back exactly

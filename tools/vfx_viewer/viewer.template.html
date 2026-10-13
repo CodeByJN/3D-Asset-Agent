@@ -360,9 +360,9 @@ function drawBoard(b, cv) {
       g.drawImage(tmp, x, y, w, h);
     } else if (c.class === "TextLabel") {
       const fam = (pr.FontFace && pr.FontFace.font) || (pr.Font && pr.Font.enum || "").split(".")[1];
-      const font = (pr.FontFace && pr.FontFace.italic ? "italic " : "") + (FONTS[fam] || "serif");
-      let size = h; g.font = `${size}px ${font}`;
-      while (size > 6 && g.measureText(pr.Text || "").width > w * 0.96) { size -= 2; g.font = `${size}px ${font}`; }
+      const style = pr.FontFace && pr.FontFace.italic ? "italic " : "", font = FONTS[fam] || "serif";  // CSS: style, then size, then family
+      let size = h; g.font = `${style}${size}px ${font}`;
+      while (size > 6 && g.measureText(pr.Text || "").width > w * 0.96) { size -= 2; g.font = `${style}${size}px ${font}`; }
       g.textAlign = "center"; g.textBaseline = "middle";
       const grad = (c.children || []).find(k => k.class === "UIGradient"), stroke = (c.children || []).find(k => k.class === "UIStroke");
       let fill = c3css((pr.TextColor3 && pr.TextColor3.c3) || [1, 1, 1]);

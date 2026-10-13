@@ -22208,7 +22208,27 @@
     "attach": "RightHand"
    }
   ],
-  "version": 2,
-  "history": []
+  "version": 3,
+  "history": [
+   {
+    "v": 2,
+    "score": null,
+    "note": "user: looks amazing, great vfx (gold v2)",
+    "recolor": null,
+    "change": {
+     "recolor": [
+      1,
+      0.12,
+      0.1
+     ]
+    },
+    "why": "user: make the aura red instead of yellow"
+   }
+  ],
+  "recolor": [
+   1,
+   0.12,
+   0.1
+  ]
  }
 }

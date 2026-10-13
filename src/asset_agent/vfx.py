@@ -16,6 +16,7 @@ Values are JSON with tags for Roblox types (see luau.py): {"c3": [r,g,b]}, {"cs"
 Bursts: emitters with attribute EmitCount (and EmitDelay seconds) fire Emit(EmitCount) when played.
 tween = {time, delay, style, props}: played on the node when the effect plays (rings, flashes).
 """
+import colorsys
 import copy
 import json
 import os
@@ -26,7 +27,7 @@ KEYS = {"type", "color", "size", "rate"}
 STUD_PROPS = {"Size", "Speed", "Acceleration", "Position", "Width0", "Width1", "CurveSize0", "CurveSize1",
               "TextureLength", "Range", "MinLength", "MaxLength", "Offset", "Scale", "StudsOffset"}
 GUI_CLASSES = {"ImageLabel", "TextLabel", "Frame", "UIStroke", "UIGradient", "SurfaceGui"}  # sizes are fractions/pixels
-COLOUR_PROPS = {"Color"}
+COLOUR_PROPS = {"Color", "ImageColor3", "TextColor3", "Color3"}
 
 
 def library_path() -> Path:
@@ -57,10 +58,44 @@ def resolve_textures(nodes, ids=None):
 
 
 def presets() -> dict:
+    """The library, with each preset's revisions applied (currently `recolor`: [r,g,b])."""
+    out = {}
+    for k, v in json.loads(library_path().read_text()).items():
+        if k.startswith("_"):
+            continue
+        if v.get("recolor"):
+            v = {**v, "nodes": transform(v["nodes"], rgb=v["recolor"])}
+        out[k] = v
+    return out
+
+
+def revise_preset(name: str, note: str = "", **change) -> str:
+    """Revise a preset without touching its recipe (recolor=[r,g,b] | None to undo). Each revision is a
+    new version; the previous version's settings and grade move into its history."""
+    p = library_path()
+    d = json.loads(p.read_text())
+    if name not in d:
+        raise KeyError(f"no preset {name!r}")
+    pr = d[name]
+    pr.setdefault("history", []).append({"v": pr.get("version", 1), "score": pr.get("score"), "note": pr.get("note"),
+                                         "recolor": pr.get("recolor"), "change": change, "why": note})
+    for k, v in change.items():
+        if v is None:
+            pr.pop(k, None)
+        else:
+            pr[k] = v
+    pr["version"] = pr.get("version", 1) + 1
+    pr.pop("score", None)
+    pr.pop("note", None)
+    p.write_text(json.dumps(d, indent=1) + "\n")
+    return f"{name} v{pr['version']}: " + ", ".join(f"{k}={v}" for k, v in change.items())
+
+
+def raw_presets() -> dict:
     return {k: v for k, v in json.loads(library_path().read_text()).items() if not k.startswith("_")}
 
 
-def save_preset(name: str, preset: dict):
+def save_preset(name: str, preset: dict):  # noqa: E302
     p = library_path()
     d = json.loads(p.read_text())
     d[name] = preset
@@ -109,17 +144,46 @@ def _scale_value(v, k):
     return v
 
 
-def recolour(v, rgb):
-    """Swap a colour's hue for rgb, keeping its brightness (per keypoint for sequences)."""
+def _hue_swap(c, hue, s_scale):
+    """One colour moved to `hue`: whites stay white, brightness kept, saturation scaled."""
+    h, s, v = colorsys.rgb_to_hsv(*c)
+    return [round(x, 3) for x in colorsys.hsv_to_rgb(hue, min(1.0, s * s_scale), v)]
+
+
+def recolour(v, rgb, s_scale=1.0):
+    """Swap a colour's hue for rgb's (per keypoint for sequences). Whites and greys stay neutral, light
+    and dark shades stay light and dark, and saturation is scaled so the palette lands as vivid as rgb."""
+    hue = colorsys.rgb_to_hsv(*rgb)[0]
     if "c3" in v:
-        return {"c3": [round(x * max(v["c3"]), 3) for x in rgb]}
-    top = max(max(p[1:4]) for p in v["cs"]) or 1.0
-    return {"cs": [[p[0], *[round(x * max(p[1:4]) / top, 3) for x in rgb]] for p in v["cs"]]}
+        return {"c3": _hue_swap(v["c3"], hue, s_scale)}
+    return {"cs": [[p[0], *_hue_swap(p[1:4], hue, s_scale)] for p in v["cs"]]}
+
+
+def _palette_saturation(nodes):
+    """Mean saturation of the tree's coloured (non-white) colours."""
+    sats = []
+
+    def walk(n):
+        for key, v in (n.get("props") or {}).items():
+            if key in COLOUR_PROPS and isinstance(v, dict):
+                for c in ([v["c3"]] if "c3" in v else [p[1:4] for p in v.get("cs", [])]):
+                    s = colorsys.rgb_to_hsv(*c)[1]
+                    if s > 0.2:
+                        sats.append(s)
+        for ch in n.get("children") or []:
+            walk(ch)
+    for n in nodes:
+        walk(n)
+    return sum(sats) / len(sats) if sats else 0
 
 
 def transform(nodes, k=1.0, rate=1.0, rgb=None):
     """Copy of a node tree with sizes x k, particle counts x rate, colours recoloured to rgb."""
     out = copy.deepcopy(nodes)
+    s_scale = 1.0
+    if rgb:
+        ref = _palette_saturation(nodes)
+        s_scale = min(3.0, max(0.3, colorsys.rgb_to_hsv(*rgb)[1] / ref)) if ref else 1.0
 
     def walk(n):
         props = n.get("props", {})
@@ -130,7 +194,7 @@ def transform(nodes, k=1.0, rate=1.0, rgb=None):
                     v = {"u2": [v["u2"][0] * k, v["u2"][1], v["u2"][2] * k, v["u2"][3]]}
                 props[key] = _scale_value(v, k)  # CFrame: only its position scales
             if rgb and key in COLOUR_PROPS and isinstance(props[key], dict):
-                props[key] = recolour(props[key], rgb)
+                props[key] = recolour(props[key], rgb, s_scale)
         if rate != 1 and "Rate" in props:
             props["Rate"] = props["Rate"] * rate
         attrs = n.get("attrs", {})
