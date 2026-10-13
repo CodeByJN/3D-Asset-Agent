@@ -213,6 +213,11 @@ def op_build(s):
     if not objs:
         raise ValueError("the build code made no meshes")
     groups, glow = {}, {}
+    rig = any(o.get("part") in kit.R15 for o in objs)
+    if rig:
+        loose = sorted({o.name for o in objs if o.get("part") not in kit.R15})
+        if loose:
+            raise ValueError(f"R15 character: tag every piece with body(part, ...); untagged: {', '.join(loose[:8])}")
     for o in objs:
         o.data.transform(o.matrix_world)
         o.matrix_world = Matrix()
@@ -224,7 +229,9 @@ def op_build(s):
     lo, hi = bbox(objs)
     out = Path(s["out_dir"])
     out.mkdir(parents=True, exist_ok=True)
-    parts = {}
+    if rig:
+        (out / "rig_mesh.json").write_text(json.dumps(rig_mesh(groups)))
+    parts, centres = {}, {}
     for part, group in groups.items():
         bpy.ops.object.select_all(action="DESELECT")
         for o in group:
@@ -234,11 +241,44 @@ def op_build(s):
             bpy.ops.object.join()
         o = bpy.context.view_layer.objects.active
         o.name = part
+        c_lo, c_hi = bbox([o])
+        centres[part] = [rnd(x) for x in (c_lo + c_hi) / 2]
         o.data.transform(Matrix.Scale(kit.STUD, 4))
         export_glb(out / f"{part}.glb", [o])
         parts[part] = tris(o.data)
-    return {"parts": parts, "glow": glow, "tris": sum(parts.values()),
+    return {"parts": parts, "glow": glow, "tris": sum(parts.values()), "centres": centres,
+            "rig": "r15" if rig else None, "missing": [p for p in kit.R15 if rig and p not in parts],
             "size_studs": [rnd(x) for x in (hi - lo)], "materials": len(bpy.data.materials)}
+
+
+def rig_mesh(groups) -> dict:
+    """{part: [{color, glow, c: centre, size, t: [x,y,z]*3 per triangle around c]}} per material, in rig
+    space (Roblox axes: x = -kit x, y = kit z, z = kit y; studs): Studio builds these as MeshParts."""
+    out = {}
+    for part, group in groups.items():
+        by_mat = {}
+        for o in group:
+            bm = bmesh.new()
+            bm.from_mesh(o.data)
+            bmesh.ops.triangulate(bm, faces=bm.faces[:])
+            for f in bm.faces:
+                m = o.data.materials[f.material_index] if o.data.materials else None
+                key = m.name if m else "_"
+                tri = [(-v.co.x, v.co.z, v.co.y) for v in f.verts]
+                by_mat.setdefault(key, {"color": [rnd(c) for c in (m.diffuse_color[:3] if m else (0.8, 0.8, 0.8))],
+                                        "glow": bool(m and m.get("glow")), "tris": []})["tris"].append(tri)
+            bm.free()
+        pieces = []
+        for d in by_mat.values():
+            pts = [p for t in d["tris"] for p in t]
+            lo = [min(p[i] for p in pts) for i in range(3)]
+            hi = [max(p[i] for p in pts) for i in range(3)]
+            c = [(a + b) / 2 for a, b in zip(lo, hi)]
+            flat = [round(p[i] - c[i], 3) for t in d["tris"] for p in t for i in range(3)]
+            pieces.append({"color": d["color"], "glow": d["glow"], "c": [round(x, 3) for x in c],
+                           "size": [round(max(b - a, 0.05), 3) for a, b in zip(lo, hi)], "t": flat})
+        out[part] = pieces
+    return out
 
 
 def op_measure(s):
@@ -558,6 +598,8 @@ def op_export(s):
     lo, hi = bbox(objs)
     s_fac = p["scale_to"] / max(hi - lo) if p.get("scale_to") else 1.0
     base = Vector(((lo.x + hi.x) / 2, (lo.y + hi.y) / 2, lo.z))
+    if p.get("keep_origin"):  # a rigged character: pieces stay where the rig's joints are
+        s_fac, base = 1.0, Vector((0, 0, 0))
     for o in objs:
         o.data.transform(Matrix.Scale(s_fac, 4) @ Matrix.Translation(-base))
         c_lo, c_hi = bbox([o])

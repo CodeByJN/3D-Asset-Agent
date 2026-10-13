@@ -257,3 +257,57 @@ def import_preset(serialized: dict, *, use: str, tags: list[str], source: dict) 
     if serialized.get("host"):  # the part it was built on: particles spawn through its volume
         out["host"] = serialized["host"]
     return out
+
+
+# ---------------------------------------------------------------- R15 characters
+
+def character_script(name: str, rev: str, mesh: dict) -> str:
+    """Luau: an R15 rig named `name` (in place of the old one) wearing the character. Each body part's
+    pieces (one per material, see worker.rig_mesh) are built in Studio as EditableMesh MeshParts (no
+    upload needed), coloured, and welded to that part with the default body hidden, so any R15
+    animation plays on it."""
+    return f"""local HS,AS=game:GetService('HttpService'),game:GetService('AssetService')
+local NAME,REV='{name}','{rev}'
+local D=HS:JSONDecode({luau.data(mesh)})
+local old=workspace:FindFirstChild(NAME) local pivot=old and old:GetPivot()
+if old then old:Destroy() end
+local rig=game:GetService('Players'):CreateHumanoidModelFromDescription(Instance.new('HumanoidDescription'),Enum.HumanoidRigType.R15)
+rig.Name=NAME rig:SetAttribute('AssetAgentRev',REV)
+local root=rig.HumanoidRootPart local up=rig.Humanoid.HipHeight+root.Size.Y/2
+if not pivot then
+ local cf=workspace.CurrentCamera.CFrame local at=cf.Position+cf.LookVector*15
+ local hit=workspace:Raycast(at+Vector3.new(0,100,0),Vector3.new(0,-1000,0))
+ local y=(hit and hit.Position.Y or 0)+up
+ pivot=CFrame.lookAt(Vector3.new(at.X,y,at.Z),Vector3.new(cf.Position.X,y,cf.Position.Z))
+end
+rig:PivotTo(pivot)
+for _,p in rig:GetDescendants() do
+ if p:IsA('BasePart') then p.Transparency=1 end
+ if p:IsA('Decal') then p:Destroy() end
+end
+local base=root.CFrame*CFrame.new(0,-up,0)
+local skin=Instance.new('Model') skin.Name='Skin' skin.Parent=rig
+local n,tris=0,0
+for part,pieces in D do
+ for i,pc in pieces do
+  local em=AS:CreateEditableMesh() local t=pc.t
+  for k=1,#t,9 do
+   local a=em:AddVertex(Vector3.new(t[k],t[k+1],t[k+2]))
+   local b=em:AddVertex(Vector3.new(t[k+3],t[k+4],t[k+5]))
+   local c=em:AddVertex(Vector3.new(t[k+6],t[k+7],t[k+8]))
+   em:AddTriangle(a,b,c) tris+=1
+  end
+  local mp=AS:CreateMeshPartAsync(Content.fromObject(em))
+  mp.Name=part..'_'..i mp.Size=Vector3.new(pc.size[1],pc.size[2],pc.size[3])
+  mp.CFrame=base*CFrame.new(pc.c[1],pc.c[2],pc.c[3])
+  mp.Color=Color3.new(pc.color[1],pc.color[2],pc.color[3])
+  mp.Material=pc.glow and Enum.Material.Neon or Enum.Material.SmoothPlastic
+  mp.Anchored=false mp.CanCollide=false mp.Massless=true mp.CanQuery=false
+  mp.Parent=skin
+  local w=Instance.new('WeldConstraint') w.Part0=rig[part] w.Part1=mp w.Parent=mp
+  n+=1
+ end
+end
+root.Anchored=true
+rig.Parent=workspace
+return 'built '..NAME..': R15 rig wearing '..n..' mesh parts, '..tris..' tris'"""

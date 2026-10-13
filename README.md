@@ -40,7 +40,8 @@ a.revise("topology", part="main", target_tris=2000)
 `.mcp.json` registers `asset-agent` (run with `uv run asset-agent-mcp`). It has 14 tools, about 1.6k tokens of definitions:
 - `build`: you model the asset in Python with a small kit (`code="help"` lists it), and the harness turns it into a
   validated, textured Roblox model in about 10 s. It's the cleanest and fastest path for stylised props, creatures and
-  weapons. Write a spec first (shape, details, palette, pose, size, what to take from references), check the 4 views
+  weapons. R15 characters too: tag each piece with `body(part, ...)` around the rig's joints (`R15` in the kit) and
+  `studio(name)` builds it in Studio on a real R15 rig (no upload), so any R15 animation plays on it. Write a spec first (shape, details, palette, pose, size, what to take from references), check the 4 views
   it returns, and rebuild before showing. `mat(..., glow=True)` parts become Neon in Roblox.
 - `make_asset` (text/image to 3D generators, for organic shapes), `import_mesh`
 - `revise`, `rollback` (no version: the history), `validate`, `preview`, `library`
@@ -49,7 +50,8 @@ a.revise("topology", part="main", target_tris=2000)
   one-shots, and IK targets for hands and feet). Overlap makes the body move hips-first, head and hands last. A revision is a call
   with only what changes, e.g. `params={"speed": 1.3, "arms": 1.3}`. Feet are planted with leg IK so they never
   sink or slide into the floor. Returns a filmstrip (side + three-quarter view) and writes `export/<name>.rbxmx`
-  (Studio: Insert from File); `studio(name)` builds it in the place and plays it on a test dummy, live in Edit mode.
+  (Studio: Insert from File); `studio(name)` builds it in the place and plays it on a test dummy, live in Edit mode,
+  or on one of your characters with `studio(name, on=character)`.
 - `plan` (a game's style guide; also writes `HANDOFF.md` so a new chat can carry on), `rate` (stars plus what you
   liked and didn't)
 - `studio`, `vfx_lab`, `vfx_import` (Roblox Studio)

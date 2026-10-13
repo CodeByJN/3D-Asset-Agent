@@ -222,14 +222,20 @@ def rate(name: str, stars: int, note: str = "") -> str:
 
 
 @server.tool(structured_output=False)
-def studio(name: str) -> str:
+def studio(name: str, on: str | None = None) -> str:
     """Upload the asset to your Roblox account (only if its model changed) and put it in the open
-    Studio place, replacing the old copy, with its effects. Animations play on a test dummy."""
+    Studio place, replacing the old copy, with its effects. R15 characters become a rigged character.
+    Animations play on a test dummy, or on character `on`."""
     try:
         if anim.Animation.exists(home() / name):
             d = anim.Animation(home() / name).resolved()
-            return studio_client.run(lambda s: s.luau(anim.studio_script(name, d)))
-        line, script = _asset(name).to_studio()
+            return studio_client.run(lambda s: s.luau(anim.studio_script(name, d, rig=on)))
+        a = _asset(name)
+        if a.m.get("rig") == "r15":
+            mesh = json.loads((a.root / Path(a.m["build"]["code"]).parent / "rig_mesh.json").read_text())
+            rev = f"build v{a.m['build']['v']}"
+            return studio_client.run(lambda s: s.luau(roblox.character_script(name, rev, mesh)))
+        line, script = a.to_studio()
         try:
             return f"{line} | studio: {studio_client.run(lambda s: s.luau(script))}"
         except studio_client.StudioError as e:

@@ -40,3 +40,32 @@ def test_build_errors_point_at_the_line(tmp_path):
 
 def test_kit_help_readable_without_blender():
     assert "blade(" in kit_help() and "studs" in kit_help()
+
+
+DOLL = """
+skin, cloth = mat("skin", (1, 0.8, 0.6)), mat("cloth", (0.2, 0.3, 0.9))
+for n, r in R15.items():
+    body(n, box(r["size"], at=r["centre"], m=skin if "Arm" in n or n == "Head" else cloth))
+body("Head", cone(0.8, 0, 1, at=(0, 0, R15["Head"]["centre"][2] + 0.6), m=cloth))
+"""
+
+
+def test_r15_character(tmp_path):
+    import json
+    line, _ = build_model(tmp_path / "doll", DOLL)
+    a = Asset(tmp_path / "doll")
+    assert a.m["rig"] == "r15" and len(a.m["parts"]) == 15 and a.m["budget_name"] == "roblox_hero", line
+    mesh = json.loads((tmp_path / "doll" / "build" / "v1" / "rig_mesh.json").read_text())
+    head = mesh["Head"]
+    assert {tuple(p["color"]) for p in head} == {(1, 0.8, 0.6), (0.2, 0.3, 0.9)}  # one piece per material
+    skin = next(p for p in head if p["color"] == [1, 0.8, 0.6])
+    assert skin["c"] == pytest.approx([0, 4.864, 0], abs=0.01)  # the rig's head centre (Roblox axes)
+    arm = mesh["RightUpperArm"][0]
+    assert arm["c"][0] == pytest.approx(1.472, abs=0.01)  # character's right is Roblox +X
+    script = roblox.character_script("doll", "build v1", mesh)
+    assert "CreateEditableMesh" in script and "WeldConstraint" in script
+
+    with pytest.raises(BlenderError, match="untagged"):
+        build_model(tmp_path / "loose", DOLL + "\nbox((1, 1, 1))\n")
+    with pytest.raises(ValueError, match="missing RightFoot"):
+        build_model(tmp_path / "footless", DOLL.replace('for n, r in R15.items():', 'for n, r in [x for x in R15.items() if x[0] != "RightFoot"]:'))

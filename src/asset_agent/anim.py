@@ -632,7 +632,7 @@ def rbxmx(name: str, d: dict, frames=None) -> str:
             f'<token name="Priority">{PRIORITY.get(d["priority"], 1)}</token></Properties>{kfs}</Item></roblox>')
 
 
-def studio_script(name: str, d: dict, frames=None) -> str:
+def studio_script(name: str, d: dict, frames=None, rig: str | None = None) -> str:
     """Luau that builds the KeyframeSequence in ServerStorage.AssetAgentAnimations and plays it on a test
     dummy (workspace.AnimTest_<name>), live in Edit mode and again in Play mode."""
     frames = frames or samples(d)
@@ -661,7 +661,8 @@ for _,f in F do
  kf.Parent=kfs
 end
 kfs.Parent=folder
-local dummy=workspace:FindFirstChild('AnimTest_'..NAME)
+local dummy=workspace:FindFirstChild({json.dumps(rig) if rig else "'AnimTest_'..NAME"})
+if {'true' if rig else 'false'} and not (dummy and dummy:FindFirstChildOfClass('Humanoid')) then error('no character {rig} with a Humanoid in workspace') end
 if not dummy then
  local hd=Instance.new('HumanoidDescription') local skin=Color3.fromRGB(245,205,150)
  hd.HeadColor,hd.LeftArmColor,hd.RightArmColor,hd.TorsoColor=skin,skin,skin,Color3.fromRGB(60,125,225)

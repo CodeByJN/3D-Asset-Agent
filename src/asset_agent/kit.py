@@ -9,6 +9,13 @@ Roblox. Shading is flat (low-poly look) unless smooth=True.
   rock(r, at, m, detail, rough, seed)   lathe(profile, at, rot, m, n)        tube(path, r, m, n)
   blade(path, width, m, fold, two_sided) extrude(shape, depth, at, rot, m)   mirror(obj), copies(obj, count)
   jitter(obj, amount, seed)             STUD (metres per stud)
+
+R15 characters (Roblox's standard rig, so every R15 animation plays on them): tag every piece with
+body(part, *objs). R15[part] = {pivot, centre, size} of the default rig in these coordinates; pivot is
+where the part bends. Model each piece around its own joints: a LeftUpperArm sleeve runs from its
+pivot (shoulder) to the LeftLowerArm pivot (elbow). Feet on z=0, faces -Y, ~5.5 studs tall; the
+character's right side is -X. Parts: Head UpperTorso LowerTorso and Left/Right UpperArm LowerArm
+Hand UpperLeg LowerLeg Foot. Hair, hats and faces go on Head; packs and capes on UpperTorso.
 """
 import math
 import random
@@ -18,7 +25,7 @@ import bpy
 from mathutils import Euler, Matrix, Vector
 
 __all__ = ["mat", "box", "cone", "ball", "rock", "lathe", "tube", "blade", "extrude", "mirror", "copies",
-           "jitter", "STUD", "math", "Vector"]
+           "jitter", "body", "R15", "STUD", "math", "Vector"]
 STUD = 0.28  # metres; Roblox imports metres and shows studs
 
 
@@ -253,6 +260,26 @@ def copies(obj, count, axis="Z", center=(0, 0, 0), jitter_deg=0.0, seed=1):
         o.data.transform(Matrix.Translation(c) @ rmat @ Matrix.Translation(-c))
         out.append(o)
     return out
+
+
+def _r15():
+    """The default R15 rig (anim.RIG, Roblox axes) in kit coordinates: x = -X, y = Z, z = Y."""
+    import anim
+    k = lambda v: (-v[0], v[2], v[1])  # noqa: E731
+    return {n: {"pivot": k(pv), "centre": k(c), "size": (s[0], s[2], s[1])} for n, (_, pv, c, s) in anim.RIG.items()}
+
+
+R15 = _r15()
+
+
+def body(part, *objs):
+    """Tag pieces as one R15 body part (see R15); a character needs all 15. Returns the pieces."""
+    if part not in R15:
+        raise ValueError(f"not an R15 part: {part}; parts: {', '.join(R15)}")
+    for o in objs:
+        for x in (o if isinstance(o, (list, tuple)) else [o]):
+            x["part"] = part
+    return objs
 
 
 def jitter(obj, amount=0.05, seed=1):

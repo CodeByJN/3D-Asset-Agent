@@ -77,6 +77,8 @@ def build_model(root, code: str, spec: dict | None = None, budget: str | None = 
     (work / "build.py").write_text(code, encoding="utf-8")
     t0 = time.time()
     res = run_steps([{"op": "build", "code": code, "out_dir": str(work.resolve())}])[0]["stats"]
+    if res.get("missing"):
+        raise ValueError(f"R15 character is missing {', '.join(res['missing'])}: give every body part a piece")
     sources = {part: work / f"{part}.glb" for part in res["parts"]}
     if (root / "manifest.json").exists():
         a = Asset(root)
@@ -91,14 +93,18 @@ def build_model(root, code: str, spec: dict | None = None, budget: str | None = 
             a.drop_part(part)
     else:
         d = project.defaults(root.name, None) if project else {}
-        a = Asset.create(root, sources, budget or d.get("budget") or "roblox_prop", surface_mode="auto")
+        rig_budget = "roblox_hero" if res.get("rig") else None  # 15 parts: a character's budget
+        a = Asset.create(root, sources, budget or rig_budget or d.get("budget") or "roblox_prop", surface_mode="auto")
         saved = None
     fin = a.finish
     for part, rgb in res["glow"].items():  # emissive parts: one flat colour, Neon in Roblox
         a.m["params"]["surface"][part].update(mode="flat", ao=0, tex_size=64)
         fin.setdefault("parts", {}).setdefault(part, {})["tint"] = rgb
     (a.root / "finish.json").write_text(json.dumps(fin, indent=2))
-    a.m["build"] = {"v": n, "code": f"build/v{n}/build.py", "size_studs": res["size_studs"]}
+    a.m["build"] = {"v": n, "code": f"build/v{n}/build.py", "size_studs": res["size_studs"], "centres": res["centres"]}
+    if res.get("rig"):
+        a.m["rig"] = res["rig"]
+        a.m["params"]["export"]["keep_origin"] = True
     if spec:
         a.m["spec"] = spec
     if project:

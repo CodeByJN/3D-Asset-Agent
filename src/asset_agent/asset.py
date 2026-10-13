@@ -471,9 +471,9 @@ class Asset:
         run_steps([step])
         return Path(step["out"])
 
-    def to_studio(self) -> tuple[str, str]:
-        """Upload the export FBX to Roblox if it changed since the last upload, then write the Studio
-        script that places it and adds its effects. Returns (one-line status, Luau script)."""
+    def upload(self) -> tuple[str, str, str]:
+        """Upload the export FBX to Roblox if it changed since the last upload.
+        Returns (one-line status, asset id, revision)."""
         from . import roblox
         name = self.m["name"]
         fbx = self.root / "export" / f"{name}.fbx"
@@ -489,6 +489,15 @@ class Asset:
             rb["rev"] = rev
             self._save()
             status = f"asset {rb['asset_id']} {'created' if new else 'new version uploaded'}"
+        return status, rb["asset_id"], rev
+
+    def to_studio(self) -> tuple[str, str]:
+        """Upload if changed, then write the Studio script that places the asset and adds its effects.
+        Returns (one-line status, Luau script)."""
+        from . import roblox
+        name = self.m["name"]
+        status, _, rev = self.upload()
+        rb = self.m["roblox"]
         glow = {p: self.finish["parts"].get(p, {}).get("tint", [1, 1, 1]) for p in self.m["parts"] if p.startswith("glow")}
         script = roblox.studio_script(name, rb["asset_id"], rev, self.effects, glow)
         (self.root / "studio.luau").write_text(script)
