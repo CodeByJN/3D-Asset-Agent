@@ -169,7 +169,163 @@ def cash():
     img.save(OUT / "cash.png", optimize=True)
 
 
-ALL = [glow, glow_hot, rays, ring, shockwave, sparkle, smoke, slash, bolts, coin, cash]
+# ---------------------------------------------------------------- aura ornaments (drawn at 2x, downsampled)
+
+def _canvas(w, h, k=2):
+    img = Image.new("L", (w * k, h * k), 0)
+    return img, ImageDraw.Draw(img), k
+
+
+def _finish(img, w, h, name, glow=0.0, blur=8):
+    """Downsample a 2x line drawing; optionally add a soft glow around the strokes."""
+    a = np.asarray(img.resize((w, h), Image.LANCZOS), np.float32) / 255
+    if glow:
+        g = np.asarray(img.resize((w, h), Image.LANCZOS).filter(ImageFilter.GaussianBlur(blur)), np.float32) / 255
+        a = np.clip(a + g * glow, 0, 1)
+    _save(a, name)
+
+
+def _diamond(d, cx, cy, r, fill=255, width=0):
+    pts = [(cx, cy - r), (cx + r * 0.62, cy), (cx, cy + r), (cx - r * 0.62, cy)]
+    if width:
+        d.polygon(pts, outline=fill, width=width)
+    else:
+        d.polygon(pts, fill=fill)
+
+
+def crest():
+    """Title-plate backdrop: a gothic pointed arch with a quatrefoil, flanked by long tapered rule lines."""
+    W, H = 1024, 512
+    img, d, k = _canvas(W, H)
+    cx, top, base = W * k / 2, 40 * k, 470 * k
+    for inset, width in ((0, 9), (26, 5)):           # outer and inner pointed arch
+        aw, ah = (120 - inset) * k, (base - top - inset * 2 * k)
+        pts = []
+        for i in range(41):                            # left side: straight then curving to the point
+            t = i / 40
+            x = cx - aw + aw * (t ** 2.2)
+            y = base - inset * k - ah * t
+            pts.append((x, y))
+        pts += [(2 * cx - x, y) for x, y in reversed(pts)]
+        d.line(pts, fill=255, width=width * k // 2, joint="curve")
+    d.line([(cx, top + 70 * k), (cx, base - 30 * k)], fill=255, width=4 * k)      # spine
+    for r, cy in ((34, 255), (16, 255)):
+        _diamond(d, cx, cy * k, r * k, width=5 * k if r > 20 else 0)
+    for side in (-1, 1):                               # rule lines: thick near the arch, tapering out
+        for dy, th in ((-14, 7), (14, 3)):
+            y = H * k / 2 + dy * k + 40 * k
+            x0, x1 = cx + side * 130 * k, cx + side * (W * k / 2 - 30 * k)
+            steps = 30
+            for i in range(steps):
+                xa = x0 + (x1 - x0) * i / steps
+                xb = x0 + (x1 - x0) * (i + 1) / steps
+                d.line([(xa, y), (xb, y)], fill=255, width=max(1, int(th * k * (1 - i / steps) + 1)))
+        _diamond(d, cx + side * (W * k / 2 - 18 * k), H * k / 2 + 40 * k, 12 * k)
+    _finish(img, W, H, "crest", glow=0.9)
+
+
+def crown_ring():
+    """A crown of ribbed arrowhead spikes radiating from a ring, as seen from below (lay it flat overhead)."""
+    S = 1024
+    img, d, k = _canvas(S, S)
+    c, n = S * k / 2, 18
+    d.ellipse((c - 300 * k, c - 300 * k, c + 300 * k, c + 300 * k), outline=255, width=10 * k)
+    d.ellipse((c - 270 * k, c - 270 * k, c + 270 * k, c + 270 * k), outline=255, width=3 * k)
+    for i in range(n):
+        a = 2 * math.pi * i / n
+        ux, uy = math.cos(a), math.sin(a)
+        px, py = -uy, ux
+        base_r, tip_r, half = 300 * k, 500 * k, 9 * k
+        tip = (c + ux * tip_r, c + uy * tip_r)
+        bl = (c + ux * base_r + px * half, c + uy * base_r + py * half)
+        br = (c + ux * base_r - px * half, c + uy * base_r - py * half)
+        barb = 0.62  # arrowhead: barbs flare out, then notch back in to the shaft
+        bx, by = c + ux * (base_r + (tip_r - base_r) * barb), c + uy * (base_r + (tip_r - base_r) * barb)
+        nx, ny = c + ux * (base_r + (tip_r - base_r) * (barb + 0.06)), c + uy * (base_r + (tip_r - base_r) * (barb + 0.06))
+        d.polygon([bl, (bx + px * half, by + py * half), (bx + px * half * 4.2, by + py * half * 4.2),
+                   (nx + px * half * 1.2, ny + py * half * 1.2), tip, (nx - px * half * 1.2, ny - py * half * 1.2),
+                   (bx - px * half * 4.2, by - py * half * 4.2), (bx - px * half, by - py * half), br], fill=215)
+        d.line([(c + ux * base_r, c + uy * base_r), tip], fill=255, width=4 * k)   # rib
+    _finish(img, S, S, "crown_ring", glow=0.7)
+
+
+def card_sigil(seed=4):
+    """A big rotating sigil: dial ring with ticks, circuit traces, a card chip in the middle, diamonds."""
+    S = 1024
+    img, d, k = _canvas(S, S)
+    c = S * k / 2
+    rng = np.random.default_rng(seed)
+    for r, w in ((490, 6), (468, 2), (330, 5), (300, 2), (150, 4)):
+        d.ellipse((c - r * k, c - r * k, c + r * k, c + r * k), outline=255, width=w * k)
+    for i in range(120):                               # dial ticks
+        a = 2 * math.pi * i / 120
+        r0 = 470 if i % 10 else 440
+        d.line([(c + math.cos(a) * r0 * k, c + math.sin(a) * r0 * k), (c + math.cos(a) * 488 * k, c + math.sin(a) * 488 * k)],
+               fill=255, width=(4 if i % 10 == 0 else 2) * k)
+    for i in range(12):                                # diamonds on the outer band
+        a = 2 * math.pi * i / 12
+        _diamond(d, c + math.cos(a) * 400 * k, c + math.sin(a) * 400 * k, 18 * k)
+    for i in range(24):                                # circuit traces between the rings
+        a = 2 * math.pi * i / 24 + rng.uniform(-0.05, 0.05)
+        r1, r2 = 155, rng.uniform(220, 300)
+        x1, y1 = c + math.cos(a) * r1 * k, c + math.sin(a) * r1 * k
+        x2, y2 = c + math.cos(a) * r2 * k, c + math.sin(a) * r2 * k
+        bend = a + rng.choice([-0.12, 0.12])
+        x3, y3 = c + math.cos(bend) * (r2 + 20) * k, c + math.sin(bend) * (r2 + 20) * k
+        d.line([(x1, y1), (x2, y2), (x3, y3)], fill=255, width=3 * k)
+        d.ellipse((x3 - 7 * k, y3 - 7 * k, x3 + 7 * k, y3 + 7 * k), fill=255)
+    w, h = 120 * k, 92 * k                             # card chip
+    d.rounded_rectangle((c - w / 2, c - h / 2, c + w / 2, c + h / 2), 16 * k, outline=255, width=6 * k)
+    for f in (-1 / 3, 1 / 3):
+        d.line([(c - w / 2, c + h * f), (c + w / 2, c + h * f)], fill=255, width=4 * k)
+    d.line([(c, c - h / 2), (c, c + h / 2)], fill=255, width=4 * k)
+    _finish(img, S, S, "card_sigil", glow=0.6, blur=6)
+
+
+def rune_ring(seed=9):
+    """A thin band of angular glyphs (made up, not any real script) for a counter-rotating ring."""
+    S = 1024
+    img, d, k = _canvas(S, S)
+    c = S * k / 2
+    rng = np.random.default_rng(seed)
+    for r in (500, 430):
+        d.ellipse((c - r * k, c - r * k, c + r * k, c + r * k), outline=255, width=3 * k)
+    n = 36
+    for i in range(n):
+        a = 2 * math.pi * i / n
+        ux, uy, px, py = math.cos(a), math.sin(a), -math.sin(a), math.cos(a)
+        g = lambda u, v: (c + ux * (465 + u) * k + px * v * k, c + uy * (465 + u) * k + py * v * k)
+        strokes = [[(-22, -10), (22, -10)], [(-22, 10), (22, 10)], [(-22, 0), (22, 0)], [(-22, -10), (22, 10)],
+                   [(-22, 10), (22, -10)], [(0, -12), (0, 12)], [(-22, -12), (-22, 12)], [(22, -12), (22, 12)]]
+        for j in rng.choice(len(strokes), size=3, replace=False):
+            d.line([g(*strokes[j][0]), g(*strokes[j][1])], fill=255, width=4 * k)
+    _finish(img, S, S, "rune_ring", glow=0.5, blur=5)
+
+
+def card():
+    """The black card: rounded black card, gold border, chip and star (coloured: use Color white)."""
+    S, w, h = N, 460, 290
+    img = Image.new("RGBA", (S, S), (0, 0, 0, 0))
+    c = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    d = ImageDraw.Draw(c)
+    d.rounded_rectangle((0, 0, w - 1, h - 1), 28, fill=(14, 14, 18, 255), outline=(232, 190, 90, 255), width=7)
+    d.rounded_rectangle((44, 92, 124, 152), 10, fill=(232, 190, 90, 255))
+    for x in (70, 98):
+        d.line([(x, 92), (x, 152)], fill=(150, 110, 40, 255), width=3)
+    d.line([(44, 122), (124, 122)], fill=(150, 110, 40, 255), width=3)
+    sx, sy, r = w - 90, 92, 46
+    pts = [(sx + math.cos(-math.pi / 2 + i * math.pi / 5) * (r if i % 2 == 0 else r * 0.42),
+            sy + math.sin(-math.pi / 2 + i * math.pi / 5) * (r if i % 2 == 0 else r * 0.42)) for i in range(10)]
+    d.polygon(pts, fill=(245, 205, 105, 255))
+    for i in range(4):
+        d.rounded_rectangle((44 + i * 92, 200, 44 + i * 92 + 70, 216), 4, fill=(90, 90, 100, 255))
+    img.alpha_composite(c, ((S - w) // 2, (S - h) // 2))
+    OUT.mkdir(parents=True, exist_ok=True)
+    img.save(OUT / "card.png", optimize=True)
+
+
+ALL = [glow, glow_hot, rays, ring, shockwave, sparkle, smoke, slash, bolts, coin, cash,
+       crest, crown_ring, card_sigil, rune_ring, card]
 
 if __name__ == "__main__":
     for fn in ALL:

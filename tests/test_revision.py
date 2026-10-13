@@ -151,3 +151,21 @@ def test_video_from_frames(fixtures, tmp_path):  # noqa: F811
     res = run_steps([{"op": "video", "frames": frames, "fps": 4, "width": 128, "out": str(out)}])
     assert res[0]["stats"] == {"frames": 4, "fps": 4}
     assert out.stat().st_size > 1000 and out.read_bytes()[4:8] == b"ftyp"  # an MP4 container
+
+
+def test_aura_scaling_and_textures():
+    from asset_agent import roblox, vfx
+    nodes = [{"class": "BillboardGui", "name": "T", "props": {"Size": {"u2": [10, 0, 5, 0]}, "StudsOffset": {"v3": [0, 4, 0]}},
+              "children": [{"class": "TextLabel", "name": "N", "props": {"Size": {"u2": [1, 0, 0.3, 0]}}}]},
+             {"class": "Plane", "name": "P", "props": {"Image": "texture://glow", "Size": {"v2": [6, 6]}},
+              "anim": {"orbit": {"radius": 3, "y": 1, "speed": 40}}}]
+    out = vfx.transform(nodes, k=2)
+    board, plane = out
+    assert board["props"]["Size"]["u2"] == [20, 0, 10, 0] and board["props"]["StudsOffset"]["v3"] == [0, 8, 0]
+    assert board["children"][0]["props"]["Size"]["u2"] == [1, 0, 0.3, 0]  # GUI fractions don't scale
+    assert plane["props"]["Size"]["v2"] == [12, 12] and plane["anim"]["orbit"] == {"radius": 6, "y": 2, "speed": 40}
+    res = vfx.resolve_textures(nodes, {"glow": "rbxassetid://5"})
+    assert res[1]["props"]["Image"] == "rbxassetid://5" and nodes[1]["props"]["Image"] == "texture://glow"
+    assert vfx.resolve_textures(nodes, {})[1]["props"]["Image"] == ""
+    script = roblox.lab_script("aura_black_card")
+    assert "StandIn" in script and "HumanoidRootPart" in script and "animate(rig" in script

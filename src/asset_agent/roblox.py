@@ -86,7 +86,7 @@ def upload(fbx: Path, name: str, asset_id: str | None = None, timeout: float = 1
 
 def studio_script(name: str, asset_id: str, revision: str, effects: dict) -> str:
     """Compact Luau for Studio's execute_luau. Returns a one-line status string when run."""
-    fx = {n: {"nodes": e["nodes"], "mode": e["mode"]} for n, e in vfx.resolve(effects).items()}
+    fx = {n: {"nodes": vfx.resolve_textures(e["nodes"]), "mode": e["mode"]} for n, e in vfx.resolve(effects).items()}
     return luau.BUILD + f"""local NAME,ID,REV,FX='{name}',{asset_id},'{revision}',HS:JSONDecode({luau.data(fx)})
 local m=workspace:FindFirstChild(NAME) local loaded=false
 if not(m and m:GetAttribute('AssetAgentRev')==REV) then
@@ -148,7 +148,10 @@ def lab_script(preset: str, effect: dict | None = None, stand_in: str | None = N
     size = [x * k for x in host] if host and stand_in is None else STAND_INS[stand_in]
     hidden = 1 if host and stand_in is None else 0
     fx = vfx.resolve({preset: {"type": preset, **(effect or {})}})[preset]
+    fx["nodes"] = vfx.resolve_textures(fx["nodes"])
     x, y, z = LAB_AT
+    if p.get("rig") == "character":
+        return luau.BUILD + RIG_LAB.format(x=x, y=y, z=z, preset=preset, nodes=luau.data(fx["nodes"]))
     return luau.BUILD + f"""local AT,SZ,FX=Vector3.new({x},{y},{z}),Vector3.new({size[0]:g},{size[1]:g},{size[2]:g}),HS:JSONDecode({luau.data(fx["nodes"])})
 local lab=workspace:FindFirstChild('AssetAgentLab') if lab then lab:Destroy() end
 lab=Instance.new('Model') lab.Name='AssetAgentLab'
@@ -159,11 +162,40 @@ h.CFrame=CFrame.new(AT+Vector3.new(0,math.max(SZ.Y/2,1),0)) h.Color=Color3.fromR
 local e=math.max(SZ.X,SZ.Y,SZ.Z,5,{min(reach(fx["nodes"]) * 0.5, 80):.3g})  -- particles fade well before full reach
 floor.Size=Vector3.new(math.max(80,e*8),1,math.max(80,e*8))
 local dir=Vector3.new(1.6,0.7,2.6).Unit
-local look=h.Position+Vector3.new(0,e*0.25,0) local cam=look+dir*e*2.4
+local look=h.Position+Vector3.new(0,e*0.35,0) local cam=look+dir*e*3.5  -- far enough to see the whole effect and its surroundings
 local wall=Instance.new('Part') wall.Name='Backdrop' wall.Anchored=true wall.CanCollide=false wall.Size=Vector3.new(e*8,e*5,1)
 wall.CFrame=CFrame.lookAt(look-dir*e*3+Vector3.new(0,e*1.5,0),cam+Vector3.new(0,e*1.5,0)) wall.Color=Color3.fromRGB(14,16,24) wall.Material=Enum.Material.SmoothPlastic wall.Parent=lab
 lab.Parent=workspace
 play(build(h,'{preset}',FX))
+return string.format('%g,%g,%g|%g,%g,%g',cam.X,cam.Y,cam.Z,look.X,look.Y,look.Z)"""
+
+
+# A blocky R15 stand-in (feet on the floor, facing -Z) for auras: layers attach to its parts by name.
+RIG = [("HumanoidRootPart", (0, 3, 0), (2, 2, 1)), ("LowerTorso", (0, 2.6, 0), (2, 0.6, 1)),
+       ("UpperTorso", (0, 3.5, 0), (2, 1.4, 1)), ("Head", (0, 4.8, 0), (1.2, 1.2, 1.2)),
+       ("LeftUpperArm", (-1.5, 3.55, 0), (1, 1.2, 1)), ("RightUpperArm", (1.5, 3.55, 0), (1, 1.2, 1)),
+       ("LeftLowerArm", (-1.5, 2.6, 0), (1, 0.8, 1)), ("RightLowerArm", (1.5, 2.6, 0), (1, 0.8, 1)),
+       ("LeftHand", (-1.5, 2.05, 0), (1, 0.3, 1)), ("RightHand", (1.5, 2.05, 0), (1, 0.3, 1)),
+       ("LeftUpperLeg", (-0.5, 1.75, 0), (1, 1.1, 1)), ("RightUpperLeg", (0.5, 1.75, 0), (1, 1.1, 1)),
+       ("LeftLowerLeg", (-0.5, 0.8, 0), (1, 0.8, 1)), ("RightLowerLeg", (0.5, 0.8, 0), (1, 0.8, 1)),
+       ("LeftFoot", (-0.5, 0.2, 0), (1, 0.4, 1)), ("RightFoot", (0.5, 0.2, 0), (1, 0.4, 1))]
+_RIG_LUA = "{{" + ",".join("{{'%s',Vector3.new(%g,%g,%g),Vector3.new(%g,%g,%g)}}" % (n, *p, *sz) for n, p, sz in RIG) + "}}"  # braces doubled for str.format
+RIG_LAB = """local AT=Vector3.new({x},{y},{z})
+local lab=workspace:FindFirstChild('AssetAgentLab') if lab then lab:Destroy() end
+lab=Instance.new('Model') lab.Name='AssetAgentLab'
+local floor=Instance.new('Part') floor.Name='Floor' floor.Anchored=true floor.Size=Vector3.new(120,1,120)
+floor.CFrame=CFrame.new(AT-Vector3.new(0,0.5,0)) floor.Color=Color3.fromRGB(16,18,28) floor.Material=Enum.Material.SmoothPlastic floor.Parent=lab
+local rig=Instance.new('Model') rig.Name='StandIn' rig.Parent=lab
+for _,r in """ + _RIG_LUA + """ do
+ local p=Instance.new('Part') p.Name=r[1] p.Anchored=true p.CanCollide=false p.Size=r[3] p.CFrame=CFrame.new(AT+r[2])
+ p.Color=Color3.fromRGB(150,156,180) p.Material=Enum.Material.SmoothPlastic p.Transparency=r[1]=='HumanoidRootPart' and 1 or 0 p.Parent=rig
+end
+lab.Parent=workspace
+local h=rig.HumanoidRootPart
+local list=build(h,'{preset}',HS:JSONDecode({nodes}))
+play(list)
+local n=animate(rig,'{preset}',function() return lab.Parent~=nil end)
+local look=h.Position+Vector3.new(0,1.6,0) local cam=look+Vector3.new(9,4,17)
 return string.format('%g,%g,%g|%g,%g,%g',cam.X,cam.Y,cam.Z,look.X,look.Y,look.Z)"""
 
 

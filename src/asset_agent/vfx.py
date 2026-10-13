@@ -24,12 +24,36 @@ from pathlib import Path
 KEYS = {"type", "color", "size", "rate"}
 # properties measured in studs, scaled by an effect's size
 STUD_PROPS = {"Size", "Speed", "Acceleration", "Position", "Width0", "Width1", "CurveSize0", "CurveSize1",
-              "TextureLength", "Range", "MinLength", "MaxLength", "Offset", "Scale"}
+              "TextureLength", "Range", "MinLength", "MaxLength", "Offset", "Scale", "StudsOffset"}
+GUI_CLASSES = {"ImageLabel", "TextLabel", "Frame", "UIStroke", "UIGradient", "SurfaceGui"}  # sizes are fractions/pixels
 COLOUR_PROPS = {"Color"}
 
 
 def library_path() -> Path:
     return Path(os.environ.get("ASSET_AGENT_VFX") or Path(__file__).parents[2] / "library" / "vfx" / "presets.json")
+
+
+def uploads() -> dict:
+    """texture://name -> rbxassetid://N for our textures that have been uploaded to Roblox."""
+    f = library_path().parent / "textures" / "uploads.json"
+    return json.loads(f.read_text()) if f.exists() else {}
+
+
+def resolve_textures(nodes, ids=None):
+    """Copy of a node tree with texture://name swapped for its uploaded asset id ('' if not uploaded)."""
+    ids = uploads() if ids is None else ids
+    out = copy.deepcopy(nodes)
+
+    def walk(n):
+        for key in ("Texture", "Image", "TextureID"):
+            v = (n.get("props") or {}).get(key)
+            if isinstance(v, str) and v.startswith("texture://"):
+                n["props"][key] = ids.get(v[len("texture://"):], "")
+        for c in n.get("children") or []:
+            walk(c)
+    for n in out:
+        walk(n)
+    return out
 
 
 def presets() -> dict:
@@ -100,8 +124,11 @@ def transform(nodes, k=1.0, rate=1.0, rgb=None):
     def walk(n):
         props = n.get("props", {})
         for key in list(props):
-            if k != 1 and (key in STUD_PROPS or key == "CFrame"):  # CFrame: only its position scales
-                props[key] = _scale_value(props[key], k)
+            if k != 1 and (key in STUD_PROPS or key == "CFrame") and n["class"] not in GUI_CLASSES:
+                v = props[key]
+                if isinstance(v, dict) and "u2" in v:  # BillboardGui size: the scale parts are studs
+                    v = {"u2": [v["u2"][0] * k, v["u2"][1], v["u2"][2] * k, v["u2"][3]]}
+                props[key] = _scale_value(v, k)  # CFrame: only its position scales
             if rgb and key in COLOUR_PROPS and isinstance(props[key], dict):
                 props[key] = recolour(props[key], rgb)
         if rate != 1 and "Rate" in props:
@@ -109,6 +136,9 @@ def transform(nodes, k=1.0, rate=1.0, rgb=None):
         attrs = n.get("attrs", {})
         if rate != 1 and "EmitCount" in attrs:
             attrs["EmitCount"] = max(1, round(attrs["EmitCount"] * rate))
+        if k != 1 and n.get("anim", {}).get("orbit"):
+            o = n["anim"]["orbit"]
+            n["anim"]["orbit"] = {**o, "radius": o.get("radius", 3) * k, "y": o.get("y", 0) * k}
         tw = n.get("tween")
         if tw and k != 1:
             tw["props"] = {p: _scale_value(v, k) if p in STUD_PROPS else v for p, v in tw["props"].items()}

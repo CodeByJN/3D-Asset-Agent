@@ -21343,5 +21343,872 @@
     "note": ""
    }
   ]
+ },
+ "aura_black_card": {
+  "tags": [
+   "aura",
+   "character",
+   "card",
+   "gold",
+   "mythic"
+  ],
+  "use": "BLACK CARD (top wheel tier): crest title, turning crown, card sigil and rune ring behind, floor sigil, orbiting black cards, gold motes and glowing hands",
+  "rig": "character",
+  "mode": "loop",
+  "sketch": "glow",
+  "source": {
+   "kind": "original",
+   "by": "claude",
+   "set": "auras-v1",
+   "notes": "Sol's RNG-style construction, own textures and theme"
+  },
+  "host": {
+   "size": {
+    "v3": [
+     2,
+     2,
+     1
+    ]
+   }
+  },
+  "nodes": [
+   {
+    "class": "BillboardGui",
+    "name": "TitlePlate",
+    "attach": "Head",
+    "props": {
+     "Size": {
+      "u2": [
+       11,
+       0,
+       5.5,
+       0
+      ]
+     },
+     "StudsOffset": {
+      "v3": [
+       0,
+       4.2,
+       0
+      ]
+     },
+     "LightInfluence": 0,
+     "MaxDistance": 160,
+     "AlwaysOnTop": false
+    },
+    "children": [
+     {
+      "class": "ImageLabel",
+      "name": "Crest",
+      "props": {
+       "Image": "texture://crest",
+       "ImageColor3": {
+        "c3": [
+         1,
+         0.82,
+         0.42
+        ]
+       },
+       "BackgroundTransparency": 1,
+       "Size": {
+        "u2": [
+         1,
+         0,
+         1,
+         0
+        ]
+       },
+       "ZIndex": 1
+      }
+     },
+     {
+      "class": "TextLabel",
+      "name": "Name",
+      "props": {
+       "Text": "BLACK CARD",
+       "FontFace": {
+        "font": "Fondamento"
+       },
+       "TextScaled": true,
+       "TextColor3": {
+        "c3": [
+         1,
+         1,
+         1
+        ]
+       },
+       "BackgroundTransparency": 1,
+       "Size": {
+        "u2": [
+         1,
+         0,
+         0.27,
+         0
+        ]
+       },
+       "Position": {
+        "u2": [
+         0,
+         0,
+         0.42,
+         0
+        ]
+       },
+       "AnchorPoint": {
+        "v2": [
+         0,
+         0.5
+        ]
+       },
+       "ZIndex": 3
+      },
+      "children": [
+       {
+        "class": "UIGradient",
+        "name": "Gradient",
+        "props": {
+         "Color": {
+          "cs": [
+           [
+            0,
+            1,
+            1,
+            1
+           ],
+           [
+            1,
+            1,
+            0.82,
+            0.42
+           ]
+          ]
+         },
+         "Rotation": 90
+        }
+       },
+       {
+        "class": "UIStroke",
+        "name": "Stroke",
+        "props": {
+         "Color": {
+          "c3": [
+           0.85,
+           0.55,
+           0.12
+          ]
+         },
+         "Thickness": 1.5,
+         "Transparency": 0.1
+        }
+       }
+      ]
+     },
+     {
+      "class": "TextLabel",
+      "name": "Odds",
+      "props": {
+       "Text": "\u25c6  1 in 1,000,000,000  \u25c6",
+       "FontFace": {
+        "font": "AccanthisADFStd",
+        "italic": true
+       },
+       "TextScaled": true,
+       "TextColor3": {
+        "c3": [
+         1,
+         0.93,
+         0.72
+        ]
+       },
+       "BackgroundTransparency": 1,
+       "Size": {
+        "u2": [
+         1,
+         0,
+         0.11,
+         0
+        ]
+       },
+       "Position": {
+        "u2": [
+         0,
+         0,
+         0.66,
+         0
+        ]
+       },
+       "AnchorPoint": {
+        "v2": [
+         0,
+         0.5
+        ]
+       },
+       "ZIndex": 3
+      },
+      "children": []
+     }
+    ]
+   },
+   {
+    "class": "Plane",
+    "name": "Crown",
+    "props": {
+     "Image": "texture://crown_ring",
+     "Size": {
+      "v2": [
+       6.5,
+       6.5
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       0,
+       1.9,
+       0,
+       90,
+       0,
+       0
+      ]
+     },
+     "Color": {
+      "c3": [
+       1,
+       0.82,
+       0.42
+      ]
+     },
+     "Brightness": 4,
+     "Transparency": 0.0
+    },
+    "attach": "Head",
+    "anim": {
+     "spin": 22
+    }
+   },
+   {
+    "class": "Plane",
+    "name": "Sigil",
+    "props": {
+     "Image": "texture://card_sigil",
+     "Size": {
+      "v2": [
+       9.5,
+       9.5
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       0,
+       0.7,
+       1.7,
+       0,
+       0,
+       0
+      ]
+     },
+     "Color": {
+      "c3": [
+       1,
+       0.82,
+       0.42
+      ]
+     },
+     "Brightness": 3,
+     "Transparency": 0.1
+    },
+    "attach": "UpperTorso",
+    "anim": {
+     "spin": 9
+    }
+   },
+   {
+    "class": "Plane",
+    "name": "Runes",
+    "props": {
+     "Image": "texture://rune_ring",
+     "Size": {
+      "v2": [
+       12,
+       12
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       0,
+       0.7,
+       1.9,
+       0,
+       0,
+       0
+      ]
+     },
+     "Color": {
+      "c3": [
+       1,
+       0.93,
+       0.72
+      ]
+     },
+     "Brightness": 2.5,
+     "Transparency": 0.25
+    },
+    "attach": "UpperTorso",
+    "anim": {
+     "spin": -6
+    }
+   },
+   {
+    "class": "Plane",
+    "name": "FloorSigil",
+    "props": {
+     "Image": "texture://card_sigil",
+     "Size": {
+      "v2": [
+       9,
+       9
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       0,
+       -2.95,
+       0,
+       -90,
+       0,
+       0
+      ]
+     },
+     "Color": {
+      "c3": [
+       1,
+       0.82,
+       0.42
+      ]
+     },
+     "Brightness": 2,
+     "Transparency": 0.35
+    },
+    "attach": "HumanoidRootPart",
+    "anim": {
+     "spin": 7,
+     "pulse": {
+      "amp": 0.04,
+      "period": 3
+     }
+    }
+   },
+   {
+    "class": "Plane",
+    "name": "Card0",
+    "props": {
+     "Image": "texture://card",
+     "Size": {
+      "v2": [
+       1.7,
+       1.7
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       3.4,
+       0.5,
+       0,
+       0,
+       90,
+       0
+      ]
+     },
+     "Color": {
+      "c3": [
+       1,
+       1,
+       1
+      ]
+     },
+     "Brightness": 1.4,
+     "Transparency": 0.0
+    },
+    "attach": "HumanoidRootPart",
+    "anim": {
+     "orbit": {
+      "radius": 3.4,
+      "speed": 40,
+      "phase": 0,
+      "y": 0.6
+     },
+     "bob": {
+      "amp": 0.25,
+      "period": 2.6
+     }
+    }
+   },
+   {
+    "class": "Plane",
+    "name": "Card1",
+    "props": {
+     "Image": "texture://card",
+     "Size": {
+      "v2": [
+       1.7,
+       1.7
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       3.4,
+       0.5,
+       0,
+       0,
+       90,
+       0
+      ]
+     },
+     "Color": {
+      "c3": [
+       1,
+       1,
+       1
+      ]
+     },
+     "Brightness": 1.4,
+     "Transparency": 0.0
+    },
+    "attach": "HumanoidRootPart",
+    "anim": {
+     "orbit": {
+      "radius": 3.4,
+      "speed": 40,
+      "phase": 120,
+      "y": 0.6
+     },
+     "bob": {
+      "amp": 0.25,
+      "period": 2.6
+     }
+    }
+   },
+   {
+    "class": "Plane",
+    "name": "Card2",
+    "props": {
+     "Image": "texture://card",
+     "Size": {
+      "v2": [
+       1.7,
+       1.7
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       3.4,
+       0.5,
+       0,
+       0,
+       90,
+       0
+      ]
+     },
+     "Color": {
+      "c3": [
+       1,
+       1,
+       1
+      ]
+     },
+     "Brightness": 1.4,
+     "Transparency": 0.0
+    },
+    "attach": "HumanoidRootPart",
+    "anim": {
+     "orbit": {
+      "radius": 3.4,
+      "speed": 40,
+      "phase": 240,
+      "y": 0.6
+     },
+     "bob": {
+      "amp": 0.25,
+      "period": 2.6
+     }
+    }
+   },
+   {
+    "class": "Attachment",
+    "name": "Body",
+    "props": {
+     "CFrame": {
+      "cf": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "children": [
+     {
+      "class": "ParticleEmitter",
+      "name": "Motes",
+      "props": {
+       "Texture": "texture://glow",
+       "Color": {
+        "cs": [
+         [
+          0,
+          1,
+          0.93,
+          0.72
+         ],
+         [
+          1,
+          1,
+          0.82,
+          0.42
+         ]
+        ]
+       },
+       "Size": {
+        "ns": [
+         [
+          0,
+          0.35,
+          0.1
+         ],
+         [
+          1,
+          0
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          1
+         ],
+         [
+          0.25,
+          0.2
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "Lifetime": {
+        "nr": [
+         2,
+         3
+        ]
+       },
+       "Rate": 12,
+       "Speed": {
+        "nr": [
+         1,
+         2.2
+        ]
+       },
+       "LightEmission": 1,
+       "Brightness": 4,
+       "Rotation": {
+        "nr": [
+         -180,
+         180
+        ]
+       },
+       "SpreadAngle": {
+        "v2": [
+         25,
+         25
+        ]
+       }
+      }
+     },
+     {
+      "class": "ParticleEmitter",
+      "name": "Glints",
+      "props": {
+       "Texture": "texture://sparkle",
+       "Color": {
+        "cs": [
+         [
+          0,
+          1,
+          1,
+          1
+         ],
+         [
+          1,
+          1,
+          0.82,
+          0.42
+         ]
+        ]
+       },
+       "Size": {
+        "ns": [
+         [
+          0,
+          0
+         ],
+         [
+          0.3,
+          1.2,
+          0.3
+         ],
+         [
+          1,
+          0
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0
+         ],
+         [
+          1,
+          0.3
+         ]
+        ]
+       },
+       "Lifetime": {
+        "nr": [
+         0.6,
+         0.9
+        ]
+       },
+       "Rate": 3,
+       "Speed": {
+        "nr": [
+         0,
+         0
+        ]
+       },
+       "LightEmission": 1,
+       "Brightness": 5,
+       "Rotation": {
+        "nr": [
+         -15,
+         15
+        ]
+       },
+       "LockedToPart": true
+      }
+     },
+     {
+      "class": "PointLight",
+      "name": "Light",
+      "props": {
+       "Color": {
+        "c3": [
+         1,
+         0.82,
+         0.42
+        ]
+       },
+       "Range": 16,
+       "Brightness": 2
+      }
+     }
+    ],
+    "attach": "HumanoidRootPart"
+   },
+   {
+    "class": "Attachment",
+    "name": "LeftGlow",
+    "props": {
+     "CFrame": {
+      "cf": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "children": [
+     {
+      "class": "ParticleEmitter",
+      "name": "Glow",
+      "props": {
+       "Texture": "texture://glow_hot",
+       "Color": {
+        "cs": [
+         [
+          0,
+          1,
+          1,
+          1
+         ],
+         [
+          1,
+          1,
+          0.82,
+          0.42
+         ]
+        ]
+       },
+       "Size": {
+        "ns": [
+         [
+          0,
+          1.1,
+          0.15
+         ],
+         [
+          1,
+          1.1,
+          0.15
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          1
+         ],
+         [
+          0.35,
+          0.35
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "Lifetime": {
+        "nr": [
+         0.3,
+         0.45
+        ]
+       },
+       "Rate": 9,
+       "Speed": {
+        "nr": [
+         0,
+         0
+        ]
+       },
+       "LightEmission": 1,
+       "Brightness": 4,
+       "Rotation": {
+        "nr": [
+         -180,
+         180
+        ]
+       },
+       "LockedToPart": true
+      }
+     }
+    ],
+    "attach": "LeftHand"
+   },
+   {
+    "class": "Attachment",
+    "name": "RightGlow",
+    "props": {
+     "CFrame": {
+      "cf": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "children": [
+     {
+      "class": "ParticleEmitter",
+      "name": "Glow",
+      "props": {
+       "Texture": "texture://glow_hot",
+       "Color": {
+        "cs": [
+         [
+          0,
+          1,
+          1,
+          1
+         ],
+         [
+          1,
+          1,
+          0.82,
+          0.42
+         ]
+        ]
+       },
+       "Size": {
+        "ns": [
+         [
+          0,
+          1.1,
+          0.15
+         ],
+         [
+          1,
+          1.1,
+          0.15
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          1
+         ],
+         [
+          0.35,
+          0.35
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "Lifetime": {
+        "nr": [
+         0.3,
+         0.45
+        ]
+       },
+       "Rate": 9,
+       "Speed": {
+        "nr": [
+         0,
+         0
+        ]
+       },
+       "LightEmission": 1,
+       "Brightness": 4,
+       "Rotation": {
+        "nr": [
+         -180,
+         180
+        ]
+       },
+       "LockedToPart": true
+      }
+     }
+    ],
+    "attach": "RightHand"
+   }
+  ],
+  "version": 2,
+  "history": []
  }
 }

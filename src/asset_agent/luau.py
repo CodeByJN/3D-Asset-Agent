@@ -15,6 +15,8 @@ local function V(x)
  if x.ns then local k={} for _,p in x.ns do table.insert(k,NumberSequenceKeypoint.new(p[1],p[2],p[3] or 0)) end return NumberSequence.new(k) end
  if x.nr then return NumberRange.new(x.nr[1],x.nr[2]) end
  if x.v2 then return Vector2.new(x.v2[1],x.v2[2]) end
+ if x.u2 then return UDim2.new(x.u2[1],x.u2[2],x.u2[3],x.u2[4]) end
+ if x.font then return Font.new('rbxasset://fonts/families/'..x.font..'.json',x.weight and Enum.FontWeight[x.weight] or Enum.FontWeight.Regular,x.italic and Enum.FontStyle.Italic or Enum.FontStyle.Normal) end
  if x.v3 then return Vector3.new(x.v3[1],x.v3[2],x.v3[3]) end
  if x.cf then local c=x.cf return CFrame.new(c[1],c[2],c[3])*CFrame.fromOrientation(math.rad(c[4]),math.rad(c[5]),math.rad(c[6])) end
  if x.enum then local a,b=string.match(x.enum,'([^.]+)%.(.+)') return Enum[a][b] end
@@ -22,24 +24,79 @@ local function V(x)
 end
 """
 
-BUILD = DECODE + r"""
+# Animates parts tagged with an AssetAgentAnim attribute (JSON: spin deg/s about the plane normal, orbit
+# {radius, speed deg/s, phase, y}, bob {amp, period}, pulse {amp, period}) relative to their parent part,
+# every frame. Returns a function(model, tag|nil, alive()) that connects to Heartbeat.
+ANIMATE = r"""
+local RS,HS=game:GetService('RunService'),game:GetService('HttpService')
+return function(model,tag,alive)
+ local items={}
+ for _,p in model:GetDescendants() do
+  local a=p:GetAttribute('AssetAgentAnim')
+  if a and p:IsA('BasePart') and (tag==nil or p:GetAttribute('AssetAgentVFX')==tag) then
+   table.insert(items,{p=p,a=HS:JSONDecode(a),base=p:GetAttribute('AssetAgentBase') or CFrame.new(),size=p.Size})
+  end
+ end
+ local t0=os.clock() local conn
+ conn=RS.Heartbeat:Connect(function()
+  if not alive() then conn:Disconnect() return end
+  local t=os.clock()-t0
+  for _,it in items do
+   local a,anchor=it.a,it.p.Parent
+   if anchor and anchor:IsA('BasePart') then
+    local cf=it.base
+    if a.orbit then local o=a.orbit
+     cf=CFrame.Angles(0,math.rad((o.phase or 0)+(o.speed or 30)*t),0)*CFrame.new(o.radius or 3,o.y or 0,0)*it.base.Rotation end
+    if a.bob then cf=CFrame.new(0,a.bob.amp*math.sin(2*math.pi*t/a.bob.period),0)*cf end
+    if a.spin then cf=cf*CFrame.Angles(0,0,math.rad(a.spin*t)) end
+    it.p.CFrame=anchor.CFrame*cf
+    if a.pulse then local k=1+a.pulse.amp*math.sin(2*math.pi*t/a.pulse.period) it.p.Size=it.size*Vector3.new(k,k,1) end
+   end
+  end
+ end)
+ return #items
+end
+"""
+
+BUILD = DECODE + "local animate=(function()" + ANIMATE + "end)()\nlocal ANIMATE_SRC=" + "[==[" + ANIMATE + "]==]\n" + r"""
 local HS,TS=game:GetService('HttpService'),game:GetService('TweenService')
 local function build(H,tag,nodes)
- local made,refs,all={}, {}, {}
+ local made,refs,all,anims={}, {}, {}, false
+ local model=H.Parent and H.Parent:IsA('Model') and H.Parent or H
+ local function anchorFor(nd,parent)
+  if nd.attach then return model:FindFirstChild(nd.attach,true) or H end
+  return parent
+ end
+ local function plane(nd,parent)  -- a flat image: thin invisible part, image on both faces, unlit and bright
+  local pr=nd.props or {} local sz=pr.Size and pr.Size.v2 or {4,4}
+  local p=Instance.new('Part') p.Name=nd.name or 'Plane' p.Size=Vector3.new(sz[1],sz[2],0.05) p.Transparency=1
+  for _,face in {Enum.NormalId.Front,Enum.NormalId.Back} do
+   local g=Instance.new('SurfaceGui') g.Face=face g.LightInfluence=0 g.Brightness=pr.Brightness or 2
+   g.SizingMode=Enum.SurfaceGuiSizingMode.PixelsPerStud g.PixelsPerStud=64 g.Parent=p
+   local im=Instance.new('ImageLabel') im.Size=UDim2.fromScale(1,1) im.BackgroundTransparency=1
+   im.Image=pr.Image or '' im.ImageColor3=pr.Color and V(pr.Color) or Color3.new(1,1,1)
+   im.ImageTransparency=pr.Transparency or 0 im.Parent=g
+  end
+  return p
+ end
  local function mk(nd,parent,path)
   local i
-  if nd.class=='MeshPart' and nd.props and nd.props.MeshId then
+  parent=anchorFor(nd,parent)
+  if nd.class=='Plane' then i=plane(nd,parent)
+  elseif nd.class=='MeshPart' and nd.props and nd.props.MeshId then
    i=game:GetService('AssetService'):CreateMeshPartAsync(nd.props.MeshId)
   else i=Instance.new(nd.class) end
   i.Name=nd.name or nd.class
-  for k,v in (nd.props or {}) do
+  for k,v in (nd.class=='Plane' and {CFrame=(nd.props or {}).CFrame} or nd.props or {}) do
    if k=='MeshId' and i:IsA('MeshPart') then
    elseif type(v)=='table' and v.ref then table.insert(refs,{i,k,v.ref})
-   elseif k=='CFrame' and i:IsA('BasePart') then i.CFrame=H.CFrame*V(v)
+   elseif k=='CFrame' and i:IsA('BasePart') then i.CFrame=(parent:IsA('BasePart') and parent or H).CFrame*V(v)
+    i:SetAttribute('AssetAgentBase',V(v))
    else i[k]=V(v) end
   end
   for k,v in (nd.attrs or {}) do i:SetAttribute(k,V(v)) end
   if nd.tween then i:SetAttribute('AssetAgentTween',HS:JSONEncode(nd.tween)) end
+  if nd.anim then i:SetAttribute('AssetAgentAnim',HS:JSONEncode(nd.anim)) anims=true end
   if i:IsA('BasePart') then i.Anchored=true i.CanCollide=false i.CanQuery=false i.CanTouch=false end
   i:SetAttribute('AssetAgentVFX',tag)
   made[path]=i table.insert(all,i)
@@ -48,6 +105,12 @@ local function build(H,tag,nodes)
  end
  for _,nd in nodes do mk(nd,H,nd.name or nd.class) end
  for _,r in refs do r[1][r[2]]=made[r[3]] end
+ if anims then  -- in game: a client script plays the animation for each player
+  local sc=Instance.new('Script') sc.Name='AssetAgentAnimator' sc.RunContext=Enum.RunContext.Client
+  sc:SetAttribute('AssetAgentVFX',tag)
+  pcall(function() sc.Source='local animate=(function()'..ANIMATE_SRC..'end)()\nanimate(script.Parent.Parent and script.Parent.Parent:IsA("Model") and script.Parent.Parent or script.Parent,'..string.format('%q',tag)..',function() return script.Parent~=nil end)' end)
+  sc.Parent=H table.insert(all,sc)
+ end
  return all
 end
 local SLOW=1 -- >1 plays effects in slow motion (for recording): particle TimeScale 1/SLOW, timings x SLOW
