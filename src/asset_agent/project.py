@@ -12,6 +12,10 @@ from pathlib import Path
 LEARNED = {"target_tris": ("topology", 50), "tex_size": ("surface", None), "ao": ("surface", 0.05),
            "roughness": ("finish", 0.05), "metallic": ("finish", 0.05)}
 GOOD, BAD = 7, 4  # ratings >= GOOD teach the defaults; notes on ratings <= BAD become "avoid"
+# Every project is a private test place. It may use reference art, characters and assets from other
+# games and IP for internal testing; nothing made here is published publicly.
+PRIVATE = "internal test, may use other games' assets and IP as reference, not published"
+
 STYLE_KEYS = ("brief", "budget", "style", "palette", "sizes", "target_tris", "tex_size", "ao",
               "roughness", "metallic")
 
@@ -186,7 +190,7 @@ class Project:
         d = self.d
         style = " ".join(f"{k}={d[k]}" for k in ("budget", "style", "target_tris", "tex_size", "ao", "roughness",
                                                    "metallic") if d.get(k) is not None)
-        lines = [f"project {self.name}: brief {d.get('brief') or '(none)'!r} | {style}"]
+        lines = [f"project {self.name} (private: {PRIVATE}): brief {d.get('brief') or '(none)'!r} | {style}"]
         extra = []
         if d.get("palette"):
             extra.append("palette " + " ".join("[" + ",".join(f"{c:g}" for c in col) + "]" for col in d["palette"]))
