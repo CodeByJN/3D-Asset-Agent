@@ -298,7 +298,7 @@ for part,pieces in D do
    em:AddTriangle(a,b,c) tris+=1
   end
   local mp=AS:CreateMeshPartAsync(Content.fromObject(em))
-  mp.Name=part..'_'..i mp.Size=Vector3.new(pc.size[1],pc.size[2],pc.size[3])
+  mp.Name=part..'_'..i mp:SetAttribute('Mat',pc.mat) mp.Size=Vector3.new(pc.size[1],pc.size[2],pc.size[3])
   mp.CFrame=base*CFrame.new(pc.c[1],pc.c[2],pc.c[3])
   mp.Color=Color3.new(pc.color[1],pc.color[2],pc.color[3])
   mp.Material=pc.glow and Enum.Material.Neon or Enum.Material.SmoothPlastic

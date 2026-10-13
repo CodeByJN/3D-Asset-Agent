@@ -593,7 +593,8 @@ def check(d: dict, frames=None) -> tuple[dict, list[str]]:
             for ch, spec in chans.items():
                 if isinstance(spec, dict) and "keys" in spec:
                     ks = sorted(spec["keys"], key=lambda k: k[0])
-                    if abs(ks[0][1] - ks[-1][1]) > 1e-6 or ks[0][0] > 0 or ks[-1][0] < 1:
+                    a, b = (k[1] if isinstance(k[1], list) else [k[1]] for k in (ks[0], ks[-1]))
+                    if max(abs(x - y) for x, y in zip(a, b)) > 1e-6 or ks[0][0] > 0 or ks[-1][0] < 1:
                         warns.append(f"{j}.{ch} keys don't meet at u=0 and u=1: pops when it loops")
     return {"low": low, "high": high}, warns
 

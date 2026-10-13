@@ -252,7 +252,7 @@ def op_build(s):
 
 
 def rig_mesh(groups) -> dict:
-    """{part: [{color, glow, c: centre, size, t: [x,y,z]*3 per triangle around c]}} per material, in rig
+    """{part: [{mat, color, glow, c: centre, size, t: [x,y,z]*3 per triangle around c]}} per material, in rig
     space (Roblox axes: x = -kit x, y = kit z, z = kit y; studs): Studio builds these as MeshParts."""
     out = {}
     for part, group in groups.items():
@@ -269,13 +269,13 @@ def rig_mesh(groups) -> dict:
                                         "glow": bool(m and m.get("glow")), "tris": []})["tris"].append(tri)
             bm.free()
         pieces = []
-        for d in by_mat.values():
+        for key, d in by_mat.items():
             pts = [p for t in d["tris"] for p in t]
             lo = [min(p[i] for p in pts) for i in range(3)]
             hi = [max(p[i] for p in pts) for i in range(3)]
             c = [(a + b) / 2 for a, b in zip(lo, hi)]
             flat = [round(p[i] - c[i], 3) for t in d["tris"] for p in t for i in range(3)]
-            pieces.append({"color": d["color"], "glow": d["glow"], "c": [round(x, 3) for x in c],
+            pieces.append({"mat": key, "color": d["color"], "glow": d["glow"], "c": [round(x, 3) for x in c],
                            "size": [round(max(b - a, 0.05), 3) for a, b in zip(lo, hi)], "t": flat})
         out[part] = pieces
     return out
