@@ -45,7 +45,8 @@ a.revise("topology", part="main", target_tris=2000)
 - `make_asset` (text/image to 3D generators, for organic shapes), `import_mesh`
 - `revise`, `rollback` (no version: the history), `validate`, `preview`, `library`
 - `animate`: R15 animations (KeyframeSequences) from presets (idle, walk, run, sprint, jump, fall, wave, punch,
-  slash, dance) or tracks you write per joint (waves for loops, eased keys for one-shots). A revision is a call
+  slash, dance) or tracks you write per joint (waves for loops, spline keys that flow through poses for
+  one-shots, and IK targets for hands and feet). Overlap makes the body move hips-first, head and hands last. A revision is a call
   with only what changes, e.g. `params={"speed": 1.3, "arms": 1.3}`. Feet are planted with leg IK so they never
   sink or slide into the floor. Returns a filmstrip (side + three-quarter view) and writes `export/<name>.rbxmx`
   (Studio: Insert from File); `studio(name)` builds it in the place and plays it on a test dummy, live in Edit mode.

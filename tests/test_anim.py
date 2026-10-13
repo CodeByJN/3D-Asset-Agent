@@ -11,19 +11,25 @@ def test_presets_are_clean(name):
     d = anim.resolve({"preset": name})
     stats, warns = anim.check(d)
     assert warns == []
-    assert abs(stats["low"]) < 0.02  # feet on the floor: neither sinking nor hovering
+    assert stats["low"] > -0.02  # nothing sinks into the floor
+    if "airborne" not in anim.presets()[name].get("tags", []):
+        assert stats["low"] < 0.02  # and grounded moves don't hover
 
 
 def test_rig_matches_studio():
-    """Part centres of the run at 0.2 s, measured on Studio's default R15 (relative to the root, +3 studs)."""
-    studio = {"RightHand": (1.67, 3.13, -1.39), "LeftUpperLeg": (-0.49, 1.63, -0.1), "Head": (0.02, 4.66, -0.7),
-              "UpperTorso": (0.01, 3.29, -0.33)}
-    d = anim.resolve({"preset": "run"})
-    world = anim.solve(anim.pose_at(d, 0.2 / d["length"], ground=False))
+    """A fixed pose built with studio_script on Studio's default R15, part centres measured in the
+    workspace (floor at y=0)."""
+    studio = {"RightHand": (0.954, 3.46, -2.206), "RightLowerArm": (1.178, 3.443, -1.582), "Head": (-0.069, 4.829, -0.389),
+              "UpperTorso": (-0.026, 3.426, -0.145), "LeftUpperLeg": (-0.533, 1.782, -0.145),
+              "LeftLowerLeg": (-0.548, 1.004, -0.227), "LeftFoot": (-0.506, 0.344, 0.009)}
+    d = anim.resolve({"tracks": {"UpperTorso": {"rx": -10, "ry": 20}, "Head": {"ry": 30}, "RightUpperArm": {"rx": 40, "rz": 20},
+                                 "RightLowerArm": {"rx": 60}, "LeftUpperLeg": {"rx": 30}, "LeftLowerLeg": {"rx": -50},
+                                 "LowerTorso": {"ry": 10}}})
+    world = anim.solve(anim.pose_at(d, 0, ground=False))
     for part, want in studio.items():
         r, t = world[part]
         got = [a + b for a, b in zip(anim._mv(r, anim.RIG[part][2]), t)]
-        assert max(abs(a - b) for a, b in zip(got, want)) < 0.15, part
+        assert max(abs(a - b) for a, b in zip(got, want)) < 0.05, (part, got)
 
 
 def test_mirror_opposite_is_half_a_cycle_later():
@@ -35,8 +41,8 @@ def test_mirror_opposite_is_half_a_cycle_later():
 
 
 def test_knobs_scale_motion_not_rest_pose():
-    base = anim.resolve({"preset": "run"})
-    big = anim.resolve({"preset": "run", "params": {"arms": 2.0, "speed": 2.0}})
+    base = anim.resolve({"preset": "run", "params": {"overlap": 0}})
+    big = anim.resolve({"preset": "run", "params": {"arms": 2.0, "speed": 2.0, "overlap": 0}})
     assert big["length"] == pytest.approx(base["length"] / 2)
     b0 = anim.pose_at(base, 0.5, ground=False)["RightUpperArm"][3]
     b1 = anim.pose_at(big, 0.5, ground=False)["RightUpperArm"][3]
@@ -67,16 +73,36 @@ def test_revision_rollback_and_export(tmp_path):
     l1 = a.update(preset="run")
     assert "v1" in l1 and "loop" in l1
     l2 = a.update(params={"speed": 1.4, "arms": 1.3})
-    assert "v2" in l2 and "0.50s" in l2
+    assert "v2" in l2 and "0.47s" in l2
     root = ET.parse(tmp_path / "hero_run" / "export" / "hero_run.rbxmx").getroot()
     kfs = root.find("Item")
     assert kfs.get("class") == "KeyframeSequence"
     keyframes = kfs.findall("Item")
-    assert len(keyframes) == 16 and all(k.get("class") == "Keyframe" for k in keyframes)
+    assert len(keyframes) == 15 and all(k.get("class") == "Keyframe" for k in keyframes)
     assert (tmp_path / "hero_run" / "export" / "versions" / "v1.rbxmx").exists()
     l3 = a.rollback(1)
-    assert "v3" in l3 and "0.70s" in l3 and a.history().splitlines()[-1] == "v3: rollback to v1"
+    assert "v3" in l3 and "0.66s" in l3 and a.history().splitlines()[-1] == "v3: rollback to v1"
     assert (tmp_path / "hero_run" / "preview.png").stat().st_size > 1000
+
+
+def test_ik_reaches_and_mirrors():
+    d = anim.resolve({"preset": "idle", "params": {"overlap": 0}, "tracks": {
+        "RightHand": {"ik": [0.4, 4.2, -1.2]}, "LeftHand": {"ik": [-0.4, 4.2, -1.2]}}})
+    world = anim.solve(anim.pose_at(d, 0))
+    for end, want in (("RightHand", (0.4, 4.2, -1.2)), ("LeftHand", (-0.4, 4.2, -1.2))):
+        r, t = world[end]
+        got = [a + b for a, b in zip(anim._mv(r, anim.RIG[end][1]), t)]
+        assert max(abs(a - b) for a, b in zip(got, want)) < 0.12, (end, got)
+    feet = anim.resolve({"preset": "wave"})["tracks"]
+    assert feet["LeftFoot"]["ik"][0] == -feet["RightFoot"]["ik"][0]
+
+
+def test_splines_flow_through_keys():
+    keys = [[0, 0], [0.5, 10], [1, 0]]
+    assert anim._keys(keys, 0.5, False) == 10
+    # moving through the middle key, not stopping on it (smoothstep would come to rest there)
+    before, after = anim._keys([[0, 0], [0.5, 10], [1, 20]], 0.49, False), anim._keys([[0, 0], [0.5, 10], [1, 20]], 0.51, False)
+    assert after - before > 0.3
 
 
 def test_loop_keys_that_dont_meet_are_flagged():

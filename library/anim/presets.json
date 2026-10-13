@@ -1,141 +1,2244 @@
 {
- "_doc": "R15 animation presets; format in src/asset_agent/anim.py. Gaits: phase 0 = right foot plants, leg forward.",
+ "_doc": "R15 animation presets; format in src/asset_agent/anim.py. Gaits: phase 0 = right foot plants, leg forward. ratings: user 1-10 per version.",
  "idle": {
-  "use": "standing idle: breathing, relaxed arms", "tags": ["locomotion", "loop"], "length": 2.6, "loop": true,
-  "priority": "Idle", "mirror": "same",
+  "use": "standing idle: breathing, weight shifting hip to hip, looking around",
+  "tags": [
+   "locomotion",
+   "loop"
+  ],
+  "length": 3.2,
+  "loop": true,
+  "priority": "Idle",
+  "mirror": "same",
+  "version": 2,
+  "ratings": [
+   {
+    "v": 1,
+    "stars": 6,
+    "note": "good but could be a better idle"
+   }
+  ],
   "tracks": {
-   "LowerTorso": {"y": {"o": -0.04, "a": 0.03, "p": 0.5}},
-   "UpperTorso": {"rx": {"o": -1, "a": 2, "p": 0}},
-   "Head": {"rx": {"o": 2, "a": -2, "p": 0.1}, "ry": {"a": 3, "p": 0.3, "h": 1}},
-   "RightUpperArm": {"rx": {"o": 2, "a": 1.5, "p": 0.1}, "rz": {"o": 7, "a": 1.5, "p": 0.1}},
-   "RightLowerArm": {"rx": {"o": 12, "a": 3, "p": 0.15}},
-   "RightUpperLeg": {"rx": 3, "rz": 2},
-   "RightLowerLeg": {"rx": -5},
-   "RightFoot": {"rx": 2, "rz": -2}
+   "LowerTorso": {
+    "x": {
+     "a": 0.14,
+     "p": 0
+    },
+    "rz": {
+     "a": -4,
+     "p": 0
+    },
+    "ry": {
+     "a": 3,
+     "p": 0.1
+    },
+    "y": {
+     "o": -0.03,
+     "a": 0.025,
+     "p": 0.25,
+     "h": 2
+    }
+   },
+   "UpperTorso": {
+    "rx": {
+     "o": -2,
+     "a": 3,
+     "p": 0.1,
+     "h": 2
+    },
+    "rz": {
+     "a": 5,
+     "p": 0.05
+    },
+    "ry": {
+     "a": -4,
+     "p": 0.15
+    }
+   },
+   "Head": {
+    "rx": {
+     "o": 3,
+     "a": -2.5,
+     "p": 0.2,
+     "h": 2
+    },
+    "ry": [
+     {
+      "a": 10,
+      "p": 0.55
+     },
+     {
+      "a": 4,
+      "p": 0.1,
+      "h": 3
+     }
+    ],
+    "rz": {
+     "a": -3,
+     "p": 0.1
+    }
+   },
+   "RightUpperArm": {
+    "rx": {
+     "o": 5,
+     "a": 4,
+     "p": 0.25
+    },
+    "rz": {
+     "o": 8,
+     "a": 3,
+     "p": 0.15,
+     "h": 2
+    }
+   },
+   "RightLowerArm": {
+    "rx": {
+     "o": 16,
+     "a": 6,
+     "p": 0.3,
+     "h": 2
+    }
+   },
+   "RightHand": {
+    "rx": {
+     "o": 4,
+     "a": 5,
+     "p": 0.35,
+     "h": 2
+    }
+   },
+   "RightFoot": {
+    "ik": [
+     0.58,
+     0.26,
+     0.02
+    ],
+    "rx": 0,
+    "ry": 6
+   }
   }
  },
  "walk": {
-  "use": "walk cycle", "tags": ["locomotion", "loop"], "length": 1.0, "loop": true, "priority": "Movement",
+  "use": "walk cycle with hip sway and counter-swing",
+  "tags": [
+   "locomotion",
+   "loop"
+  ],
+  "length": 1.0,
+  "loop": true,
+  "priority": "Movement",
   "mirror": "opposite",
+  "version": 2,
+  "ratings": [
+   {
+    "v": 1,
+    "stars": 7,
+    "note": "good, does the trick, could be more natural"
+   }
+  ],
   "tracks": {
-   "LowerTorso": {"y": {"o": -0.03, "a": 0.08, "p": 0.25, "h": 2}, "ry": {"a": 7, "p": 0}, "rz": {"a": 2.5, "p": 0.25}},
-   "UpperTorso": {"rx": {"o": -3, "a": 1.5, "p": 0.05, "h": 2}, "ry": {"a": -10, "p": 0.04}},
-   "Head": {"rx": {"o": 3, "a": -1.5, "p": 0.1, "h": 2}, "ry": {"a": 4, "p": 0.08}},
-   "RightUpperLeg": {"rx": {"o": 3, "a": 26, "p": 0}},
-   "RightLowerLeg": {"rx": {"o": -22, "a": -22, "p": 0.65}},
-   "RightFoot": {"rx": {"o": -4, "a": 14, "p": 0.92}},
-   "RightUpperArm": {"rx": {"o": 0, "a": 24, "p": 0.5}, "rz": 5},
-   "RightLowerArm": {"rx": {"o": 16, "a": 10, "p": 0.55}},
-   "RightHand": {"rx": {"a": 6, "p": 0.6}}
+   "LowerTorso": {
+    "y": {
+     "o": -0.06,
+     "a": 0.12,
+     "p": 0.27,
+     "h": 2
+    },
+    "ry": {
+     "a": 11,
+     "p": 0
+    },
+    "rz": {
+     "a": 4,
+     "p": 0.25
+    },
+    "x": {
+     "a": 0.07,
+     "p": 0.25
+    },
+    "rx": {
+     "o": -2,
+     "a": 2,
+     "p": 0.05,
+     "h": 2
+    }
+   },
+   "UpperTorso": {
+    "rx": {
+     "o": -4,
+     "a": 2,
+     "p": 0.1,
+     "h": 2
+    },
+    "ry": {
+     "a": -16,
+     "p": 0.02
+    },
+    "rz": {
+     "a": -4,
+     "p": 0.25
+    }
+   },
+   "Head": {
+    "rx": {
+     "o": 4,
+     "a": -2,
+     "p": 0.15,
+     "h": 2
+    },
+    "ry": {
+     "a": 9,
+     "p": 0.02
+    },
+    "rz": {
+     "a": 2,
+     "p": 0.3
+    }
+   },
+   "RightUpperLeg": {
+    "rx": [
+     {
+      "o": 4,
+      "a": 29,
+      "p": 0.98
+     },
+     {
+      "a": 4,
+      "p": 0.2,
+      "h": 2
+     }
+    ],
+    "rz": 2
+   },
+   "RightLowerLeg": {
+    "rx": {
+     "keys": [
+      [
+       0,
+       -6
+      ],
+      [
+       0.12,
+       -20
+      ],
+      [
+       0.38,
+       -10
+      ],
+      [
+       0.62,
+       -62
+      ],
+      [
+       0.85,
+       -22
+      ],
+      [
+       1,
+       -6
+      ]
+     ]
+    }
+   },
+   "RightFoot": {
+    "rx": {
+     "keys": [
+      [
+       0,
+       12
+      ],
+      [
+       0.12,
+       0
+      ],
+      [
+       0.38,
+       -6
+      ],
+      [
+       0.5,
+       -30
+      ],
+      [
+       0.7,
+       -8
+      ],
+      [
+       0.92,
+       14
+      ],
+      [
+       1,
+       12
+      ]
+     ]
+    }
+   },
+   "RightUpperArm": {
+    "rx": {
+     "o": 2,
+     "a": 34,
+     "p": 0.5
+    },
+    "rz": {
+     "o": 7,
+     "a": 2,
+     "p": 0.25
+    }
+   },
+   "RightLowerArm": {
+    "rx": {
+     "o": 22,
+     "a": 14,
+     "p": 0.55
+    }
+   },
+   "RightHand": {
+    "rx": {
+     "o": 4,
+     "a": 10,
+     "p": 0.6
+    }
+   }
   }
  },
  "run": {
-  "use": "run cycle", "tags": ["locomotion", "loop"], "length": 0.7, "loop": true, "priority": "Movement",
+  "use": "run cycle: forward lean, high knee drive, heel kick, pumping arms",
+  "tags": [
+   "locomotion",
+   "loop"
+  ],
+  "length": 0.66,
+  "loop": true,
+  "priority": "Movement",
   "mirror": "opposite",
+  "version": 2,
+  "ratings": [
+   {
+    "v": 1,
+    "stars": 5,
+    "note": "doesn't look very natural"
+   }
+  ],
   "tracks": {
-   "LowerTorso": {"y": {"o": -0.15, "a": 0.25, "p": 0.3, "h": 2}, "ry": {"a": 11, "p": 0}, "rx": {"o": -4, "a": 3, "p": 0.05, "h": 2}},
-   "UpperTorso": {"rx": {"o": -10, "a": 3, "p": 0.08, "h": 2}, "ry": {"a": -16, "p": 0.04}},
-   "Head": {"rx": {"o": 10, "a": -3, "p": 0.12, "h": 2}, "ry": {"a": 5, "p": 0.08}},
-   "RightUpperLeg": {"rx": {"o": 12, "a": 46, "p": 0.02}},
-   "RightLowerLeg": {"rx": {"o": -52, "a": -46, "p": 0.62}},
-   "RightFoot": {"rx": {"o": -10, "a": 22, "p": 0.9}},
-   "RightUpperArm": {"rx": {"o": 8, "a": 52, "p": 0.5}, "rz": {"o": 9, "a": 3, "p": 0.5}},
-   "RightLowerArm": {"rx": {"o": 88, "a": 16, "p": 0.55}},
-   "RightHand": {"rx": {"a": 8, "p": 0.6}}
+   "LowerTorso": {
+    "y": {
+     "o": -0.22,
+     "a": 0.24,
+     "p": 0.3,
+     "h": 2
+    },
+    "ry": {
+     "a": 14,
+     "p": 0.98
+    },
+    "rz": {
+     "a": 4,
+     "p": 0.25
+    },
+    "rx": {
+     "o": -8,
+     "a": 3,
+     "p": 0.1,
+     "h": 2
+    }
+   },
+   "UpperTorso": {
+    "rx": {
+     "o": -12,
+     "a": 4,
+     "p": 0.12,
+     "h": 2
+    },
+    "ry": {
+     "a": -22,
+     "p": 0.98
+    },
+    "rz": {
+     "a": -3,
+     "p": 0.25
+    }
+   },
+   "Head": {
+    "rx": {
+     "o": 16,
+     "a": -4,
+     "p": 0.3,
+     "h": 2
+    },
+    "ry": {
+     "a": 10,
+     "p": 0.98
+    }
+   },
+   "RightUpperLeg": {
+    "rx": [
+     {
+      "o": 17,
+      "a": 42,
+      "p": 0.95
+     },
+     {
+      "a": 6,
+      "p": 0.2,
+      "h": 2
+     }
+    ],
+    "rz": 2
+   },
+   "RightLowerLeg": {
+    "rx": {
+     "keys": [
+      [
+       0,
+       -25
+      ],
+      [
+       0.15,
+       -44
+      ],
+      [
+       0.42,
+       -16
+      ],
+      [
+       0.68,
+       -128
+      ],
+      [
+       0.88,
+       -58
+      ],
+      [
+       1,
+       -25
+      ]
+     ]
+    }
+   },
+   "RightFoot": {
+    "rx": {
+     "keys": [
+      [
+       0,
+       14
+      ],
+      [
+       0.15,
+       -2
+      ],
+      [
+       0.42,
+       -48
+      ],
+      [
+       0.68,
+       -14
+      ],
+      [
+       0.9,
+       20
+      ],
+      [
+       1,
+       14
+      ]
+     ]
+    }
+   },
+   "RightUpperArm": {
+    "rx": {
+     "o": 12,
+     "a": 62,
+     "p": 0.47
+    },
+    "rz": {
+     "o": 10,
+     "a": 4,
+     "p": 0.47
+    }
+   },
+   "RightLowerArm": {
+    "rx": {
+     "o": 92,
+     "a": 22,
+     "p": 0.47
+    }
+   },
+   "RightHand": {
+    "rx": {
+     "o": 6,
+     "a": 10,
+     "p": 0.55
+    }
+   }
   }
  },
  "sprint": {
-  "use": "fast sprint: run pushed harder, deeper lean", "tags": ["locomotion", "loop"], "base": "run",
-  "params": {"speed": 1.35, "arms": 1.25, "legs": 1.15, "lean": 10}
+  "use": "flat-out sprint: deep forward lean, huge knee drive and arm pump",
+  "tags": [
+   "locomotion",
+   "loop"
+  ],
+  "base": "run",
+  "version": 2,
+  "ratings": [
+   {
+    "v": 1,
+    "stars": 6,
+    "note": "needs much more forward lean"
+   }
+  ],
+  "params": {
+   "speed": 1.3,
+   "arms": 1.3,
+   "legs": 1.2,
+   "lean": 14
+  },
+  "tracks": {
+   "LowerTorso": {
+    "rx": {
+     "o": -16,
+     "a": 3,
+     "p": 0.1,
+     "h": 2
+    },
+    "y": {
+     "o": -0.3,
+     "a": 0.26,
+     "p": 0.3,
+     "h": 2
+    }
+   },
+   "Head": {
+    "rx": {
+     "o": 30,
+     "a": -4,
+     "p": 0.3,
+     "h": 2
+    },
+    "ry": {
+     "a": 8,
+     "p": 0.98
+    }
+   },
+   "RightUpperLeg": {
+    "rx": [
+     {
+      "o": 26,
+      "a": 46,
+      "p": 0.95
+     },
+     {
+      "a": 6,
+      "p": 0.2,
+      "h": 2
+     }
+    ],
+    "rz": 2
+   }
+  }
  },
  "jump": {
-  "use": "standing jump: crouch, launch, tuck, land", "tags": ["locomotion", "one-shot"], "length": 1.1,
-  "loop": false, "priority": "Action", "mirror": "same",
+  "use": "standing jump: crouch, launch, tuck, land",
+  "tags": [
+   "locomotion",
+   "one-shot"
+  ],
+  "length": 1.1,
+  "loop": false,
+  "priority": "Action",
+  "mirror": "same",
+  "version": 1,
+  "ratings": [
+   {
+    "v": 1,
+    "stars": 8,
+    "note": "easily the best so far"
+   }
+  ],
   "tracks": {
-   "LowerTorso": {"y": {"keys": [[0, 0], [0.18, -0.7], [0.32, 0.5, "out"], [0.52, 2.2, "out"], [0.74, 0.3, "in"], [0.82, -0.5, "out"], [1, 0]]}},
-   "UpperTorso": {"rx": {"keys": [[0, 0], [0.18, -26], [0.32, 8, "out"], [0.52, -8], [0.82, -24, "out"], [1, 0]]}},
-   "Head": {"rx": {"keys": [[0, 0], [0.18, 16], [0.32, -6], [0.52, 6], [0.82, 16], [1, 0]]}},
-   "RightUpperLeg": {"rx": {"keys": [[0, 0], [0.18, 48], [0.32, -6, "out"], [0.52, 62], [0.74, 18, "in"], [0.82, 40, "out"], [1, 0]]}, "rz": 3},
-   "RightLowerLeg": {"rx": {"keys": [[0, 0], [0.18, -92], [0.32, -4, "out"], [0.52, -105], [0.74, -30, "in"], [0.82, -78, "out"], [1, 0]]}},
-   "RightFoot": {"rx": {"keys": [[0, 0], [0.18, 43], [0.32, -38, "out"], [0.52, 12], [0.74, 4], [0.82, 37, "out"], [1, 0]]}},
-   "RightUpperArm": {"rx": {"keys": [[0, 0], [0.18, -48], [0.34, 165, "out"], [0.52, 135], [0.82, 30, "out"], [1, 0]]},
-                     "rz": {"keys": [[0, 6], [0.34, 16], [0.52, 30], [0.82, 14], [1, 6]]}},
-   "RightLowerArm": {"rx": {"keys": [[0, 10], [0.18, 22], [0.34, 8], [0.52, 40], [0.82, 35], [1, 10]]}}
+   "LowerTorso": {
+    "y": {
+     "keys": [
+      [
+       0,
+       0
+      ],
+      [
+       0.18,
+       -0.7
+      ],
+      [
+       0.32,
+       0.5,
+       "out"
+      ],
+      [
+       0.52,
+       2.2,
+       "out"
+      ],
+      [
+       0.74,
+       0.3,
+       "in"
+      ],
+      [
+       0.82,
+       -0.5,
+       "out"
+      ],
+      [
+       1,
+       0,
+       "smooth"
+      ]
+     ]
+    }
+   },
+   "UpperTorso": {
+    "rx": {
+     "keys": [
+      [
+       0,
+       0
+      ],
+      [
+       0.18,
+       -26
+      ],
+      [
+       0.32,
+       8,
+       "out"
+      ],
+      [
+       0.52,
+       -8
+      ],
+      [
+       0.82,
+       -24,
+       "out"
+      ],
+      [
+       1,
+       0,
+       "smooth"
+      ]
+     ]
+    }
+   },
+   "Head": {
+    "rx": {
+     "keys": [
+      [
+       0,
+       0
+      ],
+      [
+       0.18,
+       16
+      ],
+      [
+       0.32,
+       -6
+      ],
+      [
+       0.52,
+       6
+      ],
+      [
+       0.82,
+       16
+      ],
+      [
+       1,
+       0,
+       "smooth"
+      ]
+     ]
+    }
+   },
+   "RightUpperLeg": {
+    "rx": {
+     "keys": [
+      [
+       0,
+       0
+      ],
+      [
+       0.18,
+       48
+      ],
+      [
+       0.32,
+       -6,
+       "out"
+      ],
+      [
+       0.52,
+       62
+      ],
+      [
+       0.74,
+       18,
+       "in"
+      ],
+      [
+       0.82,
+       40,
+       "out"
+      ],
+      [
+       1,
+       0,
+       "smooth"
+      ]
+     ]
+    },
+    "rz": 3
+   },
+   "RightLowerLeg": {
+    "rx": {
+     "keys": [
+      [
+       0,
+       0
+      ],
+      [
+       0.18,
+       -92
+      ],
+      [
+       0.32,
+       -4,
+       "out"
+      ],
+      [
+       0.52,
+       -105
+      ],
+      [
+       0.74,
+       -30,
+       "in"
+      ],
+      [
+       0.82,
+       -78,
+       "out"
+      ],
+      [
+       1,
+       0,
+       "smooth"
+      ]
+     ]
+    }
+   },
+   "RightFoot": {
+    "rx": {
+     "keys": [
+      [
+       0,
+       0
+      ],
+      [
+       0.18,
+       43
+      ],
+      [
+       0.32,
+       -38,
+       "out"
+      ],
+      [
+       0.52,
+       12
+      ],
+      [
+       0.74,
+       4
+      ],
+      [
+       0.82,
+       37,
+       "out"
+      ],
+      [
+       1,
+       0,
+       "smooth"
+      ]
+     ]
+    }
+   },
+   "RightUpperArm": {
+    "rx": {
+     "keys": [
+      [
+       0,
+       0
+      ],
+      [
+       0.18,
+       -48
+      ],
+      [
+       0.34,
+       165,
+       "out"
+      ],
+      [
+       0.52,
+       135
+      ],
+      [
+       0.82,
+       30,
+       "out"
+      ],
+      [
+       1,
+       0,
+       "smooth"
+      ]
+     ]
+    },
+    "rz": {
+     "keys": [
+      [
+       0,
+       6
+      ],
+      [
+       0.34,
+       16
+      ],
+      [
+       0.52,
+       30
+      ],
+      [
+       0.82,
+       14
+      ],
+      [
+       1,
+       6
+      ]
+     ]
+    }
+   },
+   "RightLowerArm": {
+    "rx": {
+     "keys": [
+      [
+       0,
+       10
+      ],
+      [
+       0.18,
+       22
+      ],
+      [
+       0.34,
+       8
+      ],
+      [
+       0.52,
+       40
+      ],
+      [
+       0.82,
+       35
+      ],
+      [
+       1,
+       10
+      ]
+     ]
+    }
+   }
   }
  },
  "fall": {
-  "use": "falling: arms up, legs pedalling", "tags": ["locomotion", "loop"], "length": 0.9, "loop": true,
-  "priority": "Movement", "mirror": "opposite",
+  "use": "falling: arms windmilling, legs bicycling, looking down",
+  "tags": [
+   "locomotion",
+   "loop",
+   "airborne"
+  ],
+  "length": 1.0,
+  "loop": true,
+  "priority": "Movement",
+  "mirror": "opposite",
+  "version": 2,
+  "ratings": [
+   {
+    "v": 1,
+    "stars": 6,
+    "note": "not bad, can do better"
+   }
+  ],
   "tracks": {
-   "UpperTorso": {"rx": {"o": 6, "a": 2, "p": 0, "h": 2}},
-   "Head": {"rx": {"o": 12, "a": 3, "p": 0.1, "h": 2}},
-   "RightUpperArm": {"rx": {"o": 25, "a": 14, "p": 0}, "rz": {"o": 115, "a": 12, "p": 0.25}},
-   "RightLowerArm": {"rx": {"o": 35, "a": 18, "p": 0.15}},
-   "RightUpperLeg": {"rx": {"o": 22, "a": 18, "p": 0}, "rz": 6},
-   "RightLowerLeg": {"rx": {"o": -45, "a": -18, "p": 0.2}},
-   "RightFoot": {"rx": {"o": -20, "a": 10, "p": 0.3}}
+   "LowerTorso": {
+    "y": 0.35,
+    "rx": {
+     "o": 6,
+     "a": 3,
+     "p": 0.1,
+     "h": 2
+    },
+    "rz": {
+     "a": 4,
+     "p": 0.2
+    }
+   },
+   "UpperTorso": {
+    "rx": {
+     "o": 8,
+     "a": 5,
+     "p": 0.15,
+     "h": 2
+    },
+    "rz": {
+     "a": -6,
+     "p": 0.25
+    },
+    "ry": {
+     "a": 8,
+     "p": 0.1
+    }
+   },
+   "Head": {
+    "rx": {
+     "o": -14,
+     "a": 6,
+     "p": 0.3,
+     "h": 2
+    },
+    "ry": {
+     "a": -10,
+     "p": 0.2
+    }
+   },
+   "RightUpperArm": {
+    "rz": {
+     "o": 118,
+     "a": 32,
+     "p": 0
+    },
+    "rx": {
+     "o": 15,
+     "a": 45,
+     "p": 0.25
+    }
+   },
+   "RightLowerArm": {
+    "rx": {
+     "o": 40,
+     "a": 28,
+     "p": 0.35
+    }
+   },
+   "RightHand": {
+    "rx": {
+     "a": 18,
+     "p": 0.45
+    }
+   },
+   "RightUpperLeg": {
+    "rx": {
+     "o": 28,
+     "a": 34,
+     "p": 0
+    },
+    "rz": {
+     "o": 8,
+     "a": 4,
+     "p": 0.25
+    }
+   },
+   "RightLowerLeg": {
+    "rx": {
+     "o": -62,
+     "a": -34,
+     "p": 0.25
+    }
+   },
+   "RightFoot": {
+    "rx": {
+     "o": -18,
+     "a": 18,
+     "p": 0.4
+    }
+   }
   }
  },
  "wave": {
-  "use": "friendly wave with the right hand", "tags": ["emote", "loop"], "length": 1.2, "loop": true,
-  "priority": "Action", "mirror": "none",
+  "use": "big friendly wave: arm high, swinging from the elbow, body bouncing along",
+  "tags": [
+   "emote",
+   "loop"
+  ],
+  "length": 1.4,
+  "loop": true,
+  "priority": "Action",
+  "mirror": "none",
+  "version": 2,
+  "ratings": [
+   {
+    "v": 1,
+    "stars": 4,
+    "note": "weak, could be so much better"
+   }
+  ],
   "tracks": {
-   "UpperTorso": {"rz": {"o": -4, "a": 1.5, "p": 0, "h": 2}, "ry": 6},
-   "Head": {"rz": {"o": 7, "a": 2, "p": 0.1, "h": 2}, "rx": 4, "ry": 6},
-   "RightUpperArm": {"rz": {"o": 140, "a": 4, "p": 0.05, "h": 2}, "rx": 12},
-   "RightLowerArm": {"rz": {"a": 28, "p": 0, "h": 2}, "rx": 15},
-   "RightHand": {"rz": {"a": 12, "p": 0.08, "h": 2}},
-   "LeftUpperArm": {"rz": -7, "rx": 3},
-   "LeftLowerArm": {"rx": 12},
-   "LowerTorso": {"y": {"o": -0.04, "a": 0.03, "p": 0, "h": 2}}
+   "LowerTorso": {
+    "y": {
+     "o": -0.04,
+     "a": 0.04,
+     "p": 0.05,
+     "h": 2
+    },
+    "x": {
+     "a": -0.1,
+     "p": 0.1,
+     "h": 2
+    },
+    "rz": {
+     "a": 3,
+     "p": 0.1,
+     "h": 2
+    }
+   },
+   "UpperTorso": {
+    "rz": {
+     "o": -8,
+     "a": 5,
+     "p": 0.15,
+     "h": 2
+    },
+    "ry": {
+     "o": 10,
+     "a": 3,
+     "p": 0.2,
+     "h": 2
+    },
+    "rx": {
+     "o": 3,
+     "a": 2,
+     "p": 0.1,
+     "h": 2
+    }
+   },
+   "Head": {
+    "rz": {
+     "o": 12,
+     "a": 6,
+     "p": 0.25,
+     "h": 2
+    },
+    "rx": {
+     "o": 8,
+     "a": 3,
+     "p": 0.2,
+     "h": 2
+    },
+    "ry": {
+     "o": 6,
+     "a": 4,
+     "p": 0.3,
+     "h": 2
+    }
+   },
+   "RightUpperArm": {
+    "rz": {
+     "o": 152,
+     "a": 8,
+     "p": 0.05,
+     "h": 2
+    },
+    "rx": {
+     "o": 14,
+     "a": 6,
+     "p": 0.05,
+     "h": 2
+    }
+   },
+   "RightLowerArm": {
+    "rz": {
+     "o": 12,
+     "a": 32,
+     "p": 0,
+     "h": 2
+    },
+    "rx": {
+     "o": 18,
+     "a": 6,
+     "p": 0.25,
+     "h": 2
+    }
+   },
+   "RightHand": {
+    "rz": {
+     "a": 28,
+     "p": 0.12,
+     "h": 2
+    }
+   },
+   "LeftUpperArm": {
+    "rz": {
+     "o": -14,
+     "a": 4,
+     "p": 0.2,
+     "h": 2
+    },
+    "rx": {
+     "o": 6,
+     "a": 4,
+     "p": 0.25,
+     "h": 2
+    }
+   },
+   "LeftLowerArm": {
+    "rx": {
+     "o": 28,
+     "a": 8,
+     "p": 0.3,
+     "h": 2
+    }
+   },
+   "LeftHand": {
+    "rx": {
+     "a": 8,
+     "p": 0.35,
+     "h": 2
+    }
+   },
+   "RightFoot": {
+    "ik": [
+     0.62,
+     0.26,
+     0.05
+    ],
+    "ry": 10
+   },
+   "LeftFoot": {
+    "ik": [
+     -0.62,
+     0.26,
+     -0.05
+    ],
+    "ry": -10
+   }
   }
  },
  "punch": {
-  "use": "right cross from a guard stance", "tags": ["combat", "one-shot"], "length": 0.7, "loop": false,
-  "priority": "Action", "mirror": "none",
+  "use": "boxer's one-two: jab with the lead hand, then a right cross driven from the hips",
+  "tags": [
+   "combat",
+   "one-shot"
+  ],
+  "length": 1.15,
+  "loop": false,
+  "priority": "Action",
+  "mirror": "none",
+  "version": 2,
+  "ratings": [
+   {
+    "v": 1,
+    "stars": 2,
+    "note": "looks like someone who's never thrown a punch, not a boxer"
+   }
+  ],
   "tracks": {
-   "LowerTorso": {"ry": {"keys": [[0, 0], [0.28, -10], [0.42, 14, "out"], [0.65, 10], [1, 0]]}, "y": -0.2},
-   "UpperTorso": {"ry": {"keys": [[0, 0], [0.28, -16], [0.42, 30, "overshoot"], [0.65, 24], [1, 0]]},
-                  "rx": {"keys": [[0, -6], [0.28, -4], [0.42, -12, "out"], [1, -6]]}},
-   "Head": {"ry": {"keys": [[0, 0], [0.28, 12], [0.42, -24, "out"], [1, 0]]}, "rx": 6},
-   "RightUpperArm": {"rx": {"keys": [[0, 55], [0.28, 45], [0.42, 92, "overshoot"], [0.65, 88], [1, 55]]},
-                     "rz": {"keys": [[0, 14], [0.28, 20], [0.42, -8, "out"], [1, 14]]}},
-   "RightLowerArm": {"rx": {"keys": [[0, 115], [0.28, 125], [0.42, 4, "out"], [0.65, 8], [1, 115]]}},
-   "LeftUpperArm": {"rx": {"keys": [[0, 60], [0.42, 48, "out"], [1, 60]]}, "rz": -14},
-   "LeftLowerArm": {"rx": {"keys": [[0, 115], [0.42, 128, "out"], [1, 115]]}},
-   "RightUpperLeg": {"rx": -6, "rz": 4}, "RightLowerLeg": {"rx": -18}, "RightFoot": {"rx": 12},
-   "LeftUpperLeg": {"rx": 22, "rz": -4}, "LeftLowerLeg": {"rx": -24}, "LeftFoot": {"rx": 2}
+   "LowerTorso": {
+    "y": {
+     "keys": [
+      [
+       0,
+       -0.16
+      ],
+      [
+       0.14,
+       -0.2
+      ],
+      [
+       0.34,
+       -0.15
+      ],
+      [
+       0.46,
+       -0.24
+      ],
+      [
+       0.56,
+       -0.28,
+       "out"
+      ],
+      [
+       0.8,
+       -0.18
+      ],
+      [
+       1,
+       -0.16,
+       "smooth"
+      ]
+     ]
+    },
+    "z": {
+     "keys": [
+      [
+       0,
+       0
+      ],
+      [
+       0.16,
+       -0.12,
+       "out"
+      ],
+      [
+       0.32,
+       0
+      ],
+      [
+       0.42,
+       0.08
+      ],
+      [
+       0.56,
+       -0.3,
+       "out"
+      ],
+      [
+       0.8,
+       -0.05
+      ],
+      [
+       1,
+       0,
+       "smooth"
+      ]
+     ]
+    },
+    "ry": {
+     "keys": [
+      [
+       0,
+       -28
+      ],
+      [
+       0.16,
+       -36,
+       "out"
+      ],
+      [
+       0.32,
+       -28
+      ],
+      [
+       0.42,
+       -34
+      ],
+      [
+       0.56,
+       12,
+       "out"
+      ],
+      [
+       0.72,
+       6
+      ],
+      [
+       1,
+       -28,
+       "smooth"
+      ]
+     ]
+    }
+   },
+   "UpperTorso": {
+    "ry": {
+     "keys": [
+      [
+       0,
+       -10
+      ],
+      [
+       0.16,
+       -18,
+       "out"
+      ],
+      [
+       0.32,
+       -10
+      ],
+      [
+       0.42,
+       -14
+      ],
+      [
+       0.56,
+       26,
+       "overshoot"
+      ],
+      [
+       0.72,
+       20
+      ],
+      [
+       1,
+       -10,
+       "smooth"
+      ]
+     ]
+    },
+    "rx": {
+     "keys": [
+      [
+       0,
+       -10
+      ],
+      [
+       0.16,
+       -14
+      ],
+      [
+       0.32,
+       -10
+      ],
+      [
+       0.56,
+       -18,
+       "out"
+      ],
+      [
+       1,
+       -10,
+       "smooth"
+      ]
+     ]
+    },
+    "rz": {
+     "keys": [
+      [
+       0,
+       0
+      ],
+      [
+       0.16,
+       -4
+      ],
+      [
+       0.32,
+       0
+      ],
+      [
+       0.56,
+       6,
+       "out"
+      ],
+      [
+       1,
+       0,
+       "smooth"
+      ]
+     ]
+    }
+   },
+   "Head": {
+    "ry": {
+     "keys": [
+      [
+       0,
+       34
+      ],
+      [
+       0.16,
+       40
+      ],
+      [
+       0.32,
+       34
+      ],
+      [
+       0.56,
+       -6,
+       "out"
+      ],
+      [
+       0.72,
+       0
+      ],
+      [
+       1,
+       34,
+       "smooth"
+      ]
+     ]
+    },
+    "rx": -6
+   },
+   "LeftHand": {
+    "ik": {
+     "keys": [
+      [
+       0,
+       [
+        -0.4,
+        4.07,
+        -1.15
+       ]
+      ],
+      [
+       0.06,
+       [
+        -0.42,
+        4.02,
+        -1.05
+       ]
+      ],
+      [
+       0.16,
+       [
+        -0.2,
+        4.07,
+        -2.95
+       ],
+       "out"
+      ],
+      [
+       0.26,
+       [
+        -0.4,
+        4.07,
+        -1.2
+       ]
+      ],
+      [
+       0.56,
+       [
+        -0.45,
+        4.12,
+        -0.95
+       ]
+      ],
+      [
+       0.8,
+       [
+        -0.4,
+        4.07,
+        -1.15
+       ]
+      ],
+      [
+       1,
+       [
+        -0.4,
+        4.07,
+        -1.15
+       ],
+       "smooth"
+      ]
+     ]
+    },
+    "pole": [
+     -0.5,
+     -1,
+     0.1
+    ],
+    "rx": -10
+   },
+   "RightHand": {
+    "ik": {
+     "keys": [
+      [
+       0,
+       [
+        0.35,
+        4.07,
+        -0.75
+       ]
+      ],
+      [
+       0.16,
+       [
+        0.4,
+        4.12,
+        -0.7
+       ]
+      ],
+      [
+       0.42,
+       [
+        0.42,
+        4.07,
+        -0.65
+       ]
+      ],
+      [
+       0.56,
+       [
+        0.0,
+        4.02,
+        -3.05
+       ],
+       "out"
+      ],
+      [
+       0.66,
+       [
+        0.12,
+        4.04,
+        -2.7
+       ]
+      ],
+      [
+       0.84,
+       [
+        0.35,
+        4.07,
+        -0.75
+       ]
+      ],
+      [
+       1,
+       [
+        0.35,
+        4.07,
+        -0.75
+       ],
+       "smooth"
+      ]
+     ]
+    },
+    "pole": [
+     0.5,
+     -1,
+     0.2
+    ],
+    "rx": -10
+   },
+   "LeftFoot": {
+    "ik": {
+     "keys": [
+      [
+       0,
+       [
+        -0.45,
+        0.26,
+        -0.75
+       ]
+      ],
+      [
+       0.16,
+       [
+        -0.45,
+        0.26,
+        -0.85
+       ],
+       "out"
+      ],
+      [
+       0.32,
+       [
+        -0.45,
+        0.26,
+        -0.75
+       ]
+      ],
+      [
+       1,
+       [
+        -0.45,
+        0.26,
+        -0.75
+       ]
+      ]
+     ]
+    },
+    "ry": 18
+   },
+   "RightFoot": {
+    "ik": [
+     0.75,
+     0.26,
+     0.65
+    ],
+    "ry": 32,
+    "rx": {
+     "keys": [
+      [
+       0,
+       -22
+      ],
+      [
+       0.42,
+       -22
+      ],
+      [
+       0.56,
+       -45,
+       "out"
+      ],
+      [
+       0.8,
+       -25
+      ],
+      [
+       1,
+       -22,
+       "smooth"
+      ]
+     ]
+    }
+   }
   }
  },
  "slash": {
-  "use": "overhead diagonal sword slash with the right hand", "tags": ["combat", "one-shot"], "length": 0.8,
-  "loop": false, "priority": "Action", "mirror": "none",
+  "use": "overhead diagonal sword slash: weight back, step in, follow through",
+  "tags": [
+   "combat",
+   "one-shot"
+  ],
+  "length": 1.0,
+  "loop": false,
+  "priority": "Action",
+  "mirror": "none",
+  "version": 2,
+  "ratings": [
+   {
+    "v": 1,
+    "stars": 5,
+    "note": "stiff, needs more fluidity in the legs"
+   }
+  ],
   "tracks": {
-   "LowerTorso": {"y": {"keys": [[0, -0.1], [0.3, 0], [0.48, -0.35, "out"], [1, -0.1]]}},
-   "UpperTorso": {"ry": {"keys": [[0, 0], [0.3, -28], [0.48, 34, "overshoot"], [0.7, 28], [1, 0]]},
-                  "rx": {"keys": [[0, 0], [0.3, 8], [0.48, -18, "out"], [1, 0]]}},
-   "Head": {"ry": {"keys": [[0, 0], [0.3, 18], [0.48, -16], [1, 0]]}},
-   "RightUpperArm": {"rx": {"keys": [[0, 15], [0.3, 165], [0.48, -5, "overshoot"], [0.7, 0], [1, 15]]},
-                     "rz": {"keys": [[0, 8], [0.3, 40], [0.48, -32, "out"], [0.7, -26], [1, 8]]}},
-   "RightLowerArm": {"rx": {"keys": [[0, 25], [0.3, 70], [0.48, 8, "out"], [1, 25]]}},
-   "LeftUpperArm": {"rx": {"keys": [[0, 10], [0.3, 40], [0.48, -20, "out"], [1, 10]]}, "rz": -12},
-   "LeftLowerArm": {"rx": 25},
-   "RightUpperLeg": {"rx": -8, "rz": 4}, "RightLowerLeg": {"rx": -14}, "RightFoot": {"rx": 10},
-   "LeftUpperLeg": {"rx": 20, "rz": -4}, "LeftLowerLeg": {"rx": -26}, "LeftFoot": {"rx": 6}
+   "LowerTorso": {
+    "y": {
+     "keys": [
+      [
+       0,
+       -0.05
+      ],
+      [
+       0.3,
+       -0.04
+      ],
+      [
+       0.48,
+       -0.32,
+       "in"
+      ],
+      [
+       0.62,
+       -0.36
+      ],
+      [
+       1,
+       -0.05,
+       "smooth"
+      ]
+     ]
+    },
+    "z": {
+     "keys": [
+      [
+       0,
+       0
+      ],
+      [
+       0.3,
+       0.25
+      ],
+      [
+       0.48,
+       -0.5,
+       "in"
+      ],
+      [
+       0.62,
+       -0.55
+      ],
+      [
+       1,
+       0,
+       "smooth"
+      ]
+     ]
+    },
+    "ry": {
+     "keys": [
+      [
+       0,
+       0
+      ],
+      [
+       0.3,
+       -18
+      ],
+      [
+       0.48,
+       16,
+       "in"
+      ],
+      [
+       0.62,
+       20
+      ],
+      [
+       1,
+       0,
+       "smooth"
+      ]
+     ]
+    }
+   },
+   "UpperTorso": {
+    "ry": {
+     "keys": [
+      [
+       0,
+       0
+      ],
+      [
+       0.3,
+       -34
+      ],
+      [
+       0.48,
+       32,
+       "in"
+      ],
+      [
+       0.62,
+       40
+      ],
+      [
+       1,
+       0,
+       "smooth"
+      ]
+     ]
+    },
+    "rx": {
+     "keys": [
+      [
+       0,
+       0
+      ],
+      [
+       0.3,
+       10
+      ],
+      [
+       0.48,
+       -22,
+       "in"
+      ],
+      [
+       0.62,
+       -26
+      ],
+      [
+       1,
+       0,
+       "smooth"
+      ]
+     ]
+    },
+    "rz": {
+     "keys": [
+      [
+       0,
+       0
+      ],
+      [
+       0.3,
+       -8
+      ],
+      [
+       0.48,
+       10
+      ],
+      [
+       1,
+       0,
+       "smooth"
+      ]
+     ]
+    }
+   },
+   "Head": {
+    "ry": {
+     "keys": [
+      [
+       0,
+       0
+      ],
+      [
+       0.3,
+       24
+      ],
+      [
+       0.48,
+       -20
+      ],
+      [
+       0.62,
+       -26
+      ],
+      [
+       1,
+       0,
+       "smooth"
+      ]
+     ]
+    },
+    "rx": {
+     "keys": [
+      [
+       0,
+       0
+      ],
+      [
+       0.3,
+       -6
+      ],
+      [
+       0.48,
+       12
+      ],
+      [
+       1,
+       0,
+       "smooth"
+      ]
+     ]
+    }
+   },
+   "RightUpperArm": {
+    "rx": {
+     "keys": [
+      [
+       0,
+       15
+      ],
+      [
+       0.3,
+       172
+      ],
+      [
+       0.48,
+       10,
+       "in"
+      ],
+      [
+       0.62,
+       -28
+      ],
+      [
+       0.8,
+       -10
+      ],
+      [
+       1,
+       15,
+       "smooth"
+      ]
+     ]
+    },
+    "rz": {
+     "keys": [
+      [
+       0,
+       8
+      ],
+      [
+       0.3,
+       42
+      ],
+      [
+       0.48,
+       -12,
+       "in"
+      ],
+      [
+       0.62,
+       -40
+      ],
+      [
+       1,
+       8,
+       "smooth"
+      ]
+     ]
+    }
+   },
+   "RightLowerArm": {
+    "rx": {
+     "keys": [
+      [
+       0,
+       25
+      ],
+      [
+       0.3,
+       85
+      ],
+      [
+       0.44,
+       10,
+       "in"
+      ],
+      [
+       0.62,
+       30
+      ],
+      [
+       1,
+       25,
+       "smooth"
+      ]
+     ]
+    }
+   },
+   "RightHand": {
+    "rx": {
+     "keys": [
+      [
+       0,
+       0
+      ],
+      [
+       0.3,
+       -20
+      ],
+      [
+       0.48,
+       25,
+       "in"
+      ],
+      [
+       0.62,
+       10
+      ],
+      [
+       1,
+       0,
+       "smooth"
+      ]
+     ]
+    }
+   },
+   "LeftUpperArm": {
+    "rx": {
+     "keys": [
+      [
+       0,
+       10
+      ],
+      [
+       0.3,
+       55
+      ],
+      [
+       0.48,
+       -30,
+       "in"
+      ],
+      [
+       0.62,
+       -42
+      ],
+      [
+       1,
+       10,
+       "smooth"
+      ]
+     ]
+    },
+    "rz": {
+     "keys": [
+      [
+       0,
+       -12
+      ],
+      [
+       0.3,
+       -28
+      ],
+      [
+       0.5,
+       -50
+      ],
+      [
+       1,
+       -12,
+       "smooth"
+      ]
+     ]
+    }
+   },
+   "LeftLowerArm": {
+    "rx": {
+     "keys": [
+      [
+       0,
+       25
+      ],
+      [
+       0.3,
+       40
+      ],
+      [
+       0.5,
+       15
+      ],
+      [
+       1,
+       25,
+       "smooth"
+      ]
+     ]
+    }
+   },
+   "LeftFoot": {
+    "ik": {
+     "keys": [
+      [
+       0,
+       [
+        -0.6,
+        0.26,
+        0.1
+       ]
+      ],
+      [
+       0.3,
+       [
+        -0.6,
+        0.26,
+        0.15
+       ]
+      ],
+      [
+       0.38,
+       [
+        -0.62,
+        0.7,
+        -0.35
+       ]
+      ],
+      [
+       0.48,
+       [
+        -0.65,
+        0.26,
+        -1.05
+       ],
+       "in"
+      ],
+      [
+       0.82,
+       [
+        -0.65,
+        0.26,
+        -1.05
+       ]
+      ],
+      [
+       0.91,
+       [
+        -0.62,
+        0.55,
+        -0.45
+       ]
+      ],
+      [
+       1,
+       [
+        -0.6,
+        0.26,
+        0.1
+       ],
+       "smooth"
+      ]
+     ]
+    },
+    "rx": {
+     "keys": [
+      [
+       0,
+       0
+      ],
+      [
+       0.38,
+       15
+      ],
+      [
+       0.48,
+       0
+      ],
+      [
+       0.91,
+       10
+      ],
+      [
+       1,
+       0
+      ]
+     ]
+    },
+    "ry": -8
+   },
+   "RightFoot": {
+    "ik": [
+     0.6,
+     0.26,
+     0.25
+    ],
+    "ry": 14,
+    "rx": {
+     "keys": [
+      [
+       0,
+       0
+      ],
+      [
+       0.3,
+       0
+      ],
+      [
+       0.48,
+       -30,
+       "in"
+      ],
+      [
+       0.82,
+       -26
+      ],
+      [
+       1,
+       0,
+       "smooth"
+      ]
+     ]
+    }
+   }
   }
  },
  "dance": {
-  "use": "bouncy two-step groove", "tags": ["emote", "loop"], "length": 1.0, "loop": true, "priority": "Action",
+  "use": "bouncy two-step groove",
+  "tags": [
+   "emote",
+   "loop"
+  ],
+  "length": 1.0,
+  "loop": true,
+  "priority": "Action",
   "mirror": "opposite",
+  "version": 1,
+  "ratings": [
+   {
+    "v": 1,
+    "stars": 8,
+    "note": "looks good"
+   }
+  ],
   "tracks": {
-   "LowerTorso": {"y": {"o": -0.2, "a": 0.2, "p": 0, "h": 2}, "ry": {"a": 14, "p": 0}, "rz": {"a": 6, "p": 0.25}},
-   "UpperTorso": {"rz": {"a": -9, "p": 0.3}, "ry": {"a": -6, "p": 0.05}},
-   "Head": {"rz": {"a": 7, "p": 0.35}, "rx": {"o": 2, "a": 5, "p": 0.12, "h": 2}},
-   "RightUpperArm": {"rx": {"o": 40, "a": 42, "p": 0}, "rz": {"o": 28, "a": 18, "p": 0.25}},
-   "RightLowerArm": {"rx": {"o": 85, "a": 22, "p": 0.1, "h": 2}},
-   "RightUpperLeg": {"rx": {"o": 10, "a": 8, "p": 0.25, "h": 2}, "rz": {"o": 4, "a": 3, "p": 0}},
-   "RightLowerLeg": {"rx": {"o": -20, "a": -15, "p": 0.25, "h": 2}},
-   "RightFoot": {"rx": {"o": 10, "a": 7, "p": 0.25, "h": 2}}
+   "LowerTorso": {
+    "y": {
+     "o": -0.2,
+     "a": 0.2,
+     "p": 0,
+     "h": 2
+    },
+    "ry": {
+     "a": 14,
+     "p": 0
+    },
+    "rz": {
+     "a": 6,
+     "p": 0.25
+    }
+   },
+   "UpperTorso": {
+    "rz": {
+     "a": -9,
+     "p": 0.3
+    },
+    "ry": {
+     "a": -6,
+     "p": 0.05
+    }
+   },
+   "Head": {
+    "rz": {
+     "a": 7,
+     "p": 0.35
+    },
+    "rx": {
+     "o": 2,
+     "a": 5,
+     "p": 0.12,
+     "h": 2
+    }
+   },
+   "RightUpperArm": {
+    "rx": {
+     "o": 40,
+     "a": 42,
+     "p": 0
+    },
+    "rz": {
+     "o": 28,
+     "a": 18,
+     "p": 0.25
+    }
+   },
+   "RightLowerArm": {
+    "rx": {
+     "o": 85,
+     "a": 22,
+     "p": 0.1,
+     "h": 2
+    }
+   },
+   "RightUpperLeg": {
+    "rx": {
+     "o": 10,
+     "a": 8,
+     "p": 0.25,
+     "h": 2
+    },
+    "rz": {
+     "o": 4,
+     "a": 3,
+     "p": 0
+    }
+   },
+   "RightLowerLeg": {
+    "rx": {
+     "o": -20,
+     "a": -15,
+     "p": 0.25,
+     "h": 2
+    }
+   },
+   "RightFoot": {
+    "rx": {
+     "o": 10,
+     "a": 7,
+     "p": 0.25,
+     "h": 2
+    }
+   }
   }
  }
 }

@@ -10,8 +10,14 @@ forward, a knee bends with rx-, an elbow with rx+, rz+ lifts a right arm sideway
     number                      constant
     {o, a, p, h}                wave: o + a*cos(2*pi*h*(u - p)), peaks at phase p (0-1 of the cycle)
     [wave, wave, ...]           summed
-    {keys: [[u, v, ease]..]}    eased keys at normalised time u; ease: smooth (default) | linear | in |
-                                out | overshoot | snap
+    {keys: [[u, v, ease]..]}    keys at normalised time u, joined by a spline that keeps moving through
+                                them (default) or eased into a key: smooth | linear | in | out |
+                                overshoot | snap
+IK (Hand and Foot): {"ik": [x, y, z] or {keys: [[u, [x, y, z], ease]..]}, "pole": [x, y, z]} puts the wrist or
+ankle at that point (studs, character space: feet on y=0, +X right, -Z forward) and solves the limb; pole is
+the way the elbow/knee points. With ik, a Foot's rx is its pitch to the floor (0 = flat, - = heel up).
+overlap: each joint up the body runs a little behind the one below it (hips lead, chest, shoulders, arms,
+hands, head follow), which is what makes motion flow; the overlap knob scales it.
 Preset: {use, tags, length (s), loop, priority, mirror: opposite|same|none, base, params, tracks}.
 mirror fills each Left joint from its Right one: opposite = half a cycle later (gaits), same = in step.
 """
@@ -23,23 +29,27 @@ from pathlib import Path
 
 PRIORITY = {"Idle": 0, "Movement": 1, "Action": 2, "Action2": 3, "Action3": 4, "Action4": 5, "Core": 1000}
 CHANNELS = ("x", "y", "z", "rx", "ry", "rz")
+IK_CHANNELS = ("ik", "pole")
+# chain depth above the pelvis: how many overlap steps a joint trails the hips by (legs stay exact for contact)
+DEPTH = {"UpperTorso": 1, "Head": 3, "UpperArm": 2, "LowerArm": 3, "Hand": 4}
+OVERLAP_S = 0.025
 FPS = 30
 
-# Default R15 in rest pose (measured in Studio), Roblox space (X right, Y up, faces -Z), feet on y=0.
+# Default R15 in rest pose (measured in a Studio workspace), Roblox space (X right, Y up, faces -Z), feet on y=0.
 # All joints have identity rotations, so a Pose CFrame is just the joint's rotation and offset.
 # part: (parent, joint pivot, box centre, box size)
 _RIGHT = {
-    "RightUpperArm": ("UpperTorso", (0.97, 3.8, 0), (1.5, 3.37, 0), (1, 1.24, 1)),
-    "RightLowerArm": ("RightUpperArm", (1.5, 3.02, 0), (1.5, 2.78, 0), (1, 1.12, 1)),
-    "RightHand": ("RightLowerArm", (1.5, 2.25, 0), (1.5, 2.15, 0), (0.98, 0.32, 1.03)),
-    "RightUpperLeg": ("LowerTorso", (0.5, 2.0, 0), (0.5, 1.58, 0), (0.99, 1.36, 0.97)),
-    "RightLowerLeg": ("RightUpperLeg", (0.5, 1.13, 0), (0.5, 0.8, 0), (0.99, 1.3, 0.97)),
-    "RightFoot": ("RightLowerLeg", (0.5, 0.21, 0), (0.5, 0.155, 0), (1.01, 0.31, 1.0)),
+    "RightUpperArm": ("UpperTorso", (0.972, 4.037, 0), (1.472, 3.618, 0), (1, 1.24, 1)),
+    "RightLowerArm": ("RightUpperArm", (1.472, 3.263, 0), (1.472, 2.988, 0), (1, 1.12, 1)),
+    "RightHand": ("RightLowerArm", (1.472, 2.456, 0), (1.472, 2.325, 0), (0.98, 0.32, 1.03)),
+    "RightUpperLeg": ("LowerTorso", (0.498, 2.19, 0), (0.498, 1.719, 0), (0.99, 1.36, 0.97)),
+    "RightLowerLeg": ("RightUpperLeg", (0.498, 1.269, 0), (0.498, 0.856, 0), (0.99, 1.3, 0.97)),
+    "RightFoot": ("RightLowerLeg", (0.498, 0.26, 0), (0.498, 0.154, 0), (1.01, 0.31, 1.0)),
 }
 RIG = {
-    "LowerTorso": ("HumanoidRootPart", (0, 2.0, 0), (0, 2.2, 0), (2, 0.4, 1)),
-    "UpperTorso": ("LowerTorso", (0, 2.4, 0), (0, 3.2, 0), (1.94, 1.7, 1)),
-    "Head": ("UpperTorso", (0, 4.05, 0), (0, 4.6, 0), (1.16, 1.18, 1.16)),
+    "LowerTorso": ("HumanoidRootPart", (0, 2.19, 0), (0, 2.39, 0), (1.99, 0.4, 1)),
+    "UpperTorso": ("LowerTorso", (0, 2.591, 0), (0, 3.44, 0), (1.94, 1.7, 1)),
+    "Head": ("UpperTorso", (0, 4.289, 0), (0, 4.864, 0), (1.16, 1.18, 1.16)),
 }
 for _n, (_par, _pv, _c, _s) in _RIGHT.items():
     RIG[_n] = (_par, _pv, _c, _s)
@@ -47,7 +57,7 @@ for _n, (_par, _pv, _c, _s) in _RIGHT.items():
 JOINTS = list(RIG)
 GROUPS = {"arms": ("UpperArm", "LowerArm", "Hand"), "legs": ("UpperLeg", "LowerLeg", "Foot"),
           "torso": ("LowerTorso", "UpperTorso"), "head": ("Head",)}
-KNOBS = {"speed": 1.0, "amount": 1.0, "arms": 1.0, "legs": 1.0, "torso": 1.0, "head": 1.0, "bounce": 1.0, "lean": 0.0}
+KNOBS = {"overlap": 1.0, "speed": 1.0, "amount": 1.0, "arms": 1.0, "legs": 1.0, "torso": 1.0, "head": 1.0, "bounce": 1.0, "lean": 0.0}
 
 
 def library_path() -> Path:
@@ -83,6 +93,13 @@ def _merge_tracks(base: dict, over: dict) -> dict:
     return out
 
 
+def _flip_vec(spec, shift: float = 0.0):
+    """An ik/pole spec mirrored onto the other side: x negated."""
+    if isinstance(spec, list):
+        return [-spec[0], *spec[1:]]
+    return {**spec, "keys": [[k[0], [-k[1][0], *k[1][1:]], *k[2:]] for k in spec["keys"]], "shift": spec.get("shift", 0) + shift}
+
+
 def _flip(spec, sign: float, shift: float):
     """A channel spec mirrored onto the other side: values times sign, waves shifted by `shift`."""
     if isinstance(spec, (int, float)):
@@ -90,7 +107,7 @@ def _flip(spec, sign: float, shift: float):
     if isinstance(spec, list):
         return [_flip(s, sign, shift) for s in spec]
     if "keys" in spec:
-        return {**spec, "keys": [[k[0], k[1] * sign, *k[2:]] for k in spec["keys"]]}
+        return {**spec, "keys": [[k[0], k[1] * sign, *k[2:]] for k in spec["keys"]], "shift": spec.get("shift", 0) + shift}
     return {**spec, "o": spec.get("o", 0) * sign, "a": spec.get("a", 0) * sign, "p": spec.get("p", 0) + shift}
 
 
@@ -117,16 +134,18 @@ def resolve(spec: dict) -> dict:
     bad = [j for j in d["tracks"] if j not in RIG]
     if bad:
         raise KeyError(f"unknown joint(s) {', '.join(bad)}; joints: {', '.join(JOINTS)}")
-    bad = [f"{j}.{c}" for j, ch in d["tracks"].items() for c in ch if c not in CHANNELS]
+    bad = [f"{j}.{c}" for j, ch in d["tracks"].items() for c in ch
+           if c not in CHANNELS and not (c in IK_CHANNELS and j.endswith(("Hand", "Foot")))]
     if bad:
-        raise KeyError(f"unknown channel(s) {', '.join(bad)}; channels: {', '.join(CHANNELS)}")
+        raise KeyError(f"unknown channel(s) {', '.join(bad)}; channels: {', '.join(CHANNELS)} (+ ik, pole on hands/feet)")
     mirror = d.get("mirror", "none")
     if mirror in ("opposite", "same"):
         shift = 0.5 if mirror == "opposite" else 0.0
         for j in [j for j in d["tracks"] if j.startswith("Right")]:
             left = "Left" + j[5:]
             if left not in d["tracks"]:
-                d["tracks"][left] = {c: _flip(s, -1 if c in ("ry", "rz", "x") else 1, shift)
+                d["tracks"][left] = {c: _flip_vec(s, shift) if c in IK_CHANNELS else
+                                     _flip(s, -1 if c in ("ry", "rz", "x") else 1, shift)
                                      for c, s in d["tracks"][j].items()}
     d["length"] = float(d.get("length", 1.0)) / max(float(params["speed"]), 0.05)
     d["loop"] = bool(d.get("loop", True))
@@ -162,16 +181,56 @@ def _value(spec, u: float, loop: bool) -> tuple[float, float]:
     if "keys" in spec:
         keys = sorted(spec["keys"], key=lambda k: k[0])
         rest = keys[0][1]
-        if u <= keys[0][0]:
-            return rest, 0.0
-        for a, b in zip(keys, keys[1:]):
-            if u <= b[0]:
-                span = b[0] - a[0]
-                t = (u - a[0]) / span if span > 0 else 1.0
-                v = a[1] + (b[1] - a[1]) * _ease(b[2] if len(b) > 2 else spec.get("ease", "smooth"), t)
-                return rest, v - rest
-        return rest, keys[-1][1] - rest
+        if spec.get("shift") and loop:  # a mirrored gait: the same keys half a cycle later
+            u = (u - spec["shift"]) % 1.0
+        return rest, _keys(keys, u, loop, spec.get("ease", "spline")) - rest
     return float(spec.get("o", 0)), spec.get("a", 0) * math.cos(2 * math.pi * spec.get("h", 1) * (u - spec.get("p", 0)))
+
+
+def _keys(keys, u: float, loop: bool, default: str = "spline", c: int | None = None) -> float:
+    """Value of sorted keys [[u, v, ease]..] at u (component c of vector values). Spline segments are
+    cubic Hermite with Catmull-Rom tangents, so motion carries through a key instead of stopping on it;
+    the ends of a one-shot (and keys with an explicit ease) settle."""
+    def val(k):
+        return k[1] if c is None else k[1][c]
+    if u <= keys[0][0]:
+        return val(keys[0])
+    if u >= keys[-1][0]:
+        return val(keys[-1])
+    i = next(i for i in range(1, len(keys)) if u <= keys[i][0])
+    a, b = keys[i - 1], keys[i]
+    span = b[0] - a[0]
+    t = (u - a[0]) / span if span > 0 else 1.0
+    ease = b[2] if len(b) > 2 else default
+    if ease != "spline":
+        return val(a) + (val(b) - val(a)) * _ease(ease, t)
+
+    def tangent(j):
+        if 0 < j < len(keys) - 1:
+            p, n = keys[j - 1], keys[j + 1]
+            return (val(n) - val(p)) / ((n[0] - p[0]) or 1)
+        if loop and len(keys) > 2:  # wrap: u=0 and u=1 are the same moment
+            p, n = keys[-2], keys[1]
+            return (val(n) - val(p)) / ((n[0] + 1 - p[0]) or 1)
+        return 0.0
+    m0, m1 = tangent(i - 1) * span, tangent(i) * span
+    t2, t3 = t * t, t * t * t
+    return (2 * t3 - 3 * t2 + 1) * val(a) + (t3 - 2 * t2 + t) * m0 + (-2 * t3 + 3 * t2) * val(b) + (t3 - t2) * m1
+
+
+def _vec(spec, u: float, loop: bool) -> tuple:
+    if isinstance(spec, list):
+        return tuple(float(x) for x in spec)
+    keys = sorted(spec["keys"], key=lambda k: k[0])
+    if spec.get("shift") and loop:
+        u = (u - spec["shift"]) % 1.0
+    return tuple(_keys(keys, u, loop, spec.get("ease", "spline"), c) for c in range(3))
+
+
+def _lag(joint: str, d: dict) -> float:
+    """How far (normalised time) a joint trails the hips."""
+    n = next((v for k, v in DEPTH.items() if joint.endswith(k)), 0)
+    return n * OVERLAP_S * d["params"]["overlap"] / d["length"]
 
 
 def _group_scale(joint: str, ch: str, params: dict) -> float:
@@ -188,15 +247,23 @@ def pose_at(d: dict, u: float, ground: bool | str = True) -> dict:
     """{joint: [x, y, z, rx, ry, rz]} (studs, degrees) at normalised time u. ground: feet are planted
     with IK, then the body lifts if anything still dips below the floor (a sinking foot is the
     commonest animation artefact); "plant" = IK only, False = raw tracks."""
-    out = {}
+    out, iks = {}, {}
     for joint, chans in d["tracks"].items():
         vals = [0.0] * 6
+        uj = u - _lag(joint, d)
+        uj = uj % 1.0 if d["loop"] else max(0.0, uj)
         for ch, spec in chans.items():
-            base, motion = _value(spec, u, d["loop"])
+            if ch in IK_CHANNELS:
+                continue
+            base, motion = _value(spec, uj, d["loop"])
             vals[CHANNELS.index(ch)] = base + motion * _group_scale(joint, ch, d["params"])
         out[joint] = vals
+        if "ik" in chans:
+            iks[joint] = (_vec(chans["ik"], u, d["loop"]), _vec(chans["pole"], u, d["loop"]) if "pole" in chans else None)  # targets are hits: no overlap
     if d["params"]["lean"]:
         out.setdefault("UpperTorso", [0.0] * 6)[3] -= d["params"]["lean"]
+    for joint in sorted(iks, key=lambda j: j.endswith("Hand")):  # legs first, then arms on the posed torso
+        reach(out, joint, *iks[joint])
     if ground and d.get("ground", True):
         for side in ("Right", "Left"):
             plant(out, side)
@@ -253,6 +320,73 @@ def plant(pose: dict, side: str):
         world = solve(pose)
         fr = world[side + "Foot"][0]
         foot[3] -= math.degrees(math.asin(max(-1.0, min(1.0, -fr[1][2]))))
+
+
+def _bend_len(u1, u2, e):
+    v = tuple(a + b for a, b in zip(u1, _mv(_rot(math.radians(e), 0, 0), u2)))
+    return v, math.sqrt(sum(x * x for x in v))
+
+
+def _unit(v):
+    n = math.sqrt(sum(x * x for x in v))
+    return tuple(x / n for x in v) if n > 1e-9 else None
+
+
+def _cross(a, b):
+    return (a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0])
+
+
+def reach(pose: dict, end: str, target, pole=None):
+    """Two-bone IK: put the wrist (Hand) or ankle (Foot) pivot at `target` (character space) with the
+    elbow/knee pointing along `pole`; sets the upper limb's rotation and the lower limb's bend."""
+    leg = end.endswith("Foot")
+    side = "Right" if end.startswith("Right") else "Left"
+    upper, lower = (side + "UpperLeg", side + "LowerLeg") if leg else (side + "UpperArm", side + "LowerArm")
+    sgn = 1 if side == "Right" else -1
+    pole = pole or ((0.15 * sgn, 0.0, -1.0) if leg else (0.35 * sgn, -1.0, 0.45))
+    world = solve(pose)
+    pr, pt = world[RIG[upper][0]]
+    p_up, p_lo, p_end = RIG[upper][1], RIG[lower][1], RIG[end][1]
+    off = pose.get(upper, [0.0] * 6)[:3]
+    shoulder = tuple(_mv(pr, tuple(p_up[i] + off[i] for i in range(3)))[i] + pt[i] for i in range(3))
+    w = tuple(sum(pr[k][i] * (target[k] - shoulder[k]) for k in range(3)) for i in range(3))  # parent frame
+    u1 = tuple(p_lo[i] - p_up[i] for i in range(3))
+    u2 = tuple(p_end[i] - p_lo[i] for i in range(3))
+    lo_e, hi_e = 0.0, -150.0 if leg else 150.0  # |u1 + Rx(e) u2| shrinks as the joint bends
+    dist = math.sqrt(sum(x * x for x in w))
+    dist = max(min(dist, _bend_len(u1, u2, lo_e)[1]), _bend_len(u1, u2, hi_e)[1])
+    for _ in range(40):
+        mid = (lo_e + hi_e) / 2
+        if _bend_len(u1, u2, mid)[1] > dist:
+            lo_e = mid
+        else:
+            hi_e = mid
+    e = (lo_e + hi_e) / 2
+    v, _ = _bend_len(u1, u2, e)
+    a1, b1 = _unit(v), _unit(w)
+    if not b1:
+        return
+    pl = tuple(sum(pr[k][i] * pole[k] for k in range(3)) for i in range(3))
+
+    def perp(x, axis):
+        q = _unit(tuple(x[i] - sum(x[k] * axis[k] for k in range(3)) * axis[i] for i in range(3)))
+        return q or _unit(_cross(axis, (0, 0, 1))) or _unit(_cross(axis, (1, 0, 0)))
+    knee_dir = tuple(u1[i] - v[i] * sum(u1[k] * v[k] for k in range(3)) / sum(x * x for x in v) for i in range(3))
+    a2 = perp(knee_dir, a1)
+    b2 = perp(pl, b1)
+    a3, b3 = _cross(a1, a2), _cross(b1, b2)
+    r = tuple(tuple(b1[i] * a1[j] + b2[i] * a2[j] + b3[i] * a3[j] for j in range(3)) for i in range(3))
+    ry = math.asin(max(-1.0, min(1.0, r[0][2])))
+    rx = math.atan2(-r[1][2], r[2][2])
+    rz = math.atan2(-r[0][1], r[0][0])
+    pose.setdefault(upper, [0.0] * 6)[3:6] = [math.degrees(rx), math.degrees(ry), math.degrees(rz)]
+    pose.setdefault(lower, [0.0] * 6)[3:6] = [e, 0.0, 0.0]
+    if leg:  # with ik, the foot's rx is its pitch to the floor
+        foot = pose.setdefault(end, [0.0] * 6)
+        want = foot[3]
+        foot[3] = 0.0
+        fr = solve(pose)[end][0]
+        foot[3] = want - math.degrees(math.asin(max(-1.0, min(1.0, -fr[1][2]))))
 
 
 def _shin_box(side):
@@ -429,7 +563,7 @@ if not dummy then
  dummy.Name='AnimTest_'..NAME
  local cf=workspace.CurrentCamera.CFrame local at=cf.Position+cf.LookVector*15
  local hit=workspace:Raycast(at+Vector3.new(0,100,0),Vector3.new(0,-1000,0))
- dummy:PivotTo(CFrame.new(at.X,(hit and hit.Position.Y or 0)+3,at.Z)*CFrame.Angles(0,math.rad(cf.LookVector.X>0 and 90 or -90),0))
+ dummy:PivotTo(CFrame.new(at.X,(hit and hit.Position.Y or 0)+dummy.Humanoid.HipHeight+dummy.HumanoidRootPart.Size.Y/2,at.Z)*CFrame.Angles(0,math.rad(cf.LookVector.X>0 and 90 or -90),0))
  dummy.Parent=workspace
 end
 dummy.HumanoidRootPart.Anchored=true
@@ -464,19 +598,46 @@ def _colour(name):
 FACES = ((0, 1, 3, 2), (4, 6, 7, 5), (0, 4, 5, 1), (2, 3, 7, 6), (0, 2, 6, 4), (1, 5, 7, 3))
 
 
-def filmstrip(d: dict, out: Path, frames: int = 8, tile: int = 112, title: str = "") -> Path:
+def key_moments(d: dict, frames: int = 8) -> list[float]:
+    """Normalised times to show: a loop evenly; a one-shot on its keys (the poses it was built from:
+    contacts, impacts, extremes), thinned to `frames`, since fast hits fall between even frames."""
+    if d["loop"]:
+        return [i / frames for i in range(frames)]
+    us = set()
+
+    def walk(spec):
+        if isinstance(spec, list):
+            for x in spec:
+                if isinstance(x, dict):
+                    walk(x)
+        elif isinstance(spec, dict) and "keys" in spec:
+            us.update(round(k[0], 2) for k in spec["keys"])
+    for chans in d["tracks"].values():
+        for spec in chans.values():
+            walk(spec)
+    us = sorted(us | {0.0, 1.0})
+    while len(us) > frames:  # drop the key closest to its neighbours
+        i = min(range(1, len(us) - 1), key=lambda i: us[i + 1] - us[i - 1])
+        us.pop(i)
+    return us if len(us) >= 4 else [i / (frames - 1) for i in range(frames)]
+
+
+def filmstrip(d: dict, out: Path, frames: int = 8, tile: int = 112, title: str = "",
+              times: list[float] | None = None) -> Path:
     """Two rows of `frames` poses across the clip: side view (moving right) and three-quarter front."""
     from PIL import Image, ImageDraw
     views = [(1.0, 0.0, 0.0), (0.6, 0.25, -0.76)]  # direction from the character to the camera
     th = int(tile * 1.35)
     head = 16
+    us = [t / d["length"] for t in times] if times else key_moments(d, frames)
+    frames = len(us)
     img = Image.new("RGB", (tile * frames, th * len(views) + head), (34, 36, 42))
     dr = ImageDraw.Draw(img)
     dr.text((4, 2), title, fill=(220, 220, 220))
     ppu = th / 9.0
     light = (0.4, 0.8, -0.45)
     for f in range(frames):
-        u = f / frames if d["loop"] else f / (frames - 1)
+        u = us[f]
         world = solve(pose_at(d, u))
         for row, c in enumerate(views):
             n = math.sqrt(sum(x * x for x in c))
