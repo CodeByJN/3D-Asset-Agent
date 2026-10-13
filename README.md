@@ -43,6 +43,13 @@ a.revise("topology", part="main", target_tris=2000)
   weapons. R15 characters too: tag each piece with `body(part, ...)` around the rig's joints (`R15` in the kit) and
   `studio(name)` builds it in Studio on a real R15 rig (no upload), so any R15 animation plays on it. Write a spec first (shape, details, palette, pose, size, what to take from references), check the 4 views
   it returns, and rebuild before showing. `mat(..., glow=True)` parts become Neon in Roblox.
+- `character`: known characters from real Roblox assets, the fastest route to a character that looks right.
+  `character(name, query="Gon Freecss", refs=[...])` searches free Creator Store models, strips their scripts and
+  returns them numbered side by side next to your references; `character(name, pick={"shirt": 2, "hair": 3,
+  "face": 3})` composes an R15 avatar from the chosen parts (faces on a classic head, decal ids resolved, hair
+  welded at its offset). `animate` and `studio(anim, on=name)` play on it.
+- `preview(name, layer="studio", refs=[...], hide=[...])`: the model in the open Studio place from front, 3/4, side
+  and face, next to the references, saying so when Studio isn't rendering instead of returning blank images.
 - `make_asset` (text/image to 3D generators, for organic shapes), `import_mesh`
 - `revise`, `rollback` (no version: the history), `validate`, `preview`, `library`
 - `animate`: R15 animations (KeyframeSequences) from presets (idle, walk, run, sprint, jump, fall, wave, punch,

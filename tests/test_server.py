@@ -32,7 +32,7 @@ def test_tool_definitions_fit_token_budget():
     tools = run(server.server.list_tools())
     payload = json.dumps([t.model_dump(exclude_none=True) for t in tools])
     approx_tokens = len(payload) / 4
-    assert len(tools) <= 14
+    assert len(tools) <= 15
     assert approx_tokens < TOOL_TOKEN_BUDGET, f"{approx_tokens:.0f} tokens"
 
 
@@ -69,7 +69,7 @@ def test_preview_is_an_image(home):
 def test_plan_and_rate(home):
     out = text(call("plan", project="obby", brief="chunky low poly", assets={"crate": "a wooden crate"},
                     style={"target_tris": 900}))
-    assert out.startswith("project obby: brief 'chunky low poly'") and "target_tris=900" in out, out
+    assert out.startswith("project obby (private") and "brief 'chunky low poly'" in out and "target_tris=900" in out, out
     assert "no project" in text(call("rate", name="crate", stars=6))
     a = Asset(home / "crate")
     a.m["project"] = "obby"

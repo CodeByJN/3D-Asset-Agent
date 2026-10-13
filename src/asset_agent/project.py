@@ -13,8 +13,8 @@ LEARNED = {"target_tris": ("topology", 50), "tex_size": ("surface", None), "ao":
            "roughness": ("finish", 0.05), "metallic": ("finish", 0.05)}
 GOOD, BAD = 7, 4  # ratings >= GOOD teach the defaults; notes on ratings <= BAD become "avoid"
 # Every project is a private test place. It may use reference art, characters and assets from other
-# games and IP for internal testing; nothing made here is published publicly.
-PRIVATE = "internal test, may use other games' assets and IP as reference, not published"
+# games and IP as reference; rights are the game maker's business.
+PRIVATE = "may use other games' assets and IP as reference"
 
 STYLE_KEYS = ("brief", "budget", "style", "palette", "sizes", "target_tris", "tex_size", "ao",
               "roughness", "metallic")

@@ -12,7 +12,7 @@ from mcp.server.mcpserver import Image, MCPServer
 from . import generators
 from .asset import Asset
 from .make import build_model, kit_help, make_asset as _make_asset
-from . import anim, roblox, studio_client, vfx
+from . import anim, characters, roblox, studio_client, vfx
 from .project import Project
 
 server = MCPServer("asset-agent", instructions=(
@@ -58,10 +58,9 @@ def tool(fn):
 def make_asset(name: str, prompt: str | None = None, image: str | None = None, style: str | None = None,
                color: list[float] | None = None, budget: str | None = None, textured: bool = False,
                backend: str = "auto", project: str | None = None) -> str:
-    """Generate a game-ready asset from a text prompt or an image path (free, ~1-2 min).
-    style: project (paint the generated image on) | flat (one colour, set via color [r,g,b] 0-1).
-    budget: roblox_prop | roblox_hero | mobile_prop | godot_lod. backend: auto (your GPU server if up, else free hf) | hf | local.
-    project: a game from plan; fills unset args from its style guide (prompt too, if on the roster)."""
+    """Generate an asset from a text prompt or image path (~1-2 min). style: project | flat (color
+    [r,g,b]). budget: roblox_prop | roblox_hero | mobile_prop | godot_lod. backend: auto | hf | local.
+    project: fills unset args from that game's style guide."""
     return _make_asset(home() / name, prompt=prompt, image=image, budget=budget, style=style, color=color,
                        backend=backend, textured=textured, project=Project.open(home(), project) if project else None)
 
@@ -122,11 +121,27 @@ def validate(name: str) -> str:
 
 
 @server.tool(structured_output=False)
-def preview(name: str, size: int = 256, layer: str = "final"):
-    """Image. layer: final | geometry | topology | colour | texture | vfx (4 views each) |
-    breakdown (labelled row: mesh, topology, colour, texture, vfx). Costs image tokens: use sparingly."""
+def preview(name: str, size: int = 256, layer: str = "final", refs: list[str] | None = None,
+            hide: list[str] | None = None):
+    """Image. layer: final | geometry | topology | colour | texture | vfx | breakdown, or studio: the
+    model in the open place (front, 3/4, side, face) next to refs (image paths); hide: parts in the way."""
     try:
+        if layer == "studio":
+            sheet, note = characters.look(name, home() / "_look" / f"{name}.png", refs=refs, hide=hide)
+            return [note, Image(path=str(sheet))]
         return Image(path=str(_asset(name).preview(min(size, 512), layer)))
+    except Exception as e:
+        return f"error: {type(e).__name__}: {' '.join(str(e).split())}"[:300]
+
+
+@server.tool(structured_output=False)
+def character(name: str, query: str | None = None, pick: dict | None = None, refs: list[str] | None = None):
+    """Known characters from real Roblox assets (don't hand-model their faces or hair). query: free
+    Creator Store models lined up, numbered, next to refs. pick {body|shirt|pants|hair|face|skin: #}:
+    an R15 avatar from them; animate and studio(on=) work on it."""
+    try:
+        text, img = characters.find(home() / name, query, pick, refs)
+        return [text, Image(path=str(img))] if img else text
     except Exception as e:
         return f"error: {type(e).__name__}: {' '.join(str(e).split())}"[:300]
 
@@ -230,6 +245,9 @@ def studio(name: str, on: str | None = None) -> str:
         if anim.Animation.exists(home() / name):
             d = anim.Animation(home() / name).resolved()
             return studio_client.run(lambda s: s.luau(anim.studio_script(name, d, rig=on)))
+        rec = home() / name / "character.json"
+        if rec.exists() and json.loads(rec.read_text()).get("pick"):
+            return characters.find(home() / name, None, json.loads(rec.read_text())["pick"], None)[0]
         a = _asset(name)
         if a.m.get("rig") == "r15":
             mesh = json.loads((a.root / Path(a.m["build"]["code"]).parent / "rig_mesh.json").read_text())
