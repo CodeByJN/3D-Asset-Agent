@@ -269,7 +269,8 @@ def character_script(name: str, rev: str, mesh: dict) -> str:
     return f"""local HS,AS=game:GetService('HttpService'),game:GetService('AssetService')
 local NAME,REV='{name}','{rev}'
 local D=HS:JSONDecode({luau.data(mesh)})
-local old=workspace:FindFirstChild(NAME) local pivot=old and old:GetPivot()
+local old=workspace:FindFirstChild(NAME,true)  -- replaced where it is, even inside a folder
+local pivot,parent=old and old:GetPivot(),old and old.Parent or workspace
 if old then old:Destroy() end
 local rig=game:GetService('Players'):CreateHumanoidModelFromDescription(Instance.new('HumanoidDescription'),Enum.HumanoidRigType.R15)
 rig.Name=NAME rig:SetAttribute('AssetAgentRev',REV)
@@ -309,5 +310,5 @@ for part,pieces in D do
  end
 end
 root.Anchored=true
-rig.Parent=workspace
+rig.Parent=parent
 return 'built '..NAME..': R15 rig wearing '..n..' mesh parts, '..tris..' tris'"""

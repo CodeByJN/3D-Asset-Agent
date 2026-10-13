@@ -662,7 +662,7 @@ for _,f in F do
  kf.Parent=kfs
 end
 kfs.Parent=folder
-local dummy=workspace:FindFirstChild({json.dumps(rig) if rig else "'AnimTest_'..NAME"})
+local dummy=workspace:FindFirstChild({json.dumps(rig) if rig else "'AnimTest_'..NAME"},true)
 if {'true' if rig else 'false'} and not (dummy and dummy:FindFirstChildOfClass('Humanoid')) then error('no character {rig} with a Humanoid in workspace') end
 if not dummy then
  local hd=Instance.new('HumanoidDescription') local skin=Color3.fromRGB(245,205,150)
