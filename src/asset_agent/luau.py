@@ -29,6 +29,8 @@ end
 #   bob {amp, period, phase}, spin deg/s about the plane normal, tumble [x,y,z] deg/s about its own axes,
 #   pulse {amp, period, phase} (planes grow in their plane, meshes in all three axes),
 #   shimmer {min, max, period, phase}: transparency of the part (or of its images) breathes between min and max.
+#   wave {period, phase, from, to, fade [start, end]}: grows from x`from` to x`to` and fades out, again and
+#   again (shockwave rings, expanding halos).
 # Returns a function(model, tag|nil, alive()) that connects to Heartbeat.
 ANIMATE = r"""
 local RS,HS=game:GetService('RunService'),game:GetService('HttpService')
@@ -58,6 +60,11 @@ return function(model,tag,alive)
     it.p.CFrame=anchor.CFrame*cf
     if a.pulse then local k=1+a.pulse.amp*math.sin(2*math.pi*t/a.pulse.period+(a.pulse.phase or 0))
      it.p.Size=it.size*(it.p:IsA('MeshPart') and Vector3.new(k,k,k) or Vector3.new(k,k,1)) end
+    if a.wave then local w=a.wave local u=((t+(w.phase or 0))/w.period)%1 local e=1-(1-u)^2
+     local k=(w.from or 0.3)+((w.to or 1.5)-(w.from or 0.3))*e
+     it.p.Size=it.size*(it.p:IsA('MeshPart') and Vector3.new(k,k,k) or Vector3.new(k,k,1))
+     local f=w.fade or {0,1} local v=f[1]+(f[2]-f[1])*u
+     if #it.imgs>0 then for _,im in it.imgs do im.ImageTransparency=v end else it.p.Transparency=v end end
     if a.shimmer then local s=a.shimmer
      local v=s.min+(s.max-s.min)*(0.5+0.5*math.sin(2*math.pi*t/s.period+(s.phase or 0)))
      if #it.imgs>0 then for _,im in it.imgs do im.ImageTransparency=v end else it.p.Transparency=v end end
@@ -171,6 +178,7 @@ local function build(H,tag,nodes)
   if nd.tween then i:SetAttribute('AssetAgentTween',HS:JSONEncode(nd.tween)) end
   if nd.anim then i:SetAttribute('AssetAgentAnim',HS:JSONEncode(nd.anim)) anims=true end
   if i:IsA('BasePart') then i.Anchored=true i.CanCollide=false i.CanQuery=false i.CanTouch=false end
+  if i:IsA('Highlight') then i.Adornee=model end  -- an outline glow wraps the whole character
   i:SetAttribute('AssetAgentVFX',tag)
   made[path]=i table.insert(all,i)
   for _,c in (nd.children or {}) do mk(c,i,path..'/'..(c.name or c.class)) end

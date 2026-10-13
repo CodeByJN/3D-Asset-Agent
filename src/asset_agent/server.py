@@ -215,6 +215,8 @@ def rate(name: str, stars: int, note: str = "") -> str:
         p["score"] = stars
         if note:
             p["note"] = note
+        ver = next((t for t in p.get("tags", []) if t[:1] == "v" and t[1:].isdigit()), None)
+        p.setdefault("ratings", []).append({"v": ver, "stars": stars, "note": note})  # kept across versions
         vfx.save_preset(name, p)
         return f"vfx preset {name} scored {stars}/10"
     if anim.Animation.exists(home() / name):
