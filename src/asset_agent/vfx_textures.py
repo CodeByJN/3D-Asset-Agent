@@ -406,8 +406,142 @@ def streak():
     _save(np.exp(-(x / 0.05) ** 2) * np.clip(1 - np.abs(y), 0, 1) ** 1.2, "streak")
 
 
+def _blade(d, cx, cy, ang, length, width, base=0.06, edge=255, fill=70, hook=0.0, line=4):
+    """One crystal blade from (cx, cy) along ang (radians, 0 = right, y down): a kite with a pointed tip,
+    translucent fill, bright outline, a spine and a facet line. hook curls the tip upward."""
+    ca, sa = math.cos(ang), math.sin(ang)
+    nx, ny = -sa, ca
+
+    def at(t, off):
+        return (cx + ca * length * t + nx * off, cy + sa * length * t + ny * off)
+    tip = at(1.0, 0)
+    if hook:
+        tip = (tip[0] + nx * hook * length * 0.25 * (1 if ca >= 0 else -1) * 0 + 0, tip[1] - abs(hook) * length * 0.18)
+    left = [at(base, width * 0.25), at(0.32, width * 0.5), at(0.78, width * 0.16)]
+    right = [at(0.78, -width * 0.16), at(0.32, -width * 0.5), at(base, -width * 0.25)]
+    poly = left + [tip] + right
+    d.polygon(poly, fill=fill)
+    d.line(poly + [poly[0]], fill=edge, width=line, joint="curve")
+    d.line([at(base, 0), tip], fill=int(edge * 0.75), width=max(1, line // 2))
+    d.line([at(0.32, width * 0.5), at(0.6, 0)], fill=int(edge * 0.5), width=max(1, line // 2))
+    d.line([at(0.32, -width * 0.5), at(0.6, 0)], fill=int(edge * 0.5), width=max(1, line // 2))
+
+
+def lum_emblem():
+    """Luminosity's crystal star: eight blades (tall top, long hooked wings, diagonals), HD, white on clear."""
+    S = 2048
+    img = Image.new("L", (S, S), 0)
+    d = ImageDraw.Draw(img)
+    c = S / 2
+    R = S * 0.48
+    blades = [(-90, 0.98, 0.075, 0), (90, 0.55, 0.07, 0), (-180, 0.98, 0.09, 1), (0, 0.98, 0.09, 1),
+              (-148, 0.62, 0.07, 0), (-32, 0.62, 0.07, 0), (148, 0.5, 0.06, 0), (32, 0.5, 0.06, 0),
+              (-120, 0.42, 0.05, 0), (-60, 0.42, 0.05, 0)]
+    for deg, L, w, hook in blades:
+        _blade(d, c, c, math.radians(deg), R * L, R * w * 2.2, hook=hook, line=7)
+    sharp = img.filter(ImageFilter.GaussianBlur(1.1))
+    glow_l = img.filter(ImageFilter.GaussianBlur(26))
+    a = np.asarray(sharp, np.float32) / 255 + 0.55 * np.asarray(glow_l, np.float32) / 255
+    a = np.clip(a, 0, 1)
+    out = Image.fromarray((a * 255).astype(np.uint8)).resize((1024, 1024), Image.LANCZOS)
+    rgba = Image.new("RGBA", out.size, (255, 255, 255, 0))
+    rgba.putalpha(out)
+    OUT.mkdir(parents=True, exist_ok=True)
+    rgba.save(OUT / "lum_emblem.png", optimize=True)
+
+
+def spear():
+    """A long crystal spear, point to the right (laid across the base of an emblem)."""
+    S = 1024
+    img = Image.new("L", (S, S), 0)
+    d = ImageDraw.Draw(img)
+    y = S / 2
+    d.line([(S * 0.06, y), (S * 0.8, y)], fill=230, width=10)
+    d.polygon([(S * 0.78, y - 34), (S * 0.97, y), (S * 0.78, y + 34), (S * 0.82, y)], fill=255)
+    for k in range(3):
+        x = S * (0.1 + k * 0.05)
+        d.polygon([(x, y), (x - 40, y - 30), (x - 25, y), (x - 40, y + 30)], fill=200)
+    a = np.clip(np.asarray(img.filter(ImageFilter.GaussianBlur(1)), np.float32) / 255
+                + 0.5 * np.asarray(img.filter(ImageFilter.GaussianBlur(14)), np.float32) / 255, 0, 1)
+    rgba = Image.new("RGBA", (S, S), (255, 255, 255, 0))
+    rgba.putalpha(Image.fromarray((a * 255).astype(np.uint8)))
+    rgba.save(OUT / "spear.png", optimize=True)
+
+
+def _hd(alpha, name, out=1024):
+    """Save an HD white-on-clear texture from a float alpha drawn at any size."""
+    a = Image.fromarray((np.clip(alpha, 0, 1) * 255).astype(np.uint8)).resize((out, out), Image.LANCZOS)
+    rgba = Image.new("RGBA", a.size, (255, 255, 255, 0))
+    rgba.putalpha(a)
+    OUT.mkdir(parents=True, exist_ok=True)
+    rgba.save(OUT / f"{name}.png", optimize=True)
+
+
+def galaxy_disc(seed=8):
+    """Equinox's floor: a spiral galaxy of clouds with bright concentric rings and stardust, seen from above."""
+    n = 1024
+    x, y, r, a = _grid(n)
+    noise = _noise(n, seed, 6)
+    arms = 0.5 + 0.5 * np.sin(2 * a + 9 * np.log(r + 0.05) + noise * 3)
+    clouds = np.clip(arms ** 2.2 * (0.4 + 0.9 * noise), 0, 1) * np.exp(-((r - 0.55) / 0.33) ** 2)
+    rings = sum(w * np.exp(-((r - rr) / tw) ** 2) for rr, tw, w in
+                ((0.3, 0.008, 0.9), (0.42, 0.004, 0.6), (0.62, 0.006, 0.8), (0.78, 0.01, 0.7), (0.9, 0.005, 0.5)))
+    rng = np.random.default_rng(seed)
+    dust = np.zeros_like(r)
+    idx = rng.integers(0, n, size=(2600, 2))
+    dust[idx[:, 0], idx[:, 1]] = rng.uniform(0.4, 1, 2600)
+    dust = np.asarray(Image.fromarray((dust * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(0.8)), np.float32) / 255 * 2.5
+    eye = 1 - 0.8 * np.exp(-(r / 0.2) ** 2)
+    _hd((clouds * 0.9 + rings + dust * (r < 0.95)) * eye * _edge(r, 0.85), "galaxy_disc")
+
+
+def planet(seed=12):
+    """A cloudy planet: banded clouds on a sphere, darker limb, thin bright rim."""
+    n = 1024
+    x, y, r, a = _grid(n)
+    inside = r < 0.86
+    z = np.sqrt(np.clip(1 - (r / 0.86) ** 2, 0, 1))
+    noise = _noise(n, seed, 6)
+    bands = 0.5 + 0.5 * np.sin(y * 9 + noise * 5)
+    body = np.where(inside, (0.35 + 0.65 * bands * noise) * (0.45 + 0.55 * z), 0)
+    rim = np.exp(-((r - 0.86) / 0.012) ** 2) + 0.4 * np.exp(-((r - 0.86) / 0.06) ** 2) * (r > 0.86)
+    _hd(np.clip(body + rim, 0, 1), "planet")
+
+
+def cracked_rim(seed=13):
+    """The dark planet's light: a bright rim with streaks and cracks reaching inward."""
+    n = 1024
+    x, y, r, a = _grid(n)
+    rim = np.exp(-((r - 0.86) / 0.015) ** 2) + 0.35 * np.exp(-((r - 0.86) / 0.07) ** 2)
+    img = Image.new("L", (n, n), 0)
+    d = ImageDraw.Draw(img)
+    rng = np.random.default_rng(seed)
+    for _ in range(26):
+        ang = rng.uniform(0, 2 * math.pi)
+        pts = []
+        rr = 0.86
+        for _k in range(5):
+            pts.append((n / 2 + math.cos(ang) * rr * n / 2, n / 2 + math.sin(ang) * rr * n / 2))
+            rr -= rng.uniform(0.05, 0.12)
+            ang += rng.uniform(-0.15, 0.15)
+        d.line(pts, fill=int(rng.uniform(120, 255)), width=int(rng.uniform(2, 5)))
+    cracks = np.asarray(img.filter(ImageFilter.GaussianBlur(1)), np.float32) / 255
+    _hd(np.clip(rim + cracks * 0.8, 0, 1) * _edge(r, 0.95), "cracked_rim")
+
+
+def cube():
+    """A glowing cube outline (floating crystal debris)."""
+    n = 256
+    img = Image.new("L", (n, n), 0)
+    d = ImageDraw.Draw(img)
+    d.rectangle((40, 40, n - 40, n - 40), fill=90, outline=255, width=10)
+    a = np.clip(np.asarray(img.filter(ImageFilter.GaussianBlur(1.2)), np.float32) / 255
+                + 0.5 * np.asarray(img.filter(ImageFilter.GaussianBlur(12)), np.float32) / 255, 0, 1)
+    _hd(a, "cube", 256)
+
+
 ALL = [glow, glow_hot, rays, ring, shockwave, sparkle, smoke, slash, bolts, coin, cash,
-       crest, crown_ring, card_sigil, rune_ring, card, star4, shards, vortex, orb, pillar, crown_spikes, streak]
+       crest, crown_ring, card_sigil, rune_ring, card, star4, shards, vortex, orb, pillar, crown_spikes, streak, lum_emblem, spear, galaxy_disc, planet, cracked_rim, cube]
 
 if __name__ == "__main__":
     for fn in ALL:

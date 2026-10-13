@@ -78,14 +78,25 @@ local function unb64(s,len)
  return out
 end
 local function tex(name)
- local key=name..'@'..(TEXDATA[name] and #(TEXDATA[name].a or TEXDATA[name].rgba) or 0)
- if _G.AssetAgentTex[key] then return _G.AssetAgentTex[key] end
  local d=TEXDATA[name] if not d then return nil end
- local n=d.n local buf
- if d.a then
-  local a=unb64(d.a,n*n) buf=buffer.create(n*n*4)
-  for i=0,n*n-1 do buffer.writeu32(buf,i*4,0x00FFFFFF+buffer.readu8(a,i)*16777216) end
- else buf=unb64(d.rgba,n*n*4) end
+ local data=d.az or d.rgbaz
+ local key=name..'@'..d.n..'#'..#data
+ if _G.AssetAgentTex[key] then return _G.AssetAgentTex[key] end
+ local n=d.n local raw=unb64(data,math.floor(#data*3/4)) local len=buffer.len(raw)
+ local buf=buffer.create(n*n*4)
+ for i=0,n*n-1 do buffer.writeu32(buf,i*4,0x00FFFFFF) end  -- white, fully transparent
+ local o,p=0,0  -- read position, pixel
+ local step=d.az and 1 or 4
+ while o<len and p<n*n do
+  local a=buffer.readu8(raw,o)
+  if a==0 then p+=buffer.readu8(raw,o+1) o+=2
+  else
+   if step==1 then buffer.writeu8(buf,p*4+3,a)
+   else buffer.writeu8(buf,p*4,buffer.readu8(raw,o+1)) buffer.writeu8(buf,p*4+1,buffer.readu8(raw,o+2))
+    buffer.writeu8(buf,p*4+2,buffer.readu8(raw,o+3)) buffer.writeu8(buf,p*4+3,a) end
+   o+=step p+=1
+  end
+ end
  local img=game:GetService('AssetService'):CreateEditableImage({Size=Vector2.new(n,n)})
  img:WritePixelsBuffer(Vector2.zero,img.Size,buf)
  local c=Content.fromObject(img) _G.AssetAgentTex[key]=c _G.AssetAgentTex[key..'#img']=img

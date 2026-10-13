@@ -49,6 +49,7 @@ def test_unuploaded_textures_travel_inline():
     inline = {}
     out = vfx.resolve_textures(nodes, ids={}, inline=inline)
     assert out[0]["props"]["Texture"] == "texture://star4" and set(inline) == {"star4"}
-    assert len(base64.b64decode(inline["star4"]["a"])) == inline["star4"]["n"] ** 2  # alpha only: white texture
+    packed = base64.b64decode(inline["star4"]["az"])  # alpha only (white texture), transparent runs packed
+    assert len(packed) < inline["star4"]["n"] ** 2 / 2
     assert out[1]["props"]["Image"] == vfx.STAND_IN  # nothing to send: built-in stand-in
     assert vfx.resolve_textures(nodes, ids={"star4": "rbxassetid://1"})[0]["props"]["Texture"] == "rbxassetid://1"

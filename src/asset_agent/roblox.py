@@ -212,7 +212,7 @@ local h=rig.HumanoidRootPart
 local list=build(h,'{preset}',HS:JSONDecode({nodes}))
 play(list)
 local n=animate(rig,'{preset}',function() return lab.Parent~=nil end)
-local look=h.Position+Vector3.new(0,1.6,0) local cam=look+Vector3.new(7,2.5,15)
+local look=h.Position+Vector3.new(0,1.6,0) local cam=look+Vector3.new(7,2.5,-15)  -- in front: the stand-in faces -Z
 return string.format('%g,%g,%g|%g,%g,%g',cam.X,cam.Y,cam.Z,look.X,look.Y,look.Z)"""
 
 

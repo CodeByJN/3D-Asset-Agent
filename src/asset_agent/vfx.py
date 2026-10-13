@@ -71,18 +71,40 @@ def resolve_textures(nodes, ids=None, inline=None):
     return out
 
 
-def texture_data(name: str, size: int = 256) -> dict:
-    """A library texture for transport to Studio: {n, a} (white shapes: alpha only) or {n, rgba}, base64."""
+def _zero_runs(values, stride: int) -> bytes:
+    """Pixels as bytes, a fully transparent run written as 0, run length (up to 255): big textures are
+    mostly empty, so this keeps them small enough to send."""
+    out = bytearray()
+    i, n = 0, len(values) // stride
+    while i < n:
+        if values[i * stride] == 0:
+            j = i
+            while j < n and j - i < 255 and values[j * stride] == 0:
+                j += 1
+            out += bytes((0, j - i))
+            i = j
+        else:
+            out += values[i * stride:(i + 1) * stride]
+            i += 1
+    return bytes(out)
+
+
+def texture_data(name: str, size: int | None = None) -> dict:
+    """A library texture for transport to Studio, base64 with transparent runs packed:
+    {n, az} (white shapes: alpha only, up to 768 px) or {n, rgbaz} (coloured: alpha r g b, up to 384 px)."""
     import base64
-    from PIL import Image
-    im = Image.open(library_path().parent / "textures" / f"{name}.png").convert("RGBA").resize((size, size), Image.LANCZOS)
     import numpy as np
+    from PIL import Image
+    im = Image.open(library_path().parent / "textures" / f"{name}.png").convert("RGBA")
     px = np.asarray(im)
     seen = px[..., 3] > 8
-    if not seen.any() or px[seen][:, :3].min() >= 235:  # white where visible: colour comes from the emitter
-        a = im.split()[3]
-        return {"n": size, "a": base64.b64encode(a.tobytes()).decode()}
-    return {"n": size, "rgba": base64.b64encode(im.tobytes()).decode()}
+    white = not seen.any() or px[seen][:, :3].min() >= 235  # colour comes from the emitter
+    n = size or min(im.width, 768 if white else 384)
+    im = im.resize((n, n), Image.LANCZOS)
+    if white:
+        return {"n": n, "az": base64.b64encode(_zero_runs(im.split()[3].tobytes(), 1)).decode()}
+    argb = np.asarray(im)[..., [3, 0, 1, 2]].tobytes()
+    return {"n": n, "rgbaz": base64.b64encode(_zero_runs(argb, 4)).decode()}
 
 
 def presets() -> dict:
