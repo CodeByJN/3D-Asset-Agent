@@ -22,5 +22,5 @@ vec = lambda s: [float(x) for x in s.split(",")] if s else None
 if a.capture:
     print(studio_client.run(lambda s: s.capture(Path(a.capture), vec(a.camera), vec(a.look))))
 else:
-    code = a.code if a.code is not None else Path(a.file).read_text(encoding="utf-8")
+    code = a.code if a.code is not None else Path(a.file).read_text(encoding="utf-8-sig")
     print(studio_client.run(lambda s: s.luau(code)))

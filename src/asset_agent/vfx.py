@@ -40,8 +40,15 @@ def uploads() -> dict:
     return json.loads(f.read_text()) if f.exists() else {}
 
 
+# Roblox's built-in particle textures stand in for ours until they're uploaded, so an effect is never
+# invisible: soft glows and shapes -> sparkles, smoke -> smoke.
+STAND_INS = {"smoke": "rbxasset://textures/particles/smoke_main.dds"}
+STAND_IN = "rbxasset://textures/particles/sparkles_main.dds"
+
+
 def resolve_textures(nodes, ids=None):
-    """Copy of a node tree with texture://name swapped for its uploaded asset id ('' if not uploaded)."""
+    """Copy of a node tree with texture://name swapped for its uploaded asset id, or a built-in
+    stand-in texture if it hasn't been uploaded yet."""
     ids = uploads() if ids is None else ids
     out = copy.deepcopy(nodes)
 
@@ -49,7 +56,8 @@ def resolve_textures(nodes, ids=None):
         for key in ("Texture", "Image", "TextureID"):
             v = (n.get("props") or {}).get(key)
             if isinstance(v, str) and v.startswith("texture://"):
-                n["props"][key] = ids.get(v[len("texture://"):], "")
+                name = v[len("texture://"):]
+                n["props"][key] = ids.get(name) or STAND_INS.get(name, STAND_IN)
         for c in n.get("children") or []:
             walk(c)
     for n in out:

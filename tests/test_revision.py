@@ -169,7 +169,7 @@ def test_aura_scaling_and_textures():
     assert plane["props"]["Size"]["v2"] == [12, 12] and plane["anim"]["orbit"] == {"radius": 6, "y": 2, "speed": 40}
     res = vfx.resolve_textures(nodes, {"glow": "rbxassetid://5"})
     assert res[1]["props"]["Image"] == "rbxassetid://5" and nodes[1]["props"]["Image"] == "texture://glow"
-    assert vfx.resolve_textures(nodes, {})[1]["props"]["Image"] == ""
+    assert vfx.resolve_textures(nodes, {})[1]["props"]["Image"] == vfx.STAND_IN  # never invisible
     script = roblox.lab_script("aura_black_card")
     assert "StandIn" in script and "HumanoidRootPart" in script and "animate(rig" in script
 

@@ -95,9 +95,12 @@ def apply_modifiers(o):
     bpy.data.meshes.remove(old)
 
 
-def decimate_to(o, target: int):
+def decimate_to(o, target: int) -> dict:
+    """Collapse-decimate to `target` tris. Dense generator meshes can stall far above it (collapse
+    refuses the remaining edges): then voxel-remesh finely and decimate the clean result."""
     triangulate(o)
-    for _ in range(4):
+    info = {}
+    for _ in range(8):
         n = tris(o.data)
         if n <= target:
             break
@@ -105,6 +108,17 @@ def decimate_to(o, target: int):
         mod.ratio = max(target / n * 0.98, 0.001)
         apply_modifiers(o)
         triangulate(o)
+        if tris(o.data) > n * 0.97 and not info:  # stalled
+            voxel = (o.dimensions.length or 1.0) / REMESH_RES
+            mod = o.modifiers.new("remesh", "REMESH")
+            mod.mode, mod.voxel_size = "VOXEL", voxel
+            apply_modifiers(o)
+            triangulate(o)
+            info = {"remeshed": rnd(voxel)}
+    return info
+
+
+REMESH_RES = 200  # stalled decimation: voxel size = diagonal / this (fine enough to keep thin parts)
 
 
 def export_glb(path, objs):
@@ -188,9 +202,9 @@ def op_measure(s):
 def op_topology(s):
     o = import_any(s["src"])
     before = tris(o.data)
-    decimate_to(o, s["params"]["target_tris"])
+    info = decimate_to(o, s["params"]["target_tris"])
     export_glb(s["out"], [o])
-    return {"tris_in": before, "tris": tris(o.data)}
+    return {"tris_in": before, "tris": tris(o.data), **info}
 
 
 def op_uv(s):
@@ -339,7 +353,7 @@ def op_surface(s):
         cover = coverage(hi, lo)
         mode = "transfer" if cover >= TRANSFER_MIN_COVER or not s.get("image") else "project"
     elif mode == "auto":
-        mode = "bake" if any(True for _ in image_nodes(hi)) else "project" if s.get("image") else "flat"
+        mode = "bake" if has_colour(hi) else "project" if s.get("image") else "flat"
     if mode == "project":
         if not s.get("image"):
             raise ValueError("project mode needs an image")
@@ -383,6 +397,20 @@ def op_surface(s):
     if cover is not None:
         stats["cover"] = round(cover, 3)
     return stats
+
+
+def has_colour(o) -> bool:
+    """True if the mesh carries colour worth baking: an image texture, or materials whose base colours
+    aren't all the same plain default (e.g. a script-built model with a material per part)."""
+    if any(True for _ in image_nodes(o)):
+        return True
+    cols = set()
+    for mat in o.data.materials:
+        bsdf = mat and mat.node_tree and next((n for n in mat.node_tree.nodes if n.type == "BSDF_PRINCIPLED"), None)
+        c = tuple(round(x, 2) for x in (bsdf.inputs["Base Color"].default_value[:3] if bsdf else mat.diffuse_color[:3])) if mat else None
+        if c is not None:
+            cols.add(c)
+    return len(cols) > 1 or bool(cols - {(0.8, 0.8, 0.8), (1.0, 1.0, 1.0)})
 
 
 def coverage(src, target, tol=TRANSFER_TOL):
@@ -454,9 +482,9 @@ def op_export(s):
     """Combine parts, apply finish params (tint/roughness/metallic), scale, validate and export."""
     p, name = s["params"], s["name"]
     out = Path(s["out_dir"])
-    if out.exists():
-        shutil.rmtree(out)
-    (out / "textures").mkdir(parents=True)
+    for old in [*out.glob(f"{name}.*"), *out.glob(f"textures/{name}_*"), *out.glob(f"collision/{name}_*")]:
+        old.unlink()  # only this export's own files: copies saved alongside them survive
+    (out / "textures").mkdir(parents=True, exist_ok=True)
     objs = []
     for part, spec in s["parts"].items():
         o = import_any(spec["surface"])
@@ -507,7 +535,7 @@ def op_export(s):
                                      embed_textures=True, mesh_smooth_type="FACE")
         files.append(path.name)
     if s.get("collisions"):
-        (out / "collision").mkdir()
+        (out / "collision").mkdir(exist_ok=True)
         for part, src in s["collisions"].items():
             shutil.copy(src, out / "collision" / f"{name}_{part}_collision.glb")
     return {**report, "files": files}

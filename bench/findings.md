@@ -22,3 +22,11 @@
 
 ## Run cycle (harness run)
 - No animation tool at all: the harness side made zero harness calls and wrote the KeyframeSequence by hand, same as native.
+
+## Status after the bug-fix pass
+Fixed: failed revise now rolls back; auto surface bakes material colours; .obj/.gltf sidecars (.mtl, buffers,
+textures) are copied with the source; stalled decimation falls back to a fine voxel remesh; export keeps other
+files and archives every version under export/versions/vN; swapped geometry says when it was fitted to the old
+size; surface modes documented; Studio bridge strips a BOM; unuploaded VFX textures fall back to Roblox
+built-ins instead of rendering invisible.
+Open (features, not bugs): per-material recolour, aura authoring / apply-to-rig, animation layer, faster model path.

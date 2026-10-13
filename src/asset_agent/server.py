@@ -80,7 +80,7 @@ def revise(name: str, layer: str, change: dict, part: str | None = None) -> str:
     """Change one layer; only it and what depends on it rebuild. Layers and keys:
     finish {roughness, metallic, tint} | vfx {effect: {type (a library preset), color, size, rate} | null} |
     geometry {scale, offset, or new shape: source | prompt | image, keep [scale, texture]} |
-    topology {target_tris} | uv {angle, margin} | surface {mode, image, ao, tex_size} |
+    topology {target_tris} | uv {angle, margin} | surface {mode auto|bake|project|flat, image, ao, tex_size} |
     collision {max_tris} | export {scale_to (m), target} | preset (name = VFX preset/aura) {recolor [r,g,b] | null}."""
     if layer == "preset":
         return vfx.revise_preset(name, **change)

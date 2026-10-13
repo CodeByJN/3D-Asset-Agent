@@ -45,6 +45,24 @@ def _filehash(path: Path) -> str:
     return _sha(path.read_bytes())
 
 
+def _sidecars(src: Path) -> list[Path]:
+    """Files a mesh file loads from beside itself: an .obj's .mtl files and their textures, a .gltf's
+    buffers and images. Without them a copied model loses its colours."""
+    names = []
+    if src.suffix.lower() == ".obj":
+        mtls = [line.split(None, 1)[1].strip() for line in src.read_text(errors="ignore").splitlines()
+                if line.startswith("mtllib ")]
+        names += mtls
+        for m in mtls:
+            if (src.parent / m).exists():
+                names += [line.split()[-1] for line in (src.parent / m).read_text(errors="ignore").splitlines()
+                          if line.strip().lower().startswith(("map_", "bump", "norm"))]
+    elif src.suffix.lower() == ".gltf":
+        d = json.loads(src.read_text())
+        names += [x["uri"] for x in d.get("buffers", []) + d.get("images", []) if "uri" in x and ":" not in x["uri"]]
+    return [src.parent / n for n in names if n and (src.parent / n).is_file()]
+
+
 def lk(kind: str, part: str | None = None) -> str:
     return f"{kind}[{part}]" if part else kind
 
@@ -98,6 +116,9 @@ class Asset:
         dst = self.root / "source" / f"{part}-{_filehash(src)[:8]}{src.suffix.lower()}"
         if not dst.exists():
             shutil.copy(src, dst)
+        for side in _sidecars(src):  # .obj materials / .gltf buffers and textures, under their own names
+            if not (dst.parent / side.name).exists():
+                shutil.copy(side, dst.parent / side.name)
         self.m["parts"][part]["source"] = dst.relative_to(self.root).as_posix()
 
     def _set_image(self, part, img):
@@ -250,10 +271,19 @@ class Asset:
                 line += f"; restored {', '.join(self._restored)}"
             line += f"; reused {self._reused} layers; tris {before or 0}->{exp['tris']}"
             self.m["history"].append(line)
+            self._archive_export()
         else:
             line = f"v{self.m['version']}: up to date"
         self._save()
         return f"{line} | {self.summary()}"
+
+    def _archive_export(self):
+        """Copy this version's exported model files to export/versions/v<N>/."""
+        dst = self.path(f"export/versions/v{self.m['version']}")
+        dst.mkdir(parents=True, exist_ok=True)
+        for f in self.cur("export")["stats"].get("files", []):
+            if self.path(f"export/{f}").exists():
+                shutil.copy(self.path(f"export/{f}"), dst / f)
 
     def summary(self) -> str:
         s = self.cur("export")["stats"]
@@ -275,7 +305,20 @@ class Asset:
         collision: max_tris
         export:    scale_to (metres, longest side), target (roblox|godot|unity)
         vfx:       {effect_name: {type fire|smoke|sparkles|glow, color, size, rate} | None to remove}
+
+        If the rebuild fails, the change is undone (settings and files as before) and the error raised.
         """
+        saved = (copy.deepcopy(self.m), (self.root / "finish.json").read_text())
+        try:
+            return self._revise(layer, part, change)
+        except Exception:
+            self.m = saved[0]
+            (self.root / "finish.json").write_text(saved[1])
+            self._save()
+            raise
+
+    def _revise(self, layer, part, change) -> str:
+        self._note = ""
         if layer == "finish":
             fin = self.finish
             (fin["parts"].setdefault(part, {}) if part else fin).update(change)
@@ -299,7 +342,7 @@ class Asset:
         else:
             raise KeyError(f"unknown layer {layer!r}")
         self._save()
-        return self.build()
+        return self.build() + self._note
 
     def _swap_geometry(self, part, ch):
         """New shape for a part from `source` (a mesh file) or a fresh generation (`prompt` and/or
@@ -327,6 +370,7 @@ class Asset:
             for k in ("scale", "offset", "fit"):
                 geo.pop(k, None)
             ch["fit"] = {"lo": lo, "hi": hi, "mode": "stretch" if stretch else "uniform"}
+            self._note = " | new shape fitted to the old size (keep: [\"texture\"] or [] to use its own size)"
         else:
             geo.pop("fit", None)
         surf = self.m["params"]["surface"][part]

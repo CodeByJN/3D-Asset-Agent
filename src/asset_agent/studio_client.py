@@ -110,7 +110,7 @@ class Studio:
                         next((k for k, v in props.items() if v.get("type") == "string"
                               and k not in ("studio_id", "datamodel_type")), "code"))
         args = self._args("execute_luau", datamodel_type=datamodel)
-        args[code_key] = code
+        args[code_key] = code.lstrip("﻿")  # a byte-order mark (PowerShell-saved files) hangs Studio
         return _text(await self.call("execute_luau", **args))
 
     async def capture(self, out: Path, camera=None, look_at=None) -> Path:
