@@ -131,7 +131,13 @@ local function meshContent(spec)
  local em=game:GetService('AssetService'):CreateEditableMesh()
  local ids,v,f={},d.v,d.f
  for k=1,#v,3 do table.insert(ids,em:AddVertex(Vector3.new(v[k],v[k+1],v[k+2]))) end
- for k=1,#f,3 do em:AddTriangle(ids[f[k]+1],ids[f[k+1]+1],ids[f[k+2]+1]) end
+ local uv=d.uv and {}
+ if uv then for k=1,#d.uv,2 do table.insert(uv,em:AddUV(Vector2.new(d.uv[k],d.uv[k+1]))) end end
+ for k=1,#f,3 do
+  local a,b,c=f[k]+1,f[k+1]+1,f[k+2]+1
+  local t=em:AddTriangle(ids[a],ids[b],ids[c])
+  if uv then em:SetFaceUVs(t,{uv[a],uv[b],uv[c]}) end
+ end
  local c=Content.fromObject(em) _G.AssetAgentMesh[key]=c _G.AssetAgentMesh[key..'#em']=em
  return c
 end

@@ -540,8 +540,42 @@ def cube():
     _hd(a, "cube", 256)
 
 
+
+def _tile_x(a):
+    """Make a map wrap around a globe without a seam: blend it with itself shifted half a turn."""
+    n = a.shape[1]
+    w = 1 - np.abs(np.linspace(-1, 1, n, dtype=np.float32))[None, :]
+    return a * w + np.roll(a, n // 2, axis=1) * (1 - w)
+
+
+def _map(lum, name):
+    """An opaque surface map (wrapped onto a 3D mesh by its UVs), grey levels in lum 0-1."""
+    g = (np.clip(lum, 0, 1) * 255 + 0.5).astype(np.uint8)
+    _save(np.ones(lum.shape, np.float32), name, rgb=np.stack([g, g, g], -1))
+
+
+def map_clouds(seed=12):
+    """Globe map: swirling cloud bands, white over soft grey (Equinox's light planet)."""
+    n = 512
+    y = np.linspace(-1, 1, n, dtype=np.float32)[:, None]
+    noise = _tile_x(_noise(n, seed, 6))
+    fine = _tile_x(_noise(n, seed + 1, 7))
+    bands = 0.5 + 0.5 * np.sin(y * 11 + noise * 7)
+    _map(0.42 + 0.5 * bands * (0.6 + 0.4 * fine) + 0.15 * (fine - 0.5), "map_clouds")
+
+
+def map_cracked(seed=13):
+    """Globe map: near-black rock split by a web of glowing white cracks (Equinox's dark planet)."""
+    n = 512
+    rock = _tile_x(_noise(n, seed, 6))
+    ridge = 1 - np.abs(2 * _tile_x(_noise(n, seed + 5, 5)) - 1)
+    ridge2 = 1 - np.abs(2 * _tile_x(_noise(n, seed + 9, 6)) - 1)
+    cracks = np.clip((np.maximum(ridge, ridge2 * 0.9) - 0.93) / 0.07, 0, 1) ** 1.5
+    _map(0.03 + 0.08 * rock + 0.95 * cracks, "map_cracked")
+
+
 ALL = [glow, glow_hot, rays, ring, shockwave, sparkle, smoke, slash, bolts, coin, cash,
-       crest, crown_ring, card_sigil, rune_ring, card, star4, shards, vortex, orb, pillar, crown_spikes, streak, lum_emblem, spear, galaxy_disc, planet, cracked_rim, cube]
+       crest, crown_ring, card_sigil, rune_ring, card, star4, shards, vortex, orb, pillar, crown_spikes, streak, lum_emblem, spear, galaxy_disc, planet, cracked_rim, cube, map_clouds, map_cracked]
 
 if __name__ == "__main__":
     for fn in ALL:

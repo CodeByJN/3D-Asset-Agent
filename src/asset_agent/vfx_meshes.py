@@ -1,9 +1,11 @@
-"""Procedural HD meshes for VFX: crystals, planets, rings, blades and bevelled cubes.
+"""Procedural HD meshes for VFX: crystals, planets, rings, blades, bevelled cubes and glowing edges.
 
 A preset uses one as a MeshPart with MeshId "mesh://kind?key=value&..." (e.g. "mesh://crystal?sides=7&seed=3").
 Studio builds it as an EditableMesh (no upload needed); the node's Size scales it. Each mesh fits in
 a unit box (-0.5..0.5) so Size is its size in studs. Faceted kinds (crystal, blade, cube, shard) use
 unshared vertices so every facet catches the light; round kinds (sphere, torus) share vertices.
+globe has UVs, so a texture (TextureID texture://map_...) wraps around it. frame and blade_edge are the
+glowing edges of a box and of a blade: give them the same Size and CFrame as the body they outline.
 """
 import math
 import random
@@ -12,10 +14,12 @@ from urllib.parse import parse_qsl
 ROUND = 4  # decimals sent to Studio
 
 
-def _fit(verts):
-    """Scale and centre vertices into the unit box."""
-    lo = [min(v[i] for v in verts) for i in range(3)]
-    hi = [max(v[i] for v in verts) for i in range(3)]
+def _fit(verts, like=None):
+    """Scale and centre vertices into the unit box (the box of `like` when given: edges that outline a
+    body keep its proportions, so both take the same Size)."""
+    ref = like or verts
+    lo = [min(v[i] for v in ref) for i in range(3)]
+    hi = [max(v[i] for v in ref) for i in range(3)]
     return [tuple((v[i] - (lo[i] + hi[i]) / 2) / max(hi[i] - lo[i], 1e-6) for i in range(3)) for v in verts]
 
 
@@ -101,29 +105,6 @@ def crystal(sides=6, tip=0.35, base=0.12, jitter=0.12, seed=0):
     return _flat(_fit(v), f)
 
 
-def blade(hook=0.0, thick=0.18, seg=10):
-    """A crystal blade along +Y with a diamond cross-section, tapering to a point; hook bends the tip
-    sideways (+X) like the curved wings of a star emblem."""
-    seg = int(seg)
-    v, f = [], []
-    for k in range(seg + 1):
-        u = k / seg
-        w = math.sin(math.pi * min(1.0, 0.15 + u * 0.95)) * (1 - u) ** 0.35 if u < 1 else 0
-        cx = hook * u ** 2
-        y = u
-        v += [(cx + w * 0.5, y, 0), (cx, y, thick * w), (cx - w * 0.5, y, 0), (cx, y, -thick * w)]
-    for k in range(seg):
-        for i in range(4):
-            a, b = k * 4 + i, k * 4 + (i + 1) % 4
-            c, d = a + 4, b + 4
-            f += [(a, c, b), (b, c, d)]
-    v.append((0, 0, 0))
-    root = len(v) - 1
-    for i in range(4):
-        f.append((root, i, (i + 1) % 4))
-    return _flat(_fit(v), f)
-
-
 def cube(bevel=0.12):
     """A cube with chamfered edges and corners (catches highlights on every edge)."""
     e = 0.5 - bevel
@@ -182,7 +163,121 @@ def _hull(pts):
     return pts, faces
 
 
-KINDS = {"sphere": sphere, "torus": torus, "crystal": crystal, "blade": blade, "cube": cube, "shard": shard}
+def globe(seg=96, rings=48):
+    """A UV sphere: smooth, with an equirectangular UV map (u around, v pole to pole) for surface textures."""
+    seg, rings = int(seg), int(rings)
+    v, uv, f = [], [], []
+    for j in range(rings + 1):
+        th = math.pi * j / rings
+        for i in range(seg + 1):  # the seam column is doubled so the texture wraps cleanly
+            ph = 2 * math.pi * i / seg
+            v.append((math.sin(th) * math.cos(ph), math.cos(th), math.sin(th) * math.sin(ph)))
+            uv.append((i / seg, j / rings))
+    for j in range(rings):
+        for i in range(seg):
+            a, b = j * (seg + 1) + i, j * (seg + 1) + i + 1
+            c, d = a + seg + 1, b + seg + 1
+            if j:
+                f.append((a, b, c))
+            if j < rings - 1:
+                f.append((b, d, c))
+    return _fit(v), f, uv
+
+
+def _tube(path, radius, sides=6, closed=False):
+    """A thin round tube along a polyline (glowing edges and grooves)."""
+    v, f = [], []
+    n = len(path)
+    for k, p in enumerate(path):
+        a = path[(k - 1) % n if closed else max(k - 1, 0)]
+        b = path[(k + 1) % n if closed else min(k + 1, n - 1)]
+        t = [b[i] - a[i] for i in range(3)]
+        ln = math.sqrt(sum(c * c for c in t)) or 1
+        t = [c / ln for c in t]
+        up = (0, 0, 1) if abs(t[2]) < 0.9 else (1, 0, 0)
+        u = [t[1] * up[2] - t[2] * up[1], t[2] * up[0] - t[0] * up[2], t[0] * up[1] - t[1] * up[0]]
+        ln = math.sqrt(sum(c * c for c in u)) or 1
+        u = [c / ln for c in u]
+        w = [t[1] * u[2] - t[2] * u[1], t[2] * u[0] - t[0] * u[2], t[0] * u[1] - t[1] * u[0]]
+        for s_ in range(sides):
+            ang = 2 * math.pi * s_ / sides
+            v.append(tuple(p[i] + radius * (math.cos(ang) * u[i] + math.sin(ang) * w[i]) for i in range(3)))
+    for k in range(n if closed else n - 1):
+        k2 = (k + 1) % n
+        for s_ in range(sides):
+            a, b = k * sides + s_, k * sides + (s_ + 1) % sides
+            c, d = k2 * sides + s_, k2 * sides + (s_ + 1) % sides
+            f += [(a, c, b), (b, c, d)]
+    if not closed:  # cap the ends
+        for k, flip in ((0, True), (n - 1, False)):
+            v.append(path[k])
+            m = len(v) - 1
+            for s_ in range(sides):
+                a, b = k * sides + s_, k * sides + (s_ + 1) % sides
+                f.append((m, b, a) if flip else (m, a, b))
+    return v, [(a, c, b) for a, b, c in f]  # outward
+
+
+def _merge(parts):
+    v, f = [], []
+    for pv, pf in parts:
+        f += [(a + len(v), b + len(v), c + len(v)) for a, b, c in pf]
+        v += pv
+    return v, f
+
+
+def frame(r=0.025):
+    """The 12 glowing edges of a box (outline a Part of the same Size)."""
+    h = 0.5
+    corners = [(x, y, z) for x in (-h, h) for y in (-h, h) for z in (-h, h)]
+    edges = [(a, b) for i, a in enumerate(corners) for b in corners[i + 1:] if sum(a[k] != b[k] for k in range(3)) == 1]
+    v, f = _merge(_tube([a, b], r, 6) for a, b in edges)
+    return _fit(v, corners), f
+
+
+def _blade_profile(hook, seg):
+    pts = []
+    for k in range(seg + 1):
+        u = k / seg
+        w = math.sin(math.pi * min(1.0, 0.15 + u * 0.95)) * (1 - u) ** 0.35 if u < 1 else 0
+        pts.append((hook * u ** 2, u, w))
+    return pts
+
+
+def blade(hook=0.0, thick=0.18, seg=10):
+    """A crystal blade along +Y with a diamond cross-section, tapering to a point; hook bends the tip
+    sideways (+X) like the curved wings of a star emblem."""
+    seg = int(seg)
+    v, f = [], []
+    for cx, y, w in _blade_profile(hook, seg):
+        v += [(cx + w * 0.5, y, 0), (cx, y, thick * w), (cx - w * 0.5, y, 0), (cx, y, -thick * w)]
+    for k in range(seg):
+        for i in range(4):
+            a, b = k * 4 + i, k * 4 + (i + 1) % 4
+            c, d = a + 4, b + 4
+            f += [(a, c, b), (b, c, d)]
+    v.append((0, 0, 0))
+    root = len(v) - 1
+    for i in range(4):
+        f.append((root, i, (i + 1) % 4))
+    return _flat(_fit(v), f)
+
+
+def blade_edge(hook=0.0, thick=0.18, seg=24, r=0.012):
+    """The glowing outline of blade(hook, thick): both cutting edges, plus a groove down each face."""
+    seg = int(seg)
+    prof = _blade_profile(hook, seg)
+    body = [(cx + s * w * 0.5, y, z * thick * w) for cx, y, w in prof for s, z in ((1, 0), (-1, 0), (0, 1), (0, -1))]
+    right = [(cx + w * 0.5, y, 0) for cx, y, w in prof]
+    left = [(cx - w * 0.5, y, 0) for cx, y, w in prof]
+    outline = left[::-1] + right[1:]
+    grooves = [[(cx, y, z * (thick * w + r * 0.5)) for cx, y, w in prof[2:int(seg * 0.8)]] for z in (1, -1)]
+    v, f = _merge([_tube(outline, r, 6)] + [_tube(g, r * 0.6, 5) for g in grooves])
+    return _fit(v, body), f
+
+
+KINDS = {"sphere": sphere, "globe": globe, "torus": torus, "crystal": crystal, "blade": blade, "blade_edge": blade_edge,
+         "cube": cube, "frame": frame, "shard": shard}
 
 
 def build(spec: str):
@@ -195,6 +290,9 @@ def build(spec: str):
 
 
 def mesh_data(spec: str) -> dict:
-    """A mesh for transport to Studio: {v: [x,y,z,...], f: [a,b,c,...]} (0-based)."""
-    v, f = build(spec)
-    return {"v": [round(c, ROUND) for p in v for c in p], "f": [i for t in f for i in t]}
+    """A mesh for transport to Studio: {v: [x,y,z,...], f: [a,b,c,...] (0-based), uv: [u,v,...] if mapped}."""
+    v, f, *uv = build(spec)
+    out = {"v": [round(c, ROUND) for p in v for c in p], "f": [i for t in f for i in t]}
+    if uv:
+        out["uv"] = [round(c, ROUND) for p in uv[0] for c in p]
+    return out

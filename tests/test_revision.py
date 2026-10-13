@@ -178,16 +178,19 @@ def test_procedural_meshes():
     import math
     from asset_agent import roblox, vfx, vfx_meshes
     for spec in ("sphere?sub=3", "sphere?sub=2&noise=0.2&seed=1", "torus?tube=0.02", "crystal?sides=7&seed=3",
-                 "blade?hook=0.3", "cube", "shard?seed=4"):
+                 "blade?hook=0.3", "cube", "shard?seed=4", "globe?seg=24&rings=12", "frame", "blade_edge?hook=0.3"):
         d = vfx_meshes.mesh_data("mesh://" + spec)
         v = [d["v"][i:i + 3] for i in range(0, len(d["v"]), 3)]
         assert len(d["f"]) % 3 == 0 and max(d["f"]) < len(v)
-        for ax in range(3):  # fits the unit box, so a node's Size is its size in studs
-            assert math.isclose(max(p[ax] for p in v) - min(p[ax] for p in v), 1, abs_tol=2e-3), spec
+        for ax in range(3):  # fits the unit box, so a node's Size is its size in studs (edges: their body's box)
+            ext = max(p[ax] for p in v) - min(p[ax] for p in v)
+            assert (1 <= ext < 1.1) if spec.startswith(("frame", "blade_edge")) else math.isclose(ext, 1, abs_tol=2e-3), spec
         # outward winding: the signed volume of a closed outward mesh is positive
         vol = sum(a[0] * (b[1] * c[2] - b[2] * c[1]) + a[1] * (b[2] * c[0] - b[0] * c[2]) + a[2] * (b[0] * c[1] - b[1] * c[0])
                   for a, b, c in ([v[d["f"][i]], v[d["f"][i + 1]], v[d["f"][i + 2]]] for i in range(0, len(d["f"]), 3)))
         assert vol > 0, spec
+    uv = vfx_meshes.mesh_data("globe?seg=24&rings=12")["uv"]  # a globe carries one UV per vertex
+    assert len(uv) * 3 == len(vfx_meshes.mesh_data("globe?seg=24&rings=12")["v"]) * 2 and 0 <= min(uv) and max(uv) <= 1
     with pytest.raises(ValueError):
         vfx_meshes.build("mesh://teapot")
     nodes = [{"class": "MeshPart", "name": "M", "props": {"MeshId": "mesh://cube?bevel=0.1"},
