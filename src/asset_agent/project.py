@@ -151,6 +151,34 @@ class Project:
                 out[k] = round(round(mean / step) * step, 3) if step < 1 else int(round(mean / step) * step)
         return out
 
+    # ------------------------------------------------------------ handoff
+
+    def handoff(self) -> Path:
+        """Write HANDOFF.md: everything a fresh conversation needs to carry on this game's assets
+        (style guide, ratings, and per asset its spec, build code, version and feedback). Kept up to
+        date on every build and rating, so starting a new chat costs one file read, not a replay."""
+        home = self.root.parent.parent
+        lines = ["# Handoff: " + self.name, "", "Read this first in a new conversation, then carry on.", "",
+                 "## Style guide and ratings", "", "```", self.summary(), "```", ""]
+        for m in sorted(home.glob("*/manifest.json")):
+            d = json.loads(m.read_text())
+            if d.get("project") != self.name:
+                continue
+            lines += [f"## {m.parent.name} (v{d.get('version')})", ""]
+            if d.get("spec"):
+                lines += [f"- **{k}:** {v}" for k, v in d["spec"].items()]
+            if d.get("build"):
+                lines.append(f"- **build code:** {(m.parent / d['build']['code']).as_posix()} (edit it and call build again)")
+            elif d.get("prompt"):
+                lines.append(f"- **prompt:** {d['prompt']}")
+            for r in d.get("ratings", [])[-3:]:
+                lines.append(f"- rated {r['stars']}/10 on v{r['v']}: {r.get('note') or '(no note)'}")
+            lines.append("")
+        f = self.root / "HANDOFF.md"
+        self.root.mkdir(parents=True, exist_ok=True)
+        f.write_text("\n".join(lines), encoding="utf-8")
+        return f
+
     # ------------------------------------------------------------ summary
 
     def summary(self) -> str:

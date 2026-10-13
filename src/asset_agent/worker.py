@@ -195,6 +195,52 @@ def fit_to(bm, fit):
         v.co = t_base + Vector(tuple(a * b for a, b in zip(v.co - base, sc)))
 
 
+def op_build(s):
+    """Run Claude's modelling code (with the kit, see kit.py) and export one GLB per part: glow
+    materials become their own glow_<material> part (Neon in Roblox), everything else is "main".
+    Units: the code works in studs; the GLBs are in metres like every other source."""
+    sys.path.insert(0, str(Path(__file__).parent))
+    import importlib
+    import kit
+    importlib.reload(kit)
+    ns = {k: getattr(kit, k) for k in kit.__all__}
+    try:
+        exec(compile(s["code"], "<build>", "exec"), ns)
+    except Exception as e:
+        tb = [f for f in traceback.extract_tb(e.__traceback__) if f.filename == "<build>"]
+        raise RuntimeError(f"build code line {tb[-1].lineno if tb else '?'}: {type(e).__name__}: {e}") from None
+    objs = [o for o in bpy.context.scene.objects if o.type == "MESH" and len(o.data.polygons)]
+    if not objs:
+        raise ValueError("the build code made no meshes")
+    groups, glow = {}, {}
+    for o in objs:
+        o.data.transform(o.matrix_world)
+        o.matrix_world = Matrix()
+        g = next((m for m in o.data.materials if m and m.get("glow")), None)
+        part = o.get("part") or (f"glow_{g.name}" if g else "main")
+        if g:
+            glow[part] = [rnd(c) for c in g.diffuse_color[:3]]
+        groups.setdefault(part, []).append(o)
+    lo, hi = bbox(objs)
+    out = Path(s["out_dir"])
+    out.mkdir(parents=True, exist_ok=True)
+    parts = {}
+    for part, group in groups.items():
+        bpy.ops.object.select_all(action="DESELECT")
+        for o in group:
+            o.select_set(True)
+        bpy.context.view_layer.objects.active = group[0]
+        if len(group) > 1:
+            bpy.ops.object.join()
+        o = bpy.context.view_layer.objects.active
+        o.name = part
+        o.data.transform(Matrix.Scale(kit.STUD, 4))
+        export_glb(out / f"{part}.glb", [o])
+        parts[part] = tris(o.data)
+    return {"parts": parts, "glow": glow, "tris": sum(parts.values()),
+            "size_studs": [rnd(x) for x in (hi - lo)], "materials": len(bpy.data.materials)}
+
+
 def op_measure(s):
     return {"bbox": [list(map(rnd, c)) for c in bbox([import_any(s["src"])])]}
 

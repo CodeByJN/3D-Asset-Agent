@@ -84,10 +84,12 @@ def upload(fbx: Path, name: str, asset_id: str | None = None, timeout: float = 1
 
 # ---------------------------------------------------------------- Studio script
 
-def studio_script(name: str, asset_id: str, revision: str, effects: dict) -> str:
-    """Compact Luau for Studio's execute_luau. Returns a one-line status string when run."""
+def studio_script(name: str, asset_id: str, revision: str, effects: dict, glow: dict | None = None) -> str:
+    """Compact Luau for Studio's execute_luau. Returns a one-line status string when run.
+    glow: {part name: [r,g,b]} parts made Neon in that colour (emissive details)."""
     fx = {n: {"nodes": vfx.resolve_textures(e["nodes"]), "mode": e["mode"]} for n, e in vfx.resolve(effects).items()}
     return luau.BUILD + f"""local NAME,ID,REV,FX='{name}',{asset_id},'{revision}',HS:JSONDecode({luau.data(fx)})
+local GLOW=HS:JSONDecode({luau.data(glow or {})})
 local m=workspace:FindFirstChild(NAME) local loaded=false
 if not(m and m:GetAttribute('AssetAgentRev')==REV) then
  local ok,c=pcall(function() return game:GetService('InsertService'):LoadAsset(ID) end)
@@ -100,7 +102,9 @@ if not(m and m:GetAttribute('AssetAgentRev')==REV) then
   local cf=workspace.CurrentCamera.CFrame local at=cf.Position+cf.LookVector*20
   local bc,bs=n:GetBoundingBox() n:PivotTo(n:GetPivot()+(Vector3.new(at.X,bs.Y/2,at.Z)-bc.Position)) end
  n.Parent=workspace m=n loaded=true end
-for _,d in m:GetDescendants() do if d:GetAttribute('AssetAgentVFX') then d:Destroy() end end
+for _,d in m:GetDescendants() do if d:GetAttribute('AssetAgentVFX') then d:Destroy() end
+ local g=d:IsA('BasePart') and GLOW[d.Name] if g then d.Material=Enum.Material.Neon d.Color=Color3.new(g[1],g[2],g[3])
+  if d:IsA('MeshPart') then d.TextureID='' end end end
 local h=m.PrimaryPart or m:FindFirstChildWhichIsA('BasePart',true)
 local n=0 for tag,e in FX do play(build(h,tag,e.nodes)) n+=1 end
 return (loaded and 'loaded ' or 'kept model, ')..NAME..' with '..n..' effect(s)'"""

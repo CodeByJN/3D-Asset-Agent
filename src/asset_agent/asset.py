@@ -96,13 +96,7 @@ class Asset:
         a = cls(root)
         fin = DEFAULT_FINISH | {"parts": {}}
         for i, (part, src) in enumerate(sources.items()):
-            a.m["parts"][part] = {}
-            a._set_source(part, src)
-            a.m["params"]["geometry"][part] = {}
-            a.m["params"]["topology"][part] = {"target_tris": None}  # resolved after first geometry build
-            a.m["params"]["collision"][part] = {"max_tris": b["collision_tris"]}
-            a.m["params"]["uv"][part] = {"angle": 66, "margin": 0.02}
-            a.m["params"]["surface"][part] = {"tex_size": b["tex_size"], "mode": surface_mode, "image": None}
+            a.add_part(part, src, surface_mode)
             if images and images.get(part):
                 a._set_image(part, images[part])
             if surface_mode == "flat":
@@ -110,6 +104,27 @@ class Asset:
         (root / "finish.json").write_text(json.dumps(fin, indent=2))
         a._save()
         return a
+
+    def add_part(self, part, src, surface_mode="auto"):
+        """Register a new part from a mesh file (built on the next build)."""
+        b = self.m["budget"]
+        self.m["parts"][part] = {}
+        self._set_source(part, src)
+        p = self.m["params"]
+        p["geometry"][part] = {}
+        p["topology"][part] = {"target_tris": None}  # resolved after first geometry build
+        p["collision"][part] = {"max_tris": b["collision_tris"]}
+        p["uv"][part] = {"angle": 66, "margin": 0.02}
+        p["surface"][part] = {"tex_size": b["tex_size"], "mode": surface_mode, "image": None}
+
+    def drop_part(self, part):
+        """Remove a part (its layer history stays in the manifest)."""
+        self.m["parts"].pop(part)
+        for kind in PART_LAYERS:
+            self.m["params"].get(kind, {}).pop(part, None)
+        fin = self.finish
+        if fin.get("parts", {}).pop(part, None) is not None:
+            (self.root / "finish.json").write_text(json.dumps(fin, indent=2))
 
     def _set_source(self, part, src):
         src = Path(src)
@@ -474,7 +489,8 @@ class Asset:
             rb["rev"] = rev
             self._save()
             status = f"asset {rb['asset_id']} {'created' if new else 'new version uploaded'}"
-        script = roblox.studio_script(name, rb["asset_id"], rev, self.effects)
+        glow = {p: self.finish["parts"].get(p, {}).get("tint", [1, 1, 1]) for p in self.m["parts"] if p.startswith("glow")}
+        script = roblox.studio_script(name, rb["asset_id"], rev, self.effects, glow)
         (self.root / "studio.luau").write_text(script)
         return f"{status} | effects: {vfx.describe(self.effects)}", script
 

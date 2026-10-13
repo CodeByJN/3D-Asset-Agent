@@ -37,12 +37,16 @@ a.revise("topology", part="main", target_tris=2000)
 - Generations are cached in `library/cache/`, so the same request is never run twice.
 
 ## MCP server
-`.mcp.json` registers `asset-agent` (run with `uv run asset-agent-mcp`). It has 8 tools, about 1k tokens of definitions:
-- `make_asset`, `import_mesh`
-- `revise`, `rollback`, `history`
-- `validate`
-- `preview` (opt-in 256px 4-view tile)
-- `library`
+`.mcp.json` registers `asset-agent` (run with `uv run asset-agent-mcp`). It has 14 tools, about 1.6k tokens of definitions:
+- `build`: you model the asset in Python with a small kit (`code="help"` lists it), and the harness turns it into a
+  validated, textured Roblox model in about 10 s. It's the cleanest and fastest path for stylised props, creatures and
+  weapons. Write a spec first (shape, details, palette, pose, size, what to take from references), check the 4 views
+  it returns, and rebuild before showing. `mat(..., glow=True)` parts become Neon in Roblox.
+- `make_asset` (text/image to 3D generators, for organic shapes), `import_mesh`
+- `revise`, `rollback`, `history`, `validate`, `preview`, `library`
+- `plan` (a game's style guide; also writes `HANDOFF.md` so a new chat can carry on), `rate` (stars plus what you
+  liked and didn't)
+- `studio`, `vfx_lab`, `vfx_import` (Roblox Studio)
 
 ## Your own GPU (optional)
 With an NVIDIA GPU (6 GB+ of VRAM), shape generation runs on your own machine: unlimited and private. The GPU can also be in another machine, such as a home desktop serving your laptop.

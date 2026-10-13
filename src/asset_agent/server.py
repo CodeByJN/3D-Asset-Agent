@@ -11,14 +11,14 @@ from mcp.server.mcpserver import Image, MCPServer
 
 from . import generators
 from .asset import Asset
-from .make import make_asset as _make_asset
+from .make import build_model, kit_help, make_asset as _make_asset
 from . import roblox, studio_client, vfx
 from .project import Project
 
 server = MCPServer("asset-agent", instructions=(
     "Game-ready 3D assets (Roblox first). For a game, call plan(project) first: its style guide, roster "
-    "and what past ratings liked/avoided; pass project= to make_asset. make_asset generates (free or on "
-    "your GPU) and returns one line. Fix things with revise (only that layer and what depends on it "
+    "and what past ratings liked/avoided; pass project=. Best quality: build (you model it in code, ~5s); "
+    "make_asset generates organic shapes (slow) and returns one line. Fix things with revise (only that layer and what depends on it "
     "rebuilds), not by regenerating. preview only when you must see it (layer='breakdown' shows geometry, "
     "topology, colour, texture). After each make_asset or revise the user looks at, ask for a 1-10 "
     "rating and call rate. studio(name) puts an asset in the user's open Roblox Studio place. VFX: "
@@ -63,6 +63,21 @@ def make_asset(name: str, prompt: str | None = None, image: str | None = None, s
     project: a game from plan; fills unset args from its style guide (prompt too, if on the roster)."""
     return _make_asset(home() / name, prompt=prompt, image=image, budget=budget, style=style, color=color,
                        backend=backend, textured=textured, project=Project.open(home(), project) if project else None)
+
+
+@server.tool(structured_output=False)
+def build(name: str, code: str, spec: dict | None = None, budget: str | None = None, project: str | None = None):
+    """Model it yourself in Python with the kit (code="help" lists it): studs, Z up, faces -Y.
+    Write spec first {shape, details, palette (main+accents+glow), pose, size, refs (what to take)}.
+    Returns 4 views: check them against spec and rebuild before showing. Again with edited code = next
+    version. mat(..., glow=True) parts are Neon in Roblox."""
+    try:
+        if code.strip() == "help":
+            return kit_help()
+        line, img = build_model(home() / name, code, spec, budget, Project.open(home(), project) if project else None)
+        return [line, Image(path=str(img))]
+    except Exception as e:
+        return f"error: {type(e).__name__}: {' '.join(str(e).split())}"[:300]
 
 
 @tool
@@ -143,7 +158,7 @@ def plan(project: str, brief: str | None = None, references: list[str] | None = 
     if brief is not None or references or assets or style or not (p.root / "project.json").exists():
         p.update(references=references, assets=assets, **({"brief": brief} if brief is not None else {}),
                  **(style or {}))
-    return p.summary()
+    return f"{p.summary()}\nhandoff (for a new chat): {p.handoff()}"
 
 
 @tool
@@ -164,8 +179,10 @@ def rate(name: str, stars: int, note: str = "") -> str:
     a._save()
     if not a.m.get("project"):
         return f"rated {name} v{a.m['version']} {stars}/10 (no project, so nothing learned)"
-    return Project.open(home(), a.m["project"]).rate(name, a.m["version"], stars, note, a.params_snapshot(),
-                                                     a.m.get("prompt"))
+    p = Project.open(home(), a.m["project"])
+    line = p.rate(name, a.m["version"], stars, note, a.params_snapshot(), a.m.get("prompt"))
+    p.handoff()
+    return line
 
 
 @server.tool(structured_output=False)
@@ -220,6 +237,29 @@ def vfx_import(path: str, name: str = "", use: str = "", tags: list[str] | None 
     vfx.save_preset(name, p)
     stats = " ".join(f"{k}={v}" for k, v in data.get("stats", {}).items() if v)
     return f"saved vfx preset {name}: {p['mode']}, {stats}"
+
+
+def _compact(schema):
+    """Advertised schemas without what costs tokens and tells the model nothing: titles (they repeat
+    the names) and "or null" on optional args (leaving them out already means None)."""
+    if isinstance(schema, dict):
+        schema.pop("title", None)
+        alts = schema.get("anyOf")
+        if alts and {"type": "null"} in alts and len(alts) == 2:
+            schema.pop("anyOf")
+            schema.update(next(a for a in alts if a != {"type": "null"}))
+            if schema.get("default", 0) is None:
+                schema.pop("default")
+        for v in schema.values():
+            _compact(v)
+    elif isinstance(schema, list):
+        for v in schema:
+            _compact(v)
+    return schema
+
+
+for _t in server._tool_manager._tools.values():  # arguments are still validated against the full signatures
+    _compact(_t.parameters)
 
 
 def main():
