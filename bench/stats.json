@@ -1,0 +1,110 @@
+{
+ "palm_tree": {
+  "native": {
+   "v1": {
+    "tris": 650,
+    "height": 14.276,
+    "objects": 1,
+    "materials": 5,
+    "file": "bench\\runs\\native\\palm_tree\\palm_tree.fbx"
+   },
+   "v2": {
+    "tris": 650,
+    "height": 21.376,
+    "objects": 1,
+    "materials": 5,
+    "file": "bench\\runs\\native\\palm_tree\\palm_tree_v2.fbx"
+   }
+  },
+  "harness": {
+   "v1": {
+    "tris": 1426,
+    "height": 3.961,
+    "objects": 1,
+    "materials": 1,
+    "file": "assets\\bench_palm_tree\\export\\bench_palm_tree.fbx"
+   },
+   "v2": {
+    "tris": 1422,
+    "height": 5.941,
+    "objects": 1,
+    "materials": 1,
+    "file": "assets\\bench_palm_tree\\export\\bench_palm_tree_v2.fbx"
+   }
+  }
+ },
+ "ssj_aura": {
+  "native": {
+   "v1": {
+    "PointLight": 1,
+    "Beam": 70,
+    "ParticleEmitter": 19,
+    "LocalScript": 1,
+    "total_rate": 647,
+    "Highlight": 1,
+    "Script": 1
+   },
+   "v2": {
+    "PointLight": 1,
+    "Beam": 70,
+    "ParticleEmitter": 19,
+    "LocalScript": 1,
+    "total_rate": 647,
+    "Highlight": 1,
+    "Script": 1
+   }
+  },
+  "harness": {
+   "v1": {
+    "PointLight": 1,
+    "Highlight": 1,
+    "ParticleEmitter": 12,
+    "LocalScript": 1,
+    "total_rate": 635,
+    "Script": 1
+   },
+   "v2": {
+    "PointLight": 1,
+    "Highlight": 1,
+    "ParticleEmitter": 12,
+    "LocalScript": 1,
+    "total_rate": 635,
+    "Script": 1
+   }
+  }
+ },
+ "run_anim": {
+  "native": {
+   "v1": {
+    "keyframes": 13,
+    "loop": true,
+    "length": 0.699999988079071,
+    "priority": "Movement",
+    "poses": 208
+   },
+   "v2": {
+    "keyframes": 13,
+    "loop": true,
+    "length": 0.5,
+    "priority": "Movement",
+    "poses": 208
+   }
+  },
+  "harness": {
+   "v1": {
+    "keyframes": 9,
+    "loop": true,
+    "length": 0.800000011920929,
+    "priority": "Movement",
+    "poses": 144
+   },
+   "v2": {
+    "keyframes": 9,
+    "loop": true,
+    "length": 0.6000000238418579,
+    "priority": "Movement",
+    "poses": 144
+   }
+  }
+ }
+}

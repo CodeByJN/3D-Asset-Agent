@@ -1,0 +1,17 @@
+{
+ "palm_tree": {
+  "task": "Build a low-poly palm tree for a Roblox game (stylised, game-ready, sensible tri count, about 12-18 studs tall).",
+  "deliver": "An .fbx (or .obj/.glb) file that imports into Roblox Studio, inside your run folder. Put its path in result.txt.",
+  "revision": "Revision: make the palm 50% taller and give the fronds a darker green. Keep everything else. Save the revised file next to the first one with _v2 in its name and add its path to result.txt."
+ },
+ "ssj_aura": {
+  "task": "Make a Super Saiyan aura VFX for a Roblox character: golden flame-like energy surrounding the whole body, with crackling energy, the way it looks in Dragon Ball. Aim for top-tier Roblox VFX quality.",
+  "deliver": "Leave the finished aura playing on an R15 character in the open Roblox Studio place (create the character if you need one; keep it at least 100 studs above the map). Write the character's full path (e.g. workspace.X) in result.txt.",
+  "revision": "Revision: make it Super Saiyan Blue (blue aura instead of gold). Keep everything else. Leave the revised aura on a separate R15 character and add its path to result.txt as v2."
+ },
+ "run_anim": {
+  "task": "Make a running animation (looping run cycle) for a standard Roblox R15 character.",
+  "deliver": "A KeyframeSequence for the R15 rig saved in ServerStorage of the open Roblox Studio place, named BenchRun_{mode} (the format Studio's Animation Editor saves). Write its path in result.txt.",
+  "revision": "Revision: make it a faster sprint with a bigger arm swing. Save it as a second KeyframeSequence named BenchRun_{mode}_v2 in ServerStorage and add its path to result.txt."
+ }
+}

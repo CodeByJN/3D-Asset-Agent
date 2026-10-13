@@ -7,3 +7,4 @@ assets/*/export/
 library/cache/
 .pytest_cache/
 assets/
+bench/frames/

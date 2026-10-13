@@ -8,6 +8,15 @@ A low-token 3D asset harness for Claude and other LLM agents. It builds on [Blen
 
 See [docs/PLAN.md](docs/PLAN.md) for the full plan.
 
+## Benchmark
+
+![Claude native vs Claude + asset-agent](docs/benchmark.gif)
+
+The benchmark covers three tasks (a palm tree, a Super Saiyan aura and an R15 run cycle), with one revision each.
+For now, native Claude is faster and cheaper. The generator, the missing aura and animation tools, and pipeline
+bugs cost the harness more than its cheap revisions save. Full numbers, method and the fix list are in
+[docs/BENCHMARK.md](docs/BENCHMARK.md).
+
 ## Quick start (free, no API keys)
 
 ```python

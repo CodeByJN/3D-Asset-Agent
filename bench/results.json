@@ -1,0 +1,116 @@
+{
+ "palm_tree": {
+  "native": {
+   "create": {
+    "seconds": 73.0,
+    "tokens": 60809,
+    "context_tokens": 336577,
+    "output": 2201,
+    "tool_calls": 6,
+    "api_calls": 6
+   },
+   "revise": {
+    "seconds": 28.6,
+    "tokens": 2889,
+    "context_tokens": 180980,
+    "output": 440,
+    "tool_calls": 3,
+    "api_calls": 3
+   }
+  },
+  "harness": {
+   "create": {
+    "seconds": 821.8,
+    "tokens": 92543,
+    "context_tokens": 1439283,
+    "output": 3666,
+    "tool_calls": 23,
+    "api_calls": 23
+   },
+   "revise": {
+    "seconds": 198.6,
+    "tokens": 14254,
+    "context_tokens": 1461424,
+    "output": 2466,
+    "tool_calls": 19,
+    "api_calls": 19
+   }
+  }
+ },
+ "ssj_aura": {
+  "native": {
+   "create": {
+    "seconds": 387.6,
+    "tokens": 48279,
+    "context_tokens": 1446310,
+    "output": 6434,
+    "tool_calls": 22,
+    "api_calls": 21
+   },
+   "revise": {
+    "seconds": 54.4,
+    "tokens": 10150,
+    "context_tokens": 740421,
+    "output": 1753,
+    "tool_calls": 8,
+    "api_calls": 9
+   }
+  },
+  "harness": {
+   "create": {
+    "seconds": 750.8,
+    "tokens": 88329,
+    "context_tokens": 4316239,
+    "output": 10005,
+    "tool_calls": 52,
+    "api_calls": 49
+   },
+   "revise": {
+    "seconds": 64.9,
+    "tokens": 8916,
+    "context_tokens": 1067215,
+    "output": 1357,
+    "tool_calls": 9,
+    "api_calls": 9
+   }
+  }
+ },
+ "run_anim": {
+  "native": {
+   "create": {
+    "seconds": 125.4,
+    "tokens": 33041,
+    "context_tokens": 540274,
+    "output": 2867,
+    "tool_calls": 12,
+    "api_calls": 9
+   },
+   "revise": {
+    "seconds": 35.8,
+    "tokens": 5126,
+    "context_tokens": 342738,
+    "output": 907,
+    "tool_calls": 5,
+    "api_calls": 5
+   }
+  },
+  "harness": {
+   "create": {
+    "seconds": 98.5,
+    "tokens": 30912,
+    "context_tokens": 468577,
+    "output": 2129,
+    "tool_calls": 9,
+    "api_calls": 8
+   },
+   "revise": {
+    "seconds": 49.9,
+    "tokens": 6972,
+    "context_tokens": 339793,
+    "output": 1182,
+    "tool_calls": 6,
+    "api_calls": 5
+   }
+  }
+ }
+}

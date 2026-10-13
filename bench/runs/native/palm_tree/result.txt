@@ -1,0 +1,2 @@
+C:\Users\Jordan\Desktop\code\3D-Asset-Agent\bench\runs\native\palm_tree\palm_tree.fbx
+C:\Users\Jordan\Desktop\code\3D-Asset-Agent\bench\runs\native\palm_tree\palm_tree_v2.fbx
