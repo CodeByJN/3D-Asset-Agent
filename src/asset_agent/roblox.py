@@ -203,7 +203,8 @@ for _,w in {{{{Vector3.new(0,30,-60),Vector3.new(120,62,1)}},{{Vector3.new(0,30,
 end
 local cam=workspace.CurrentCamera
 local bl=cam:FindFirstChild('AssetAgentLabBloom') or Instance.new('BloomEffect') bl.Name='AssetAgentLabBloom'
-bl.Intensity=1.2 bl.Size=28 bl.Threshold=0.85 bl.Parent=cam
+bl.Intensity=1.2 bl.Size=28 bl.Threshold=0.85
+bl.Parent=not game.Lighting:FindFirstChildOfClass('BloomEffect') and cam or nil  -- a lighting preset's bloom is enough
 local rig=Instance.new('Model') rig.Name='StandIn' rig.Parent=lab
 for _,r in """ + _RIG_LUA + """ do
  local p=Instance.new('Part') p.Name=r[1] p.Anchored=true p.CanCollide=false p.Size=r[3] p.CFrame=CFrame.new(AT+r[2])

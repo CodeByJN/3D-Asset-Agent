@@ -106,3 +106,12 @@ def test_revise_recolors_a_preset(home, tmp_path, monkeypatch):
     line = text(call("revise", name="aura_black_card", layer="preset", change={"recolor": [0.2, 0.4, 1]}))
     assert line.startswith("aura_black_card v") and "\n" not in line, line
     assert vfx.raw_presets()["aura_black_card"]["recolor"] == [0.2, 0.4, 1]
+
+
+def test_lighting_presets():
+    from asset_agent import lighting
+    assert "lighting:shader_night" in lighting.catalog()
+    s = lighting.script("shader_night")
+    assert "BloomEffect" in s and "Atmosphere" in s and "AssetAgentLighting" in s and "ClockTime" in s
+    with pytest.raises(KeyError):
+        lighting.script("nope")

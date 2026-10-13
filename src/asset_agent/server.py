@@ -9,7 +9,7 @@ from pathlib import Path
 
 from mcp.server.mcpserver import Image, MCPServer
 
-from . import generators
+from . import generators, lighting
 from .asset import Asset
 from .make import build_model, kit_help, make_asset as _make_asset
 from . import anim, characters, roblox, studio_client, vfx
@@ -245,8 +245,11 @@ def rate(name: str, stars: int, note: str = "") -> str:
 def studio(name: str, on: str | None = None) -> str:
     """Upload the asset to your Roblox account (only if its model changed) and put it in the open
     Studio place, replacing the old copy, with its effects. R15 characters become a rigged character.
-    Animations play on a test dummy, or on character `on`."""
+    Animations play on a test dummy, or on character `on`. name 'lighting[:preset]': shader lighting."""
     try:
+        if name.startswith("lighting"):
+            preset = name.partition(":")[2]
+            return studio_client.run(lambda s: s.luau(lighting.script(preset))) if preset else lighting.catalog()
         if anim.Animation.exists(home() / name):
             d = anim.Animation(home() / name).resolved()
             return studio_client.run(lambda s: s.luau(anim.studio_script(name, d, rig=on)))
