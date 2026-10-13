@@ -115,3 +115,30 @@ def test_lighting_presets():
     assert "BloomEffect" in s and "Atmosphere" in s and "AssetAgentLighting" in s and "ClockTime" in s
     with pytest.raises(KeyError):
         lighting.script("nope")
+
+
+def test_portable_setup(monkeypatch, tmp_path):
+    import json
+    from pathlib import Path
+    from asset_agent import blender, doctor, studio_client
+    # .mcp.json has no machine-specific paths and runs as python -m (no generated .exe)
+    cfg = json.loads((Path(__file__).parents[1] / ".mcp.json").read_text())["mcpServers"]
+    assert {"asset-agent", "Roblox_Studio"} <= set(cfg)
+    for s in cfg.values():
+        assert s["command"] == "uv" and "-m" in s["args"] and "env" not in s
+        assert not any(":\\" in a or "/Users/" in a for a in s["args"])
+    # overrides
+    monkeypatch.setenv("ASSET_AGENT_STUDIO_MCP", "/opt/studio-mcp|--stdio")
+    p = studio_client.launcher()
+    assert p.command == "/opt/studio-mcp" and p.args == ["--stdio"]
+    fake = tmp_path / "blender.exe"
+    fake.write_text("")
+    monkeypatch.setenv("BLENDER_EXE", str(fake))
+    assert blender.find_blender() == str(fake)
+    monkeypatch.setenv("BLENDER_EXE", str(tmp_path / "missing"))
+    with pytest.raises(blender.BlenderError, match="BLENDER_EXE"):
+        blender.find_blender()
+    monkeypatch.delenv("BLENDER_EXE")
+    monkeypatch.delenv("ASSET_AGENT_STUDIO_MCP")
+    rows = {name: ok for name, ok, _ in doctor.checks(live=False)}
+    assert rows["python"] and rows["packages"] and rows[".mcp.json"] and rows["mcp tools"]

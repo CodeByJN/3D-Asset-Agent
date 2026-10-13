@@ -9,6 +9,7 @@ import base64
 import json
 import os
 import re
+import sys
 from pathlib import Path
 
 from mcp import ClientSession, StdioServerParameters
@@ -19,17 +20,34 @@ class StudioError(RuntimeError):
     pass
 
 
+def _studio_mcp_exes() -> list[Path]:
+    """Studio's built-in MCP proxy in each install, newest first."""
+    if sys.platform == "win32":
+        roots = [Path(os.environ.get("LOCALAPPDATA", "")) / "Roblox",
+                 Path(os.environ.get("ProgramFiles(x86)", "C:/Program Files (x86)")) / "Roblox"]
+        found = [p for r in roots for p in r.glob("Versions/*/StudioMCP.exe")]
+    elif sys.platform == "darwin":
+        found = [p for base in (Path("/Applications"), Path.home() / "Applications")
+                 for p in base.glob("RobloxStudio.app/Contents/MacOS/StudioMCP*")]
+    else:
+        found = []
+    return sorted(found, key=lambda p: p.stat().st_mtime, reverse=True)
+
+
 def launcher() -> StdioServerParameters:
+    """How to start Studio's MCP server: ASSET_AGENT_STUDIO_MCP (a command; extra arguments after |),
+    else the newest installed Studio's own proxy (Roblox's mcp.bat does the same, noisily)."""
     if os.environ.get("ASSET_AGENT_STUDIO_MCP"):
-        return StdioServerParameters(command=os.environ["ASSET_AGENT_STUDIO_MCP"])
-    root = Path(os.environ.get("LOCALAPPDATA", "")) / "Roblox"
-    exes = sorted(root.glob("Versions/*/StudioMCP.exe"), key=lambda p: p.stat().st_mtime)
-    if exes:  # newest Studio's proxy (Roblox's mcp.bat does the same, noisily)
-        return StdioServerParameters(command=str(exes[-1]))
-    if (root / "mcp.bat").exists():
-        return StdioServerParameters(command="cmd.exe", args=["/c", str(root / "mcp.bat")])
-    raise StudioError("Roblox Studio MCP not found: open Studio > Assistant > ... > Manage MCP Servers > "
-                      "Enable Studio as MCP server")
+        cmd, *args = os.environ["ASSET_AGENT_STUDIO_MCP"].split("|")
+        return StdioServerParameters(command=cmd, args=args)
+    exes = _studio_mcp_exes()
+    if exes:
+        return StdioServerParameters(command=str(exes[0]))
+    bat = Path(os.environ.get("LOCALAPPDATA", "")) / "Roblox" / "mcp.bat"
+    if sys.platform == "win32" and bat.exists():
+        return StdioServerParameters(command="cmd.exe", args=["/c", str(bat)])
+    raise StudioError("Roblox Studio's MCP server not found: install Roblox Studio, then in Studio open Assistant > "
+                      "... > Manage MCP Servers > Enable Studio as MCP server (or set ASSET_AGENT_STUDIO_MCP)")
 
 
 def _text(res) -> str:

@@ -8,3 +8,5 @@ library/cache/
 .pytest_cache/
 assets/
 bench/frames/
+CLAUDE.local.md
+.claude/settings.local.json

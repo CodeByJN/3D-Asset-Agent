@@ -1,38 +1,12 @@
 {
   "mcpServers": {
-    "blender": {
-      "command": "uvx",
-      "args": [
-        "--python",
-        "3.12",
-        "mcp-for-blender"
-      ],
-      "env": {
-        "UV_PYTHON_INSTALL_DIR": "C:\\Users\\Jordan\\.uv\\python",
-        "UV_CACHE_DIR": "C:\\Users\\Jordan\\.uv\\cache",
-        "UV_TOOL_DIR": "C:\\Users\\Jordan\\.uv\\tools"
-      }
-    },
     "asset-agent": {
       "command": "uv",
-      "args": [
-        "run",
-        "--python",
-        "3.12",
-        "asset-agent-mcp"
-      ],
-      "env": {
-        "UV_PYTHON_INSTALL_DIR": "C:\\Users\\Jordan\\.uv\\python",
-        "UV_CACHE_DIR": "C:\\Users\\Jordan\\.uv\\cache",
-        "UV_TOOL_DIR": "C:\\Users\\Jordan\\.uv\\tools"
-      }
+      "args": ["run", "--python", "3.12", "python", "-m", "asset_agent.server"]
     },
     "Roblox_Studio": {
-      "command": "cmd.exe",
-      "args": [
-        "/c",
-        "%LOCALAPPDATA%\\Roblox\\mcp.bat"
-      ]
+      "command": "uv",
+      "args": ["run", "--python", "3.12", "python", "-m", "asset_agent", "studio-mcp"]
     }
   }
 }

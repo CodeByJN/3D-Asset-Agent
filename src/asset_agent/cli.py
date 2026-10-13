@@ -1,4 +1,5 @@
-"""asset-agent: set up and run the GPU shape server, connect to one on another machine, check status."""
+"""asset-agent: check this machine (doctor), set up and run the GPU shape server, connect to one on another
+machine, check status."""
 import argparse
 import sys
 from pathlib import Path
@@ -41,6 +42,9 @@ def connect(url: str, key: str | None) -> str:
 def main(argv=None):
     p = argparse.ArgumentParser(prog="asset-agent", description=__doc__)
     sub = p.add_subparsers(dest="cmd", required=True)
+    s = sub.add_parser("doctor", help="check everything the harness needs here and say what to fix")
+    s.add_argument("--offline", action="store_true", help="skip connecting to Roblox Studio")
+    sub.add_parser("studio-mcp", help="run Roblox Studio's MCP server over stdio (used by .mcp.json)")
     sub.add_parser("status", help="what is installed and which backend auto will use")
     s = sub.add_parser("setup", help="install Hunyuan3D-2 for this machine's NVIDIA GPU")
     s.add_argument("--dir", help="install folder (default ~/.asset-agent/Hunyuan3D-2)")
@@ -59,6 +63,20 @@ def main(argv=None):
     s.add_argument("--key", help="Open Cloud API key with Assets read+write")
     a = p.parse_args(argv)
     try:
+        if a.cmd == "doctor":
+            from .doctor import report
+            text, code = report(live=not a.offline)
+            print(text)
+            return code
+        if a.cmd == "studio-mcp":  # one .mcp.json entry for Windows and macOS: find Studio's proxy, hand it our stdio
+            import subprocess
+            from .studio_client import StudioError, launcher
+            try:
+                p = launcher()
+            except StudioError as e:
+                print(f"error: {e}", file=sys.stderr)
+                return 1
+            return subprocess.call([p.command, *p.args])
         if a.cmd == "status":
             print(status())
         elif a.cmd == "setup":
