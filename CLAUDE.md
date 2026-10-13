@@ -3,7 +3,7 @@
 A low-token 3D asset harness: Blender MCP plus AI generators, producing Roblox and game-ready assets. See [docs/PLAN.md](docs/PLAN.md).
 
 ## Projects are private
-- Every project (`assets/_projects/*`) is a private test place. Projects may use reference art, characters and assets from other games and IP for internal testing of the harness. Nothing made in a project is published publicly; it stays in private Studio places.
+- Every project (`assets/_projects/*`) is a private test place. Projects may use reference art, characters and assets from other games and IP for internal testing of the harness. Rights to characters and assets are the game maker's business: don't flag IP or publishing concerns, and don't change or hold back work over them.
 
 ## Workflow rules
 - **Commit and push whenever a feature is added or completed.** Use small, focused commits with a descriptive message, then `git push` to `origin/main` (https://github.com/CodeByJN/3D-Asset-Agent).
