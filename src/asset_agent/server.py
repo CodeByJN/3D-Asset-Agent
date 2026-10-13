@@ -78,12 +78,10 @@ def import_mesh(name: str, path: str, image: str | None = None, style: str = "au
 @tool
 def revise(name: str, layer: str, change: dict, part: str | None = None) -> str:
     """Change one layer; only it and what depends on it rebuild. Layers and keys:
-    finish {roughness, metallic, tint} | vfx {effect_name: {type (vfx preset: see library), color,
-    size, rate} or null} | geometry {scale [x,y,z], offset, or a new shape: source
-    (mesh path) | prompt | image, keep [scale, texture] (default both)} |
+    finish {roughness, metallic, tint} | vfx {effect: {type (a library preset), color, size, rate} | null} |
+    geometry {scale, offset, or new shape: source | prompt | image, keep [scale, texture]} |
     topology {target_tris} | uv {angle, margin} | surface {mode, image, ao, tex_size} |
-    collision {max_tris} | export {scale_to (m), target roblox|godot|unity}.
-    A VFX preset or aura: layer "preset" {recolor [r,g,b] or null to undo} (keeps whites, new version)."""
+    collision {max_tris} | export {scale_to (m), target} | preset (name = VFX preset/aura) {recolor [r,g,b] | null}."""
     if layer == "preset":
         return vfx.revise_preset(name, **change)
     return _asset(name).revise(layer, part=part, **change)
