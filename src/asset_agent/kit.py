@@ -276,9 +276,13 @@ def body(part, *objs):
     """Tag pieces as one R15 body part (see R15); a character needs all 15. Returns the pieces."""
     if part not in R15:
         raise ValueError(f"not an R15 part: {part}; parts: {', '.join(R15)}")
-    for o in objs:
-        for x in (o if isinstance(o, (list, tuple)) else [o]):
-            x["part"] = part
+    def tag(o):  # pieces may come in lists of lists (helpers that return several)
+        if isinstance(o, (list, tuple)):
+            for x in o:
+                tag(x)
+        else:
+            o["part"] = part
+    tag(objs)
     return objs
 
 
