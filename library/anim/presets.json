@@ -1,0 +1,141 @@
+{
+ "_doc": "R15 animation presets; format in src/asset_agent/anim.py. Gaits: phase 0 = right foot plants, leg forward.",
+ "idle": {
+  "use": "standing idle: breathing, relaxed arms", "tags": ["locomotion", "loop"], "length": 2.6, "loop": true,
+  "priority": "Idle", "mirror": "same",
+  "tracks": {
+   "LowerTorso": {"y": {"o": -0.04, "a": 0.03, "p": 0.5}},
+   "UpperTorso": {"rx": {"o": -1, "a": 2, "p": 0}},
+   "Head": {"rx": {"o": 2, "a": -2, "p": 0.1}, "ry": {"a": 3, "p": 0.3, "h": 1}},
+   "RightUpperArm": {"rx": {"o": 2, "a": 1.5, "p": 0.1}, "rz": {"o": 7, "a": 1.5, "p": 0.1}},
+   "RightLowerArm": {"rx": {"o": 12, "a": 3, "p": 0.15}},
+   "RightUpperLeg": {"rx": 3, "rz": 2},
+   "RightLowerLeg": {"rx": -5},
+   "RightFoot": {"rx": 2, "rz": -2}
+  }
+ },
+ "walk": {
+  "use": "walk cycle", "tags": ["locomotion", "loop"], "length": 1.0, "loop": true, "priority": "Movement",
+  "mirror": "opposite",
+  "tracks": {
+   "LowerTorso": {"y": {"o": -0.03, "a": 0.08, "p": 0.25, "h": 2}, "ry": {"a": 7, "p": 0}, "rz": {"a": 2.5, "p": 0.25}},
+   "UpperTorso": {"rx": {"o": -3, "a": 1.5, "p": 0.05, "h": 2}, "ry": {"a": -10, "p": 0.04}},
+   "Head": {"rx": {"o": 3, "a": -1.5, "p": 0.1, "h": 2}, "ry": {"a": 4, "p": 0.08}},
+   "RightUpperLeg": {"rx": {"o": 3, "a": 26, "p": 0}},
+   "RightLowerLeg": {"rx": {"o": -22, "a": -22, "p": 0.65}},
+   "RightFoot": {"rx": {"o": -4, "a": 14, "p": 0.92}},
+   "RightUpperArm": {"rx": {"o": 0, "a": 24, "p": 0.5}, "rz": 5},
+   "RightLowerArm": {"rx": {"o": 16, "a": 10, "p": 0.55}},
+   "RightHand": {"rx": {"a": 6, "p": 0.6}}
+  }
+ },
+ "run": {
+  "use": "run cycle", "tags": ["locomotion", "loop"], "length": 0.7, "loop": true, "priority": "Movement",
+  "mirror": "opposite",
+  "tracks": {
+   "LowerTorso": {"y": {"o": -0.15, "a": 0.25, "p": 0.3, "h": 2}, "ry": {"a": 11, "p": 0}, "rx": {"o": -4, "a": 3, "p": 0.05, "h": 2}},
+   "UpperTorso": {"rx": {"o": -10, "a": 3, "p": 0.08, "h": 2}, "ry": {"a": -16, "p": 0.04}},
+   "Head": {"rx": {"o": 10, "a": -3, "p": 0.12, "h": 2}, "ry": {"a": 5, "p": 0.08}},
+   "RightUpperLeg": {"rx": {"o": 12, "a": 46, "p": 0.02}},
+   "RightLowerLeg": {"rx": {"o": -52, "a": -46, "p": 0.62}},
+   "RightFoot": {"rx": {"o": -10, "a": 22, "p": 0.9}},
+   "RightUpperArm": {"rx": {"o": 8, "a": 52, "p": 0.5}, "rz": {"o": 9, "a": 3, "p": 0.5}},
+   "RightLowerArm": {"rx": {"o": 88, "a": 16, "p": 0.55}},
+   "RightHand": {"rx": {"a": 8, "p": 0.6}}
+  }
+ },
+ "sprint": {
+  "use": "fast sprint: run pushed harder, deeper lean", "tags": ["locomotion", "loop"], "base": "run",
+  "params": {"speed": 1.35, "arms": 1.25, "legs": 1.15, "lean": 10}
+ },
+ "jump": {
+  "use": "standing jump: crouch, launch, tuck, land", "tags": ["locomotion", "one-shot"], "length": 1.1,
+  "loop": false, "priority": "Action", "mirror": "same",
+  "tracks": {
+   "LowerTorso": {"y": {"keys": [[0, 0], [0.18, -0.7], [0.32, 0.5, "out"], [0.52, 2.2, "out"], [0.74, 0.3, "in"], [0.82, -0.5, "out"], [1, 0]]}},
+   "UpperTorso": {"rx": {"keys": [[0, 0], [0.18, -26], [0.32, 8, "out"], [0.52, -8], [0.82, -24, "out"], [1, 0]]}},
+   "Head": {"rx": {"keys": [[0, 0], [0.18, 16], [0.32, -6], [0.52, 6], [0.82, 16], [1, 0]]}},
+   "RightUpperLeg": {"rx": {"keys": [[0, 0], [0.18, 48], [0.32, -6, "out"], [0.52, 62], [0.74, 18, "in"], [0.82, 40, "out"], [1, 0]]}, "rz": 3},
+   "RightLowerLeg": {"rx": {"keys": [[0, 0], [0.18, -92], [0.32, -4, "out"], [0.52, -105], [0.74, -30, "in"], [0.82, -78, "out"], [1, 0]]}},
+   "RightFoot": {"rx": {"keys": [[0, 0], [0.18, 43], [0.32, -38, "out"], [0.52, 12], [0.74, 4], [0.82, 37, "out"], [1, 0]]}},
+   "RightUpperArm": {"rx": {"keys": [[0, 0], [0.18, -48], [0.34, 165, "out"], [0.52, 135], [0.82, 30, "out"], [1, 0]]},
+                     "rz": {"keys": [[0, 6], [0.34, 16], [0.52, 30], [0.82, 14], [1, 6]]}},
+   "RightLowerArm": {"rx": {"keys": [[0, 10], [0.18, 22], [0.34, 8], [0.52, 40], [0.82, 35], [1, 10]]}}
+  }
+ },
+ "fall": {
+  "use": "falling: arms up, legs pedalling", "tags": ["locomotion", "loop"], "length": 0.9, "loop": true,
+  "priority": "Movement", "mirror": "opposite",
+  "tracks": {
+   "UpperTorso": {"rx": {"o": 6, "a": 2, "p": 0, "h": 2}},
+   "Head": {"rx": {"o": 12, "a": 3, "p": 0.1, "h": 2}},
+   "RightUpperArm": {"rx": {"o": 25, "a": 14, "p": 0}, "rz": {"o": 115, "a": 12, "p": 0.25}},
+   "RightLowerArm": {"rx": {"o": 35, "a": 18, "p": 0.15}},
+   "RightUpperLeg": {"rx": {"o": 22, "a": 18, "p": 0}, "rz": 6},
+   "RightLowerLeg": {"rx": {"o": -45, "a": -18, "p": 0.2}},
+   "RightFoot": {"rx": {"o": -20, "a": 10, "p": 0.3}}
+  }
+ },
+ "wave": {
+  "use": "friendly wave with the right hand", "tags": ["emote", "loop"], "length": 1.2, "loop": true,
+  "priority": "Action", "mirror": "none",
+  "tracks": {
+   "UpperTorso": {"rz": {"o": -4, "a": 1.5, "p": 0, "h": 2}, "ry": 6},
+   "Head": {"rz": {"o": 7, "a": 2, "p": 0.1, "h": 2}, "rx": 4, "ry": 6},
+   "RightUpperArm": {"rz": {"o": 140, "a": 4, "p": 0.05, "h": 2}, "rx": 12},
+   "RightLowerArm": {"rz": {"a": 28, "p": 0, "h": 2}, "rx": 15},
+   "RightHand": {"rz": {"a": 12, "p": 0.08, "h": 2}},
+   "LeftUpperArm": {"rz": -7, "rx": 3},
+   "LeftLowerArm": {"rx": 12},
+   "LowerTorso": {"y": {"o": -0.04, "a": 0.03, "p": 0, "h": 2}}
+  }
+ },
+ "punch": {
+  "use": "right cross from a guard stance", "tags": ["combat", "one-shot"], "length": 0.7, "loop": false,
+  "priority": "Action", "mirror": "none",
+  "tracks": {
+   "LowerTorso": {"ry": {"keys": [[0, 0], [0.28, -10], [0.42, 14, "out"], [0.65, 10], [1, 0]]}, "y": -0.2},
+   "UpperTorso": {"ry": {"keys": [[0, 0], [0.28, -16], [0.42, 30, "overshoot"], [0.65, 24], [1, 0]]},
+                  "rx": {"keys": [[0, -6], [0.28, -4], [0.42, -12, "out"], [1, -6]]}},
+   "Head": {"ry": {"keys": [[0, 0], [0.28, 12], [0.42, -24, "out"], [1, 0]]}, "rx": 6},
+   "RightUpperArm": {"rx": {"keys": [[0, 55], [0.28, 45], [0.42, 92, "overshoot"], [0.65, 88], [1, 55]]},
+                     "rz": {"keys": [[0, 14], [0.28, 20], [0.42, -8, "out"], [1, 14]]}},
+   "RightLowerArm": {"rx": {"keys": [[0, 115], [0.28, 125], [0.42, 4, "out"], [0.65, 8], [1, 115]]}},
+   "LeftUpperArm": {"rx": {"keys": [[0, 60], [0.42, 48, "out"], [1, 60]]}, "rz": -14},
+   "LeftLowerArm": {"rx": {"keys": [[0, 115], [0.42, 128, "out"], [1, 115]]}},
+   "RightUpperLeg": {"rx": -6, "rz": 4}, "RightLowerLeg": {"rx": -18}, "RightFoot": {"rx": 12},
+   "LeftUpperLeg": {"rx": 22, "rz": -4}, "LeftLowerLeg": {"rx": -24}, "LeftFoot": {"rx": 2}
+  }
+ },
+ "slash": {
+  "use": "overhead diagonal sword slash with the right hand", "tags": ["combat", "one-shot"], "length": 0.8,
+  "loop": false, "priority": "Action", "mirror": "none",
+  "tracks": {
+   "LowerTorso": {"y": {"keys": [[0, -0.1], [0.3, 0], [0.48, -0.35, "out"], [1, -0.1]]}},
+   "UpperTorso": {"ry": {"keys": [[0, 0], [0.3, -28], [0.48, 34, "overshoot"], [0.7, 28], [1, 0]]},
+                  "rx": {"keys": [[0, 0], [0.3, 8], [0.48, -18, "out"], [1, 0]]}},
+   "Head": {"ry": {"keys": [[0, 0], [0.3, 18], [0.48, -16], [1, 0]]}},
+   "RightUpperArm": {"rx": {"keys": [[0, 15], [0.3, 165], [0.48, -5, "overshoot"], [0.7, 0], [1, 15]]},
+                     "rz": {"keys": [[0, 8], [0.3, 40], [0.48, -32, "out"], [0.7, -26], [1, 8]]}},
+   "RightLowerArm": {"rx": {"keys": [[0, 25], [0.3, 70], [0.48, 8, "out"], [1, 25]]}},
+   "LeftUpperArm": {"rx": {"keys": [[0, 10], [0.3, 40], [0.48, -20, "out"], [1, 10]]}, "rz": -12},
+   "LeftLowerArm": {"rx": 25},
+   "RightUpperLeg": {"rx": -8, "rz": 4}, "RightLowerLeg": {"rx": -14}, "RightFoot": {"rx": 10},
+   "LeftUpperLeg": {"rx": 20, "rz": -4}, "LeftLowerLeg": {"rx": -26}, "LeftFoot": {"rx": 6}
+  }
+ },
+ "dance": {
+  "use": "bouncy two-step groove", "tags": ["emote", "loop"], "length": 1.0, "loop": true, "priority": "Action",
+  "mirror": "opposite",
+  "tracks": {
+   "LowerTorso": {"y": {"o": -0.2, "a": 0.2, "p": 0, "h": 2}, "ry": {"a": 14, "p": 0}, "rz": {"a": 6, "p": 0.25}},
+   "UpperTorso": {"rz": {"a": -9, "p": 0.3}, "ry": {"a": -6, "p": 0.05}},
+   "Head": {"rz": {"a": 7, "p": 0.35}, "rx": {"o": 2, "a": 5, "p": 0.12, "h": 2}},
+   "RightUpperArm": {"rx": {"o": 40, "a": 42, "p": 0}, "rz": {"o": 28, "a": 18, "p": 0.25}},
+   "RightLowerArm": {"rx": {"o": 85, "a": 22, "p": 0.1, "h": 2}},
+   "RightUpperLeg": {"rx": {"o": 10, "a": 8, "p": 0.25, "h": 2}, "rz": {"o": 4, "a": 3, "p": 0}},
+   "RightLowerLeg": {"rx": {"o": -20, "a": -15, "p": 0.25, "h": 2}},
+   "RightFoot": {"rx": {"o": 10, "a": 7, "p": 0.25, "h": 2}}
+  }
+ }
+}

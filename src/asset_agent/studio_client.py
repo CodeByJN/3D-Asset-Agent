@@ -79,6 +79,8 @@ class Studio:
         try:
             d = json.loads(text)
             items = d if isinstance(d, list) else d.get("studios") or d.get("instances") or [d]
+            # a Studio with a place open has a name; a bare start page doesn't
+            items = sorted(items, key=lambda it: not (isinstance(it, dict) and it.get("name")))
             for it in items:
                 for k in ("studio_id", "studioId", "id"):
                     if isinstance(it, dict) and it.get(k) is not None:

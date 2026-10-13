@@ -53,7 +53,7 @@ def test_tools_return_one_line(home):
     assert text(call("validate", name="crate")).startswith("ok tris=")
     line = text(call("revise", name="crate", layer="finish", change={"tint": [0.5, 0.5, 1]}))
     assert "rebuilt finish, export" in line and "\n" not in line
-    assert "v2:" in text(call("history", name="crate"))
+    assert "v2:" in text(call("rollback", name="crate"))
     assert text(call("library", query="cra")).startswith("crate: v2")
     err = text(call("validate", name="nope"))
     assert err.startswith("error: KeyError") and "crate" in err and "\n" not in err

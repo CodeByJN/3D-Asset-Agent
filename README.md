@@ -43,7 +43,12 @@ a.revise("topology", part="main", target_tris=2000)
   weapons. Write a spec first (shape, details, palette, pose, size, what to take from references), check the 4 views
   it returns, and rebuild before showing. `mat(..., glow=True)` parts become Neon in Roblox.
 - `make_asset` (text/image to 3D generators, for organic shapes), `import_mesh`
-- `revise`, `rollback`, `history`, `validate`, `preview`, `library`
+- `revise`, `rollback` (no version: the history), `validate`, `preview`, `library`
+- `animate`: R15 animations (KeyframeSequences) from presets (idle, walk, run, sprint, jump, fall, wave, punch,
+  slash, dance) or tracks you write per joint (waves for loops, eased keys for one-shots). A revision is a call
+  with only what changes, e.g. `params={"speed": 1.3, "arms": 1.3}`. Feet are planted with leg IK so they never
+  sink or slide into the floor. Returns a filmstrip (side + three-quarter view) and writes `export/<name>.rbxmx`
+  (Studio: Insert from File); `studio(name)` builds it in the place and plays it on a test dummy, live in Edit mode.
 - `plan` (a game's style guide; also writes `HANDOFF.md` so a new chat can carry on), `rate` (stars plus what you
   liked and didn't)
 - `studio`, `vfx_lab`, `vfx_import` (Roblox Studio)

@@ -12,7 +12,7 @@ from mcp.server.mcpserver import Image, MCPServer
 from . import generators
 from .asset import Asset
 from .make import build_model, kit_help, make_asset as _make_asset
-from . import roblox, studio_client, vfx
+from . import anim, roblox, studio_client, vfx
 from .project import Project
 
 server = MCPServer("asset-agent", instructions=(
@@ -23,7 +23,8 @@ server = MCPServer("asset-agent", instructions=(
     "topology, colour, texture). After each make_asset or revise the user looks at, ask for a 1-10 "
     "rating and call rate. studio(name) puts an asset in the user's open Roblox Studio place. VFX: "
     "vfx_lab shows a preset playing in Studio; rate(preset, stars) scores it; vfx_import saves effects "
-    "already in the place (e.g. Creator Store packs inserted with Studio's insert_asset) as presets."))
+    "already in the place (e.g. Creator Store packs inserted with Studio's insert_asset) as presets. "
+    "Animation: animate (R15 presets or your own tracks; revise by calling it again with what changes)."))
 
 
 def home() -> Path:
@@ -103,15 +104,15 @@ def revise(name: str, layer: str, change: dict, part: str | None = None) -> str:
 
 
 @tool
-def rollback(name: str, layer: str, version: int, part: str | None = None) -> str:
-    """Restore one layer's settings from an earlier version (see history); exact when inputs match."""
+def rollback(name: str, layer: str | None = None, version: int | None = None, part: str | None = None) -> str:
+    """No version: the history. Else restore one layer's settings from that version (exact when inputs
+    match); for an animation, the whole animation."""
+    if anim.Animation.exists(home() / name):
+        a = anim.Animation(home() / name)
+        return a.history() if version is None else a.rollback(version)
+    if version is None:
+        return _asset(name).history()
     return _asset(name).rollback(layer, version, part=part)
-
-
-@tool
-def history(name: str) -> str:
-    """Version lines and each layer's current version."""
-    return _asset(name).history()
 
 
 @tool
@@ -130,6 +131,24 @@ def preview(name: str, size: int = 256, layer: str = "final"):
         return f"error: {type(e).__name__}: {' '.join(str(e).split())}"[:300]
 
 
+@server.tool(structured_output=False)
+def animate(name: str, preset: str | None = None, params: dict | None = None, tracks: dict | None = None,
+            project: str | None = None):
+    """R15 animation -> filmstrip + .rbxmx. preset='help' lists presets. Again with only what changes =
+    next version. params: speed amount arms legs torso head bounce (x1), lean (deg), length loop.
+    tracks {Joint: {rx|ry|rz deg, x|y|z studs: n | {o,a,p,h} wave | {keys:[[u,v,ease]]}}} override joints."""
+    try:
+        if preset == "help":
+            return anim.catalog() + "\njoints: " + " ".join(anim.JOINTS)
+        a = anim.Animation(home() / name)
+        if a.m is None and (home() / name / "manifest.json").exists():
+            raise ValueError(f"{name} is a model; pick a new name for the animation")
+        line = a.update(preset=preset, params=params, tracks=tracks, project=project)
+        return [line, Image(path=str(a.root / "preview.png"))]
+    except Exception as e:
+        return f"error: {type(e).__name__}: {' '.join(str(e).split())}"[:300]
+
+
 @tool
 def library(query: str = "") -> str:
     """List assets, cached generations and VFX presets whose name, prompt or tags contain query."""
@@ -144,6 +163,9 @@ def library(query: str = "") -> str:
         if q in (d.get("prompt") or "").lower():
             lines.append(f"cached {d['backend']}: {d.get('prompt')!r} -> {meta.parent / d['mesh']}")
     lines += [f"vfx {x}" for x in vfx.catalog().splitlines() if q in x.lower()]
+    lines += [f"anim {p.parent.name}: {anim.Animation(p.parent).history().splitlines()[-1]}"
+              for p in sorted(home().glob("*/anim.json")) if q in p.parent.name.lower()]
+    lines += [f"anim preset {x}" for x in anim.catalog().splitlines() if q in x.lower()]
     return "\n".join(lines) or "nothing found"
 
 
@@ -174,6 +196,11 @@ def rate(name: str, stars: int, note: str = "") -> str:
             p["note"] = note
         vfx.save_preset(name, p)
         return f"vfx preset {name} scored {stars}/10"
+    if anim.Animation.exists(home() / name):
+        a = anim.Animation(home() / name)
+        a.m["ratings"].append({"v": a.m["version"], "stars": stars, "note": note})
+        a.file.write_text(json.dumps(a.m, indent=1))
+        return f"rated animation {name} v{a.m['version']} {stars}/10"
     a = _asset(name)
     a.m.setdefault("ratings", []).append({"v": a.m["version"], "stars": stars, "note": note})
     a._save()
@@ -188,8 +215,11 @@ def rate(name: str, stars: int, note: str = "") -> str:
 @server.tool(structured_output=False)
 def studio(name: str) -> str:
     """Upload the asset to your Roblox account (only if its model changed) and put it in the open
-    Studio place, replacing the old copy, with its effects."""
+    Studio place, replacing the old copy, with its effects. Animations play on a test dummy."""
     try:
+        if anim.Animation.exists(home() / name):
+            d = anim.Animation(home() / name).resolved()
+            return studio_client.run(lambda s: s.luau(anim.studio_script(name, d)))
         line, script = _asset(name).to_studio()
         try:
             return f"{line} | studio: {studio_client.run(lambda s: s.luau(script))}"
