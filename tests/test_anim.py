@@ -115,3 +115,15 @@ def test_studio_script_mentions_every_frame():
     code = anim.studio_script("j", d)
     assert "KeyframeSequenceProvider" in code and "Enum.AnimationPriority.Action" in code
     assert code.count("],[") >= len(anim.samples(d)) - 1
+
+
+@pytest.mark.parametrize("name", list(anim.presets()))
+def test_no_joint_pops(name):
+    """A joint never jumps in one frame (the leg glitches: knee flips, foot snaps at contact)."""
+    assert not [w for w in anim.check(anim.resolve({"preset": name}))[1] if "pops" in w]
+
+
+def test_pop_detector_catches_a_flip():
+    d = anim.resolve({"preset": "idle", "tracks": {"Head": {"ry": {"keys": [[0, 0], [0.5, 0], [0.52, 170], [1, 170]], "ease": "linear"}}},
+                      "params": {"loop": False}})
+    assert any("Head pops" in w for w in anim.check(d)[1])

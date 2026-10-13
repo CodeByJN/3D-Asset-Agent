@@ -15,7 +15,8 @@ forward, a knee bends with rx-, an elbow with rx+, rz+ lifts a right arm sideway
                                 overshoot | snap
 IK (Hand and Foot): {"ik": [x, y, z] or {keys: [[u, [x, y, z], ease]..]}, "pole": [x, y, z]} puts the wrist or
 ankle at that point (studs, character space: feet on y=0, +X right, -Z forward) and solves the limb; pole is
-the way the elbow/knee points. With ik, a Foot's rx is its pitch to the floor (0 = flat, - = heel up).
+the way the elbow/knee points. With ik a Foot is set in the world: rx = pitch to the floor (0 = flat,
+- = heel up), ry = which way the toes point; it stays flat however the leg moves.
 overlap: each joint up the body runs a little behind the one below it (hips lead, chest, shoulders, arms,
 hands, head follow), which is what makes motion flow; the overlap knob scales it.
 Preset: {use, tags, length (s), loop, priority, mirror: opposite|same|none, base, params, tracks}.
@@ -34,6 +35,7 @@ IK_CHANNELS = ("ik", "pole")
 DEPTH = {"UpperTorso": 1, "Head": 3, "UpperArm": 2, "LowerArm": 3, "Hand": 4}
 OVERLAP_S = 0.025
 FPS = 30
+PLANT_EASE_S = 0.1  # foot contact fixes ease in and out over this long either side
 
 # Default R15 in rest pose (measured in a Studio workspace), Roblox space (X right, Y up, faces -Z), feet on y=0.
 # All joints have identity rotations, so a Pose CFrame is just the joint's rotation and offset.
@@ -247,6 +249,32 @@ def pose_at(d: dict, u: float, ground: bool | str = True) -> dict:
     """{joint: [x, y, z, rx, ry, rz]} (studs, degrees) at normalised time u. ground: feet are planted
     with IK, then the body lifts if anything still dips below the floor (a sinking foot is the
     commonest animation artefact); "plant" = IK only, False = raw tracks."""
+    out, iks = _raw(d, u)
+    if ground and d.get("ground", True):
+        # how much each foot must roll and lift to stay out of the floor, eased in and out over
+        # neighbouring frames: a foot leaves the floor in a frame or two, so per-frame fixes would pop
+        n = max(1, round(PLANT_EASE_S * FPS))
+        du = 1.0 / (FPS * d["length"])
+        for side in ("Right", "Left"):
+            if side + "Foot" in iks:  # an IK foot is already where the author put it
+                continue
+            toe, heel, lift = 0.0, 0.0, 0.0  # rolling onto the heel and onto the toes ease separately,
+            for k in range(-n, n + 1):     # so the hand-over from heel strike to toe-off blends
+                uk = u + k * du
+                uk = uk % 1.0 if d["loop"] else min(1.0, max(0.0, uk))
+                r, l = plant_need(out if k == 0 else _raw(d, uk)[0], side)
+                w = 1 - abs(k) / (n + 1)
+                toe, heel = max(toe, r * w), min(heel, r * w)
+                lift = max(lift, l * w)
+            plant_apply(out, side, toe + heel, lift)
+        low = lowest(out)
+        if low < 0 and ground != "plant":
+            out.setdefault("LowerTorso", [0.0] * 6)[1] -= low
+    return out
+
+
+def _raw(d: dict, u: float) -> tuple[dict, dict]:
+    """The pose from the tracks alone (with overlap, lean and IK), before the feet are kept out of the floor."""
     out, iks = {}, {}
     for joint, chans in d["tracks"].items():
         vals = [0.0] * 6
@@ -264,13 +292,7 @@ def pose_at(d: dict, u: float, ground: bool | str = True) -> dict:
         out.setdefault("UpperTorso", [0.0] * 6)[3] -= d["params"]["lean"]
     for joint in sorted(iks, key=lambda j: j.endswith("Hand")):  # legs first, then arms on the posed torso
         reach(out, joint, *iks[joint])
-    if ground and d.get("ground", True):
-        for side in ("Right", "Left"):
-            plant(out, side)
-        low = lowest(out)
-        if low < 0 and ground != "plant":
-            out.setdefault("LowerTorso", [0.0] * 6)[1] -= low
-    return out
+    return out, iks
 
 
 ANKLE_H = RIG["RightFoot"][1][1]  # ankle height with the sole flat on the floor
@@ -282,44 +304,62 @@ def _foot_low(world, side):
     return min(p[1] for p in corners(side + "Foot", world[side + "Foot"]))
 
 
-def plant(pose: dict, side: str):
-    """Keep one foot out of the floor with two-bone IK in the leg's swing plane: a near-flat foot is laid
-    flat with its ankle at standing height; a pointed foot keeps its point and the ankle rises instead.
-    The hip and knee are re-solved to reach (rx only; the leg's twist and spread are kept)."""
+def plant_need(pose: dict, side: str) -> tuple[float, float]:
+    """(roll, lift) that keep one foot out of the floor: first roll the foot toward flat (degrees), as a
+    foot rolls onto or off its toes, by the least that clears it; if even flat it's under, lift the
+    ankle (studs). Both are zero while the foot is clear, so contact never pops."""
     world = solve(pose)
-    pen = -_foot_low(world, side)
-    if pen <= 1e-4:
+    if _foot_low(world, side) >= -1e-4:
+        return 0.0, 0.0
+    trial = {k: list(v) for k, v in pose.items()}
+    foot = trial.setdefault(side + "Foot", [0.0] * 6)
+    pitch = math.degrees(math.asin(max(-1.0, min(1.0, -world[side + "Foot"][0][1][2]))))
+    base = foot[3]
+    foot[3] = base - pitch
+    under = -_foot_low(solve(trial), side)
+    if under <= 1e-4:
+        lo, hi = 0.0, 1.0
+        for _ in range(16):
+            mid = (lo + hi) / 2
+            foot[3] = base - pitch * mid
+            if _foot_low(solve(trial), side) >= -1e-4:
+                hi = mid
+            else:
+                lo = mid
+        return -pitch * hi, 0.0
+    return -pitch, under + 0.002
+
+
+def plant_apply(pose: dict, side: str, roll: float, lift: float):
+    """Roll the foot, then lift the ankle with two-bone IK in the leg's swing plane, re-solving the hip
+    and knee (rx only; the leg's twist and spread are kept) while the foot keeps its angle."""
+    if not roll and not lift:
         return
     hip, knee, foot = (pose.setdefault(side + n, [0.0] * 6) for n in ("UpperLeg", "LowerLeg", "Foot"))
-    fr = world[side + "Foot"][0]
-    pitch = math.degrees(math.asin(max(-1.0, min(1.0, -fr[1][2]))))  # toe up +
-    ankle = _mv(*world[side + "LowerLeg"][:1], RIG[side + "Foot"][1])
-    ankle = tuple(a + b for a, b in zip(ankle, world[side + "LowerLeg"][1]))
-    if abs(pitch) < 25:
-        target = (ankle[0], ANKLE_H + 0.002, ankle[2])
-        flatten = True
-    else:
-        target = (ankle[0], ankle[1] + pen + 0.002, ankle[2])
-        flatten = False
-    lr, lt = world["LowerTorso"]
-    h_rest = RIG[side + "UpperLeg"][1]
-    h = tuple(a + b for a, b in zip(_mv(lr, h_rest), lt))
-    w = tuple(target[i] - h[i] for i in range(3))
-    v = tuple(sum(lr[k][i] * w[k] for k in range(3)) for i in range(3))  # into the pelvis frame
-    dist = min(math.hypot(v[1], v[2]), THIGH + SHIN - 1e-4)
-    if dist < abs(THIGH - SHIN) + 1e-4:
+    foot[3] += roll
+    if lift <= 0:
         return
-    gamma = math.acos(max(-1.0, min(1.0, (THIGH ** 2 + SHIN ** 2 - dist ** 2) / (2 * THIGH * SHIN))))
-    alpha = math.acos(max(-1.0, min(1.0, (THIGH ** 2 + dist ** 2 - SHIN ** 2) / (2 * THIGH * dist))))
-    theta = math.atan2(-v[2], -v[1])
-    old = hip[3] + knee[3]
-    hip[3] = math.degrees(theta + alpha)
-    knee[3] = -math.degrees(math.pi - gamma)
-    foot[3] += old - hip[3] - knee[3]  # keep the foot's angle to the ground while the leg re-bends
-    if flatten:
-        world = solve(pose)
-        fr = world[side + "Foot"][0]
-        foot[3] -= math.degrees(math.asin(max(-1.0, min(1.0, -fr[1][2]))))
+    world = solve(pose)
+    ankle = _mv(world[side + "LowerLeg"][0], RIG[side + "Foot"][1])
+    ankle = tuple(a + b for a, b in zip(ankle, world[side + "LowerLeg"][1]))
+    lr, lt = world["LowerTorso"]
+    h = tuple(a + b for a, b in zip(_mv(lr, RIG[side + "UpperLeg"][1]), lt))
+
+    def planar(target):
+        """(hip, knee) rx in degrees that put the ankle at target, in the leg's swing plane."""
+        w = tuple(target[i] - h[i] for i in range(3))
+        v = tuple(sum(lr[k][i] * w[k] for k in range(3)) for i in range(3))  # into the pelvis frame
+        dist = max(min(math.hypot(v[1], v[2]), THIGH + SHIN - 1e-4), abs(THIGH - SHIN) + 1e-4)
+        gamma = math.acos(max(-1.0, min(1.0, (THIGH ** 2 + SHIN ** 2 - dist ** 2) / (2 * THIGH * SHIN))))
+        alpha = math.acos(max(-1.0, min(1.0, (THIGH ** 2 + dist ** 2 - SHIN ** 2) / (2 * THIGH * dist))))
+        return math.degrees(math.atan2(-v[2], -v[1]) + alpha), -math.degrees(math.pi - gamma)
+    # apply the change between solving for where the ankle is and where it must go, so a lift of zero
+    # changes nothing (the plane solve ignores the leg's twist and spread, so it isn't exact on its own)
+    h0, k0 = planar(ankle)
+    h1, k1 = planar((ankle[0], ankle[1] + lift, ankle[2]))
+    hip[3] += h1 - h0
+    knee[3] += k1 - k0
+    foot[3] -= (h1 - h0) + (k1 - k0)  # keep the foot's angle to the ground while the leg re-bends
 
 
 def _bend_len(u1, u2, e):
@@ -336,7 +376,18 @@ def _cross(a, b):
     return (a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0])
 
 
-def reach(pose: dict, end: str, target, pole=None):
+def _euler(r) -> list[float]:
+    """Degrees (rx, ry, rz) with Rx*Ry*Rz = r, picking the smaller of the two equivalent solutions."""
+    ry = math.asin(max(-1.0, min(1.0, r[0][2])))
+    rx = math.atan2(-r[1][2], r[2][2])
+    rz = math.atan2(-r[0][1], r[0][0])
+    alt = (rx + math.pi, math.pi - ry, rz + math.pi)
+    alt = tuple((a + math.pi) % (2 * math.pi) - math.pi for a in alt)
+    best = min(((rx, ry, rz), alt), key=lambda e: sum(x * x for x in e))
+    return [math.degrees(x) for x in best]
+
+
+def reach(pose: dict, end: str, target, pole=None, _lifted=False):
     """Two-bone IK: put the wrist (Hand) or ankle (Foot) pivot at `target` (character space) with the
     elbow/knee pointing along `pole`; sets the upper limb's rotation and the lower limb's bend."""
     leg = end.endswith("Foot")
@@ -354,7 +405,11 @@ def reach(pose: dict, end: str, target, pole=None):
     u2 = tuple(p_end[i] - p_lo[i] for i in range(3))
     lo_e, hi_e = 0.0, -150.0 if leg else 150.0  # |u1 + Rx(e) u2| shrinks as the joint bends
     dist = math.sqrt(sum(x * x for x in w))
-    dist = max(min(dist, _bend_len(u1, u2, lo_e)[1]), _bend_len(u1, u2, hi_e)[1])
+    full = _bend_len(u1, u2, lo_e)[1]
+    soft = 0.03 * full  # soft IK: ease into full reach, or the elbow/knee snaps straight in one frame
+    if dist > full - soft:
+        dist = full - soft * math.exp(-(dist - (full - soft)) / soft)
+    dist = max(dist, _bend_len(u1, u2, hi_e)[1])
     for _ in range(40):
         mid = (lo_e + hi_e) / 2
         if _bend_len(u1, u2, mid)[1] > dist:
@@ -371,22 +426,26 @@ def reach(pose: dict, end: str, target, pole=None):
     def perp(x, axis):
         q = _unit(tuple(x[i] - sum(x[k] * axis[k] for k in range(3)) * axis[i] for i in range(3)))
         return q or _unit(_cross(axis, (0, 0, 1))) or _unit(_cross(axis, (1, 0, 0)))
-    knee_dir = tuple(u1[i] - v[i] * sum(u1[k] * v[k] for k in range(3)) / sum(x * x for x in v) for i in range(3))
-    a2 = perp(knee_dir, a1)
+    # which way the knee juts in the leg's own frame (forward, -Z): taken from the hinge, not the bent
+    # shape, since a straight leg's shape doesn't say and its knee would flip from frame to frame
+    a2 = perp((0.0, 0.0, -1.0) if leg else u1, a1)  # an arm's elbow sits off the shoulder line: use it
     b2 = perp(pl, b1)
     a3, b3 = _cross(a1, a2), _cross(b1, b2)
     r = tuple(tuple(b1[i] * a1[j] + b2[i] * a2[j] + b3[i] * a3[j] for j in range(3)) for i in range(3))
-    ry = math.asin(max(-1.0, min(1.0, r[0][2])))
-    rx = math.atan2(-r[1][2], r[2][2])
-    rz = math.atan2(-r[0][1], r[0][0])
-    pose.setdefault(upper, [0.0] * 6)[3:6] = [math.degrees(rx), math.degrees(ry), math.degrees(rz)]
+    pose.setdefault(upper, [0.0] * 6)[3:6] = _euler(r)
     pose.setdefault(lower, [0.0] * 6)[3:6] = [e, 0.0, 0.0]
-    if leg:  # with ik, the foot's rx is its pitch to the floor
+    if leg:  # with ik the foot is set in the world: rx = pitch to the floor, ry = which way it points
         foot = pose.setdefault(end, [0.0] * 6)
-        want = foot[3]
-        foot[3] = 0.0
-        fr = solve(pose)[end][0]
-        foot[3] = want - math.degrees(math.asin(max(-1.0, min(1.0, -fr[1][2]))))
+        want = foot[3:6]
+        shin = solve(pose)[lower][0]
+        world_rot = _mm(_rot(0, math.radians(want[1]), 0), _rot(math.radians(want[0]), 0, 0))
+        local = tuple(tuple(sum(shin[k][i] * world_rot[k][j] for k in range(3)) for j in range(3)) for i in range(3))
+        foot[3:6] = _euler(local)
+        if not _lifted:  # a pitched foot rises until its heel or toe just touches the floor
+            pen = -_foot_low(solve(pose), side)
+            if pen > 1e-4:
+                foot[3:6] = want
+                reach(pose, end, (target[0], target[1] + pen, target[2]), pole, _lifted=True)
 
 
 def _shin_box(side):
@@ -460,6 +519,9 @@ def corners(name: str, tf, box=None) -> list[tuple]:
 
 # ---------------------------------------------------------------- checks
 
+# fastest a part really turns (deg/s): past this it reads as a glitch. A boxer's arm peaks near 2500,
+# a sprinter's knee near 1500; heads and torsos are far slower.
+POP_DEG_S = {"Head": 900, "UpperTorso": 900, "LowerTorso": 900, "Arm": 4000, "Hand": 4000, "Leg": 2500, "Foot": 2500}
 LIMITS = {"LowerLeg": ("rx", -160, 5, "knee bends backwards"), "LowerArm": ("rx", -5, 165, "elbow bends backwards")}
 
 
@@ -481,6 +543,18 @@ def check(d: dict, frames=None) -> tuple[dict, list[str]]:
                 if j.endswith(suffix) and not lo <= v <= hi and (j, msg) not in hit:
                     hit.add((j, msg))
                     warns.append(f"{j} {msg} ({v:.0f} deg at {t:.2f}s)")
+    for j in JOINTS:  # pops: a joint jumping in one frame, not a fast move that builds up and slows down
+        steps = []
+        for (t0, a), (t1, b) in zip(frames, frames[1:]):
+            ra, rb = (_rot(*(math.radians(x) for x in p.get(j, (0,) * 6)[3:])) for p in (a, b))
+            tr = sum(ra[k][i] * rb[k][i] for i in range(3) for k in range(3))
+            steps.append((math.degrees(math.acos(max(-1.0, min(1.0, (tr - 1) / 2)))), t0, t1))
+        for i, (step, t0, t1) in enumerate(steps):
+            near = max([steps[k][0] for k in (i - 1, i + 1) if 0 <= k < len(steps)] or [0])
+            limit = next(v for k, v in POP_DEG_S.items() if k in j)
+            if step / max(t1 - t0, 1e-6) > limit or (step > 30 and step > 2.5 * near):
+                warns.append(f"{j} pops {step:.0f} deg between {t0:.2f}s and {t1:.2f}s")
+                break
     if d["loop"]:
         for j, chans in d["tracks"].items():
             for ch, spec in chans.items():
