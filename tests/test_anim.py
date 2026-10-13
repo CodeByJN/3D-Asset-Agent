@@ -1,5 +1,8 @@
 """Animation layer: presets resolve cleanly, revisions are params, outputs are valid. No Blender needed."""
+import json
+import os
 import xml.etree.ElementTree as ET
+from pathlib import Path
 
 import pytest
 
@@ -127,3 +130,45 @@ def test_pop_detector_catches_a_flip():
     d = anim.resolve({"preset": "idle", "tracks": {"Head": {"ry": {"keys": [[0, 0], [0.5, 0], [0.52, 170], [1, 170]], "ease": "linear"}}},
                       "params": {"loop": False}})
     assert any("Head pops" in w for w in anim.check(d)[1])
+
+
+GOLDEN = Path(__file__).parent / "golden_anim.json"
+
+
+def _fingerprint(name):
+    d = anim.resolve({"preset": name})
+    return [{j: [round(x, 2) for x in v] for j, v in anim.pose_at(d, i / 12).items()} for i in range(12)]
+
+
+def _loved():
+    """Presets whose current version was rated 8+: an engine change must not quietly alter them."""
+    return [k for k, v in anim.presets().items() if (r := anim._last(v)) and r["stars"] >= 8]
+
+
+@pytest.mark.parametrize("name", _loved())
+def test_well_rated_presets_dont_change(name):
+    """Set ASSET_AGENT_UPDATE_GOLDEN=1 to re-record after a deliberate change (then re-rate the preset)."""
+    gold = json.loads(GOLDEN.read_text()) if GOLDEN.exists() else {}
+    version = anim.presets()[name].get("version", 1)
+    now = _fingerprint(name)
+    if os.environ.get("ASSET_AGENT_UPDATE_GOLDEN"):
+        gold[name] = {"version": version, "poses": now}
+        GOLDEN.write_text(json.dumps(gold, indent=0))
+        return
+    assert name in gold and gold[name]["version"] == version, f"no golden poses for {name} v{version}"
+    for i, (a, b) in enumerate(zip(gold[name]["poses"], now)):
+        for j in a:
+            assert max(abs(x - y) for x, y in zip(a[j], b[j])) < 0.5, f"{name} {j} changed at sample {i}"
+
+
+def test_ratings_feed_the_catalog(tmp_path, monkeypatch):
+    lib = tmp_path / "presets.json"
+    lib.write_text(anim.library_path().read_text())
+    monkeypatch.setenv("ASSET_AGENT_ANIM", str(lib))
+    assert "run: " in anim.catalog() and "unrated" in [l for l in anim.catalog().splitlines() if l.startswith("run:")][0]
+    anim.rate_preset("run", 3, "too floaty")
+    first = anim.catalog().splitlines()
+    assert "3/10 'too floaty'" in [l for l in first if l.startswith("run:")][0]
+    i = first.index([l for l in first if l.startswith("run:")][0])
+    assert all("unrated" in l for l in first[i + 1:])  # the worst rated sinks below the others
+    assert "Exaggerate" in anim.lessons()

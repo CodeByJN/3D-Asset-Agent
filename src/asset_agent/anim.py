@@ -70,12 +70,45 @@ def presets() -> dict:
     return {k: v for k, v in json.loads(library_path().read_text()).items() if not k.startswith("_")}
 
 
+def _library() -> dict:
+    return json.loads(library_path().read_text())
+
+
+def _last(v: dict) -> dict | None:
+    """The latest rating of a preset's current version."""
+    rs = [r for r in v.get("ratings", []) if r.get("v") == v.get("version", 1)]
+    return rs[-1] if rs else None
+
+
 def catalog() -> str:
-    out = []
+    """Presets, best rated first, each with its latest score and what the rater said."""
+    rows = []
     for k, v in presets().items():
         d = resolve({"preset": k})
-        out.append(f"{k}: {v.get('use', '')} ({'loop' if d['loop'] else 'one-shot'} {d['length']:.2g}s)")
-    return "\n".join(out)
+        r = _last(v)
+        score = f" {r['stars']}/10" + (f" '{r['note']}'" if r.get("note") else "") if r else " unrated"
+        rows.append((-(r["stars"] if r else 0), f"{k}: {v.get('use', '')} ({'loop' if d['loop'] else 'one-shot'} "
+                     f"{d['length']:.2g}s){score}"))
+    return "\n".join(line for _, line in sorted(rows, key=lambda x: x[0]))
+
+
+def lessons() -> str:
+    """Authoring rules learned from ratings (library _lessons), for animations Claude writes itself."""
+    return "\n".join(f"- {x['rule']}" for x in _library().get("_lessons", []))
+
+
+def rate_preset(name: str, stars: int, note: str = "", via: str | None = None) -> str:
+    """Record a 1-10 rating on a preset's current version (via: the animation it was judged on)."""
+    lib = _library()
+    if name not in lib or name.startswith("_"):
+        raise KeyError(f"no animation preset {name!r}")
+    v = lib[name]
+    entry = {"v": v.get("version", 1), "stars": stars, "note": note}
+    if via:
+        entry["via"] = via
+    v.setdefault("ratings", []).append(entry)
+    library_path().write_text(json.dumps(lib, indent=1))
+    return f"animation preset {name} v{entry['v']} rated {stars}/10"
 
 
 # ---------------------------------------------------------------- resolving a spec into tracks

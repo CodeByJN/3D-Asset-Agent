@@ -139,7 +139,8 @@ def animate(name: str, preset: str | None = None, params: dict | None = None, tr
     tracks {Joint: {rx|ry|rz deg, x|y|z studs: n | {o,a,p,h} wave | {keys:[[u,v,ease]]}}} override joints."""
     try:
         if preset == "help":
-            return anim.catalog() + "\njoints: " + " ".join(anim.JOINTS)
+            return (anim.catalog() + "\njoints: " + " ".join(anim.JOINTS) +
+                    "\nWriting your own (rules learned from ratings):\n" + anim.lessons())
         a = anim.Animation(home() / name)
         if a.m is None and (home() / name / "manifest.json").exists():
             raise ValueError(f"{name} is a model; pick a new name for the animation")
@@ -185,8 +186,8 @@ def plan(project: str, brief: str | None = None, references: list[str] | None = 
 
 @tool
 def rate(name: str, stars: int, note: str = "") -> str:
-    """Rate an asset's current version (or a VFX preset) 1-10 with a short note on what's good or
-    wrong. Ratings tune the project's defaults and show up in plan()."""
+    """Rate an asset's current version (or a VFX or animation preset) 1-10 with a short note on what's
+    good or wrong. Ratings tune the project's defaults and show up in plan() and animate('help')."""
     if not 1 <= stars <= 10:
         raise ValueError("stars must be 1-10")
     if not (home() / name / "manifest.json").exists() and name in vfx.presets():
@@ -200,7 +201,15 @@ def rate(name: str, stars: int, note: str = "") -> str:
         a = anim.Animation(home() / name)
         a.m["ratings"].append({"v": a.m["version"], "stars": stars, "note": note})
         a.file.write_text(json.dumps(a.m, indent=1))
-        return f"rated animation {name} v{a.m['version']} {stars}/10"
+        line = f"rated animation {name} v{a.m['version']} {stars}/10"
+        spec = a.m["spec"]
+        if spec.get("preset") and not spec.get("tracks"):  # a preset with knobs: the preset learns too
+            knobs = ", ".join(f"{k}={v}" for k, v in (spec.get("params") or {}).items())
+            anim.rate_preset(spec["preset"], stars, note + (f" (with {knobs})" if knobs else ""), via=name)
+            line += f"; noted on preset {spec['preset']}"
+        return line
+    if not (home() / name).exists() and name in anim.presets():
+        return anim.rate_preset(name, stars, note)
     a = _asset(name)
     a.m.setdefault("ratings", []).append({"v": a.m["version"], "stars": stars, "note": note})
     a._save()
