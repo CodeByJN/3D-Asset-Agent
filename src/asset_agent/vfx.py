@@ -46,9 +46,10 @@ STAND_INS = {"smoke": "rbxasset://textures/particles/smoke_main.dds"}
 STAND_IN = "rbxasset://textures/particles/sparkles_main.dds"
 
 
-def resolve_textures(nodes, ids=None):
-    """Copy of a node tree with texture://name swapped for its uploaded asset id, or a built-in
-    stand-in texture if it hasn't been uploaded yet."""
+def resolve_textures(nodes, ids=None, inline=None):
+    """Copy of a node tree with texture://name swapped for its uploaded asset id. One not uploaded
+    stays texture://name when `inline` (a dict) is given, and its pixels go into inline[name] for
+    Studio to build as an EditableImage (no upload needed); otherwise a built-in stand-in is used."""
     ids = uploads() if ids is None else ids
     out = copy.deepcopy(nodes)
 
@@ -57,12 +58,31 @@ def resolve_textures(nodes, ids=None):
             v = (n.get("props") or {}).get(key)
             if isinstance(v, str) and v.startswith("texture://"):
                 name = v[len("texture://"):]
-                n["props"][key] = ids.get(name) or STAND_INS.get(name, STAND_IN)
+                if ids.get(name):
+                    n["props"][key] = ids[name]
+                elif inline is not None and (library_path().parent / "textures" / f"{name}.png").exists():
+                    inline.setdefault(name, texture_data(name))
+                else:
+                    n["props"][key] = STAND_INS.get(name, STAND_IN)
         for c in n.get("children") or []:
             walk(c)
     for n in out:
         walk(n)
     return out
+
+
+def texture_data(name: str, size: int = 256) -> dict:
+    """A library texture for transport to Studio: {n, a} (white shapes: alpha only) or {n, rgba}, base64."""
+    import base64
+    from PIL import Image
+    im = Image.open(library_path().parent / "textures" / f"{name}.png").convert("RGBA").resize((size, size), Image.LANCZOS)
+    import numpy as np
+    px = np.asarray(im)
+    seen = px[..., 3] > 8
+    if not seen.any() or px[seen][:, :3].min() >= 235:  # white where visible: colour comes from the emitter
+        a = im.split()[3]
+        return {"n": size, "a": base64.b64encode(a.tobytes()).decode()}
+    return {"n": size, "rgba": base64.b64encode(im.tobytes()).decode()}
 
 
 def presets() -> dict:

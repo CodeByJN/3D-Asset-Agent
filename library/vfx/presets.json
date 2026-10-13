@@ -22230,5 +22230,2591 @@
    0.12,
    0.1
   ]
+ },
+ "aura_equinox": {
+  "tags": [
+   "aura",
+   "character",
+   "sols-rng",
+   "transcendent",
+   "equinox",
+   "black",
+   "white"
+  ],
+  "use": "EQUINOX (Sol's RNG Transcendent): black and white balance: a sun orb and a moon orb orbiting, a swirling cloud vortex at the feet, a star flare that blooms overhead, twinkling stars and grey wisps",
+  "rig": "character",
+  "mode": "loop",
+  "sketch": "glow",
+  "host": {
+   "size": {
+    "v3": [
+     2,
+     2,
+     1
+    ]
+   }
+  },
+  "source": {
+   "kind": "recreation",
+   "by": "claude",
+   "set": "sols-rng-transcendent",
+   "ref": "assets/_projects/sols_rng/refs/sol_rng_fandom_com_wiki_Auras"
+  },
+  "nodes": [
+   {
+    "class": "BillboardGui",
+    "name": "TitlePlate",
+    "attach": "Head",
+    "props": {
+     "Size": {
+      "u2": [
+       9,
+       0,
+       2.6,
+       0
+      ]
+     },
+     "StudsOffset": {
+      "v3": [
+       0,
+       3.4,
+       0
+      ]
+     },
+     "LightInfluence": 0,
+     "MaxDistance": 160,
+     "AlwaysOnTop": false
+    },
+    "children": [
+     {
+      "class": "TextLabel",
+      "name": "Name",
+      "props": {
+       "Text": "EQUINOX",
+       "FontFace": {
+        "font": "Sarpanch",
+        "weight": "Bold"
+       },
+       "TextScaled": true,
+       "TextColor3": {
+        "c3": [
+         1,
+         1,
+         1
+        ]
+       },
+       "BackgroundTransparency": 1,
+       "Size": {
+        "u2": [
+         1,
+         0,
+         0.62,
+         0
+        ]
+       },
+       "ZIndex": 3
+      },
+      "children": [
+       {
+        "class": "UIGradient",
+        "name": "G",
+        "props": {
+         "Color": {
+          "cs": [
+           [
+            0,
+            1,
+            1,
+            1
+           ],
+           [
+            1,
+            0.55,
+            0.55,
+            0.6
+           ]
+          ]
+         },
+         "Rotation": 90
+        }
+       },
+       {
+        "class": "UIStroke",
+        "name": "S",
+        "props": {
+         "Color": {
+          "c3": [
+           0.05,
+           0.05,
+           0.08
+          ]
+         },
+         "Thickness": 2,
+         "Transparency": 0
+        }
+       }
+      ]
+     },
+     {
+      "class": "TextLabel",
+      "name": "Odds",
+      "props": {
+       "Text": "1 in 2,500,000,000",
+       "FontFace": {
+        "font": "Sarpanch"
+       },
+       "TextScaled": true,
+       "TextColor3": {
+        "c3": [
+         1,
+         1,
+         1
+        ]
+       },
+       "BackgroundTransparency": 1,
+       "Size": {
+        "u2": [
+         1,
+         0,
+         0.3,
+         0
+        ]
+       },
+       "Position": {
+        "u2": [
+         0,
+         0,
+         0.66,
+         0
+        ]
+       },
+       "ZIndex": 3
+      },
+      "children": [
+       {
+        "class": "UIStroke",
+        "name": "S",
+        "props": {
+         "Color": {
+          "c3": [
+           0.05,
+           0.05,
+           0.08
+          ]
+         },
+         "Thickness": 1.2
+        }
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "class": "Plane",
+    "name": "Vortex",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "Image": "texture://vortex",
+     "Size": {
+      "v2": [
+       22,
+       22
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       0,
+       -2.95,
+       0,
+       -90,
+       0,
+       0
+      ]
+     },
+     "Color": {
+      "c3": [
+       1,
+       1,
+       1
+      ]
+     },
+     "Brightness": 2.5,
+     "Transparency": 0.15
+    },
+    "anim": {
+     "spin": 28,
+     "pulse": {
+      "amp": 0.05,
+      "period": 4
+     }
+    }
+   },
+   {
+    "class": "Plane",
+    "name": "VortexDark",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "Image": "texture://vortex",
+     "Size": {
+      "v2": [
+       15,
+       15
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       0,
+       -2.9,
+       0,
+       -90,
+       0,
+       0
+      ]
+     },
+     "Color": {
+      "c3": [
+       0.04,
+       0.04,
+       0.05
+      ]
+     },
+     "Brightness": 1,
+     "Transparency": 0.25
+    },
+    "anim": {
+     "spin": -40
+    }
+   },
+   {
+    "class": "Plane",
+    "name": "Ring",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "Image": "texture://ring",
+     "Size": {
+      "v2": [
+       18,
+       18
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       0,
+       -2.92,
+       0,
+       -90,
+       0,
+       0
+      ]
+     },
+     "Color": {
+      "c3": [
+       1,
+       1,
+       1
+      ]
+     },
+     "Brightness": 3,
+     "Transparency": 0.3
+    },
+    "anim": {
+     "spin": 10
+    }
+   },
+   {
+    "class": "Part",
+    "name": "Sun",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "Size": {
+      "v3": [
+       0.2,
+       0.2,
+       0.2
+      ]
+     },
+     "Transparency": 1,
+     "CFrame": {
+      "cf": [
+       4.6,
+       1.2,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "children": [
+     {
+      "class": "BillboardGui",
+      "name": "SunGui",
+      "props": {
+       "Size": {
+        "u2": [
+         3.6,
+         0,
+         3.6,
+         0
+        ]
+       },
+       "LightInfluence": 0,
+       "Brightness": 3,
+       "StudsOffset": {
+        "v3": [
+         0,
+         0,
+         0
+        ]
+       },
+       "MaxDistance": 200
+      },
+      "children": [
+       {
+        "class": "ImageLabel",
+        "name": "Img",
+        "props": {
+         "Image": "texture://orb",
+         "ImageColor3": {
+          "c3": [
+           1,
+           1,
+           1
+          ]
+         },
+         "ImageTransparency": 0.0,
+         "BackgroundTransparency": 1,
+         "Size": {
+          "u2": [
+           1,
+           0,
+           1,
+           0
+          ]
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "anim": {
+     "orbit": {
+      "radius": 4.6,
+      "speed": 50,
+      "phase": 0,
+      "y": 1.2
+     },
+     "bob": {
+      "amp": 0.35,
+      "period": 3
+     }
+    }
+   },
+   {
+    "class": "Part",
+    "name": "SunFlare",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "Size": {
+      "v3": [
+       0.2,
+       0.2,
+       0.2
+      ]
+     },
+     "Transparency": 1,
+     "CFrame": {
+      "cf": [
+       4.6,
+       1.2,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "children": [
+     {
+      "class": "BillboardGui",
+      "name": "SunFlareGui",
+      "props": {
+       "Size": {
+        "u2": [
+         12,
+         0,
+         12,
+         0
+        ]
+       },
+       "LightInfluence": 0,
+       "Brightness": 4,
+       "StudsOffset": {
+        "v3": [
+         0,
+         0,
+         0
+        ]
+       },
+       "MaxDistance": 200
+      },
+      "children": [
+       {
+        "class": "ImageLabel",
+        "name": "Img",
+        "props": {
+         "Image": "texture://star4",
+         "ImageColor3": {
+          "c3": [
+           1,
+           1,
+           1
+          ]
+         },
+         "ImageTransparency": 0.0,
+         "BackgroundTransparency": 1,
+         "Size": {
+          "u2": [
+           1,
+           0,
+           1,
+           0
+          ]
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "anim": {
+     "orbit": {
+      "radius": 4.6,
+      "speed": 50,
+      "phase": 0,
+      "y": 1.2
+     },
+     "bob": {
+      "amp": 0.35,
+      "period": 3
+     }
+    }
+   },
+   {
+    "class": "Part",
+    "name": "Moon",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "Size": {
+      "v3": [
+       0.2,
+       0.2,
+       0.2
+      ]
+     },
+     "Transparency": 1,
+     "CFrame": {
+      "cf": [
+       -4.6,
+       1.2,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "children": [
+     {
+      "class": "BillboardGui",
+      "name": "MoonGui",
+      "props": {
+       "Size": {
+        "u2": [
+         3.6,
+         0,
+         3.6,
+         0
+        ]
+       },
+       "LightInfluence": 0,
+       "Brightness": 1,
+       "StudsOffset": {
+        "v3": [
+         0,
+         0,
+         0
+        ]
+       },
+       "MaxDistance": 200
+      },
+      "children": [
+       {
+        "class": "ImageLabel",
+        "name": "Img",
+        "props": {
+         "Image": "texture://orb",
+         "ImageColor3": {
+          "c3": [
+           0.04,
+           0.04,
+           0.05
+          ]
+         },
+         "ImageTransparency": 0.0,
+         "BackgroundTransparency": 1,
+         "Size": {
+          "u2": [
+           1,
+           0,
+           1,
+           0
+          ]
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "anim": {
+     "orbit": {
+      "radius": 4.6,
+      "speed": 50,
+      "phase": 180,
+      "y": 1.2
+     },
+     "bob": {
+      "amp": 0.35,
+      "period": 3
+     }
+    }
+   },
+   {
+    "class": "Part",
+    "name": "MoonRim",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "Size": {
+      "v3": [
+       0.2,
+       0.2,
+       0.2
+      ]
+     },
+     "Transparency": 1,
+     "CFrame": {
+      "cf": [
+       -4.6,
+       1.2,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "children": [
+     {
+      "class": "BillboardGui",
+      "name": "MoonRimGui",
+      "props": {
+       "Size": {
+        "u2": [
+         4.6,
+         0,
+         4.6,
+         0
+        ]
+       },
+       "LightInfluence": 0,
+       "Brightness": 2,
+       "StudsOffset": {
+        "v3": [
+         0,
+         0,
+         0
+        ]
+       },
+       "MaxDistance": 200
+      },
+      "children": [
+       {
+        "class": "ImageLabel",
+        "name": "Img",
+        "props": {
+         "Image": "texture://ring",
+         "ImageColor3": {
+          "c3": [
+           1,
+           1,
+           1
+          ]
+         },
+         "ImageTransparency": 0.2,
+         "BackgroundTransparency": 1,
+         "Size": {
+          "u2": [
+           1,
+           0,
+           1,
+           0
+          ]
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "anim": {
+     "orbit": {
+      "radius": 4.6,
+      "speed": 50,
+      "phase": 180,
+      "y": 1.2
+     },
+     "bob": {
+      "amp": 0.35,
+      "period": 3
+     }
+    }
+   },
+   {
+    "class": "BillboardGui",
+    "name": "CrownGui",
+    "props": {
+     "Size": {
+      "u2": [
+       9,
+       0,
+       9,
+       0
+      ]
+     },
+     "LightInfluence": 0,
+     "Brightness": 3,
+     "StudsOffset": {
+      "v3": [
+       0,
+       1.6,
+       0
+      ]
+     },
+     "MaxDistance": 200
+    },
+    "children": [
+     {
+      "class": "ImageLabel",
+      "name": "Img",
+      "props": {
+       "Image": "texture://star4",
+       "ImageColor3": {
+        "c3": [
+         1,
+         1,
+         1
+        ]
+       },
+       "ImageTransparency": 0.1,
+       "BackgroundTransparency": 1,
+       "Size": {
+        "u2": [
+         1,
+         0,
+         1,
+         0
+        ]
+       }
+      }
+     }
+    ],
+    "attach": "Head"
+   },
+   {
+    "class": "Attachment",
+    "name": "Body",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "CFrame": {
+      "cf": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "children": [
+     {
+      "class": "ParticleEmitter",
+      "name": "Stars",
+      "props": {
+       "Texture": "texture://sparkle",
+       "Color": {
+        "cs": [
+         [
+          0,
+          1,
+          1,
+          1
+         ],
+         [
+          1,
+          0.8,
+          0.8,
+          0.85
+         ]
+        ]
+       },
+       "Size": {
+        "ns": [
+         [
+          0,
+          0
+         ],
+         [
+          0.4,
+          0.55,
+          0.2
+         ],
+         [
+          1,
+          0
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0
+         ],
+         [
+          1,
+          0.2
+         ]
+        ]
+       },
+       "Lifetime": {
+        "nr": [
+         0.8,
+         1.6
+        ]
+       },
+       "Rate": 28,
+       "Speed": {
+        "nr": [
+         0.5,
+         1.5
+        ]
+       },
+       "LightEmission": 1,
+       "Brightness": 3,
+       "Rotation": {
+        "nr": [
+         -180,
+         180
+        ]
+       },
+       "SpreadAngle": {
+        "v2": [
+         180,
+         180
+        ]
+       },
+       "Shape": {
+        "enum": "ParticleEmitterShape.Sphere"
+       }
+      }
+     },
+     {
+      "class": "ParticleEmitter",
+      "name": "WispsWhite",
+      "props": {
+       "Texture": "texture://smoke",
+       "Color": {
+        "cs": [
+         [
+          0,
+          0.95,
+          0.95,
+          1
+         ],
+         [
+          1,
+          0.6,
+          0.6,
+          0.65
+         ]
+        ]
+       },
+       "Size": {
+        "ns": [
+         [
+          0,
+          1.2
+         ],
+         [
+          1,
+          3.2
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          1
+         ],
+         [
+          0.3,
+          0.75
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "Lifetime": {
+        "nr": [
+         1.8,
+         2.6
+        ]
+       },
+       "Rate": 10,
+       "Speed": {
+        "nr": [
+         1,
+         2
+        ]
+       },
+       "LightEmission": 0.3,
+       "Brightness": 3,
+       "Rotation": {
+        "nr": [
+         -180,
+         180
+        ]
+       },
+       "SpreadAngle": {
+        "v2": [
+         180,
+         180
+        ]
+       },
+       "Acceleration": {
+        "v3": [
+         0,
+         1.5,
+         0
+        ]
+       }
+      }
+     },
+     {
+      "class": "ParticleEmitter",
+      "name": "WispsBlack",
+      "props": {
+       "Texture": "texture://smoke",
+       "Color": {
+        "cs": [
+         [
+          0,
+          0.05,
+          0.05,
+          0.06
+         ],
+         [
+          1,
+          0.1,
+          0.1,
+          0.12
+         ]
+        ]
+       },
+       "Size": {
+        "ns": [
+         [
+          0,
+          1.4
+         ],
+         [
+          1,
+          3.6
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          1
+         ],
+         [
+          0.3,
+          0.6
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "Lifetime": {
+        "nr": [
+         1.8,
+         2.6
+        ]
+       },
+       "Rate": 10,
+       "Speed": {
+        "nr": [
+         1,
+         2
+        ]
+       },
+       "LightEmission": 0,
+       "Brightness": 3,
+       "Rotation": {
+        "nr": [
+         -180,
+         180
+        ]
+       },
+       "SpreadAngle": {
+        "v2": [
+         180,
+         180
+        ]
+       },
+       "Acceleration": {
+        "v3": [
+         0,
+         1.5,
+         0
+        ]
+       }
+      }
+     },
+     {
+      "class": "PointLight",
+      "name": "Light",
+      "props": {
+       "Color": {
+        "c3": [
+         1,
+         1,
+         1
+        ]
+       },
+       "Range": 14,
+       "Brightness": 1.6
+      }
+     }
+    ]
+   }
+  ]
+ },
+ "aura_luminosity": {
+  "tags": [
+   "aura",
+   "character",
+   "sols-rng",
+   "transcendent",
+   "luminosity",
+   "white",
+   "blue",
+   "ice",
+   "wings"
+  ],
+  "use": "LUMINOSITY (Sol's RNG Transcendent): an icy white-blue star blazing at the chest with crystalline shard wings spread behind, slow light rays, a cold ground glow and drifting glints",
+  "rig": "character",
+  "mode": "loop",
+  "sketch": "glow",
+  "host": {
+   "size": {
+    "v3": [
+     2,
+     2,
+     1
+    ]
+   }
+  },
+  "source": {
+   "kind": "recreation",
+   "by": "claude",
+   "set": "sols-rng-transcendent",
+   "ref": "assets/_projects/sols_rng/refs/sol_rng_fandom_com_wiki_Auras"
+  },
+  "nodes": [
+   {
+    "class": "BillboardGui",
+    "name": "TitlePlate",
+    "attach": "Head",
+    "props": {
+     "Size": {
+      "u2": [
+       9,
+       0,
+       2.6,
+       0
+      ]
+     },
+     "StudsOffset": {
+      "v3": [
+       0,
+       3.4,
+       0
+      ]
+     },
+     "LightInfluence": 0,
+     "MaxDistance": 160,
+     "AlwaysOnTop": false
+    },
+    "children": [
+     {
+      "class": "TextLabel",
+      "name": "Name",
+      "props": {
+       "Text": "LUMINOSITY",
+       "FontFace": {
+        "font": "Sarpanch",
+        "weight": "Bold"
+       },
+       "TextScaled": true,
+       "TextColor3": {
+        "c3": [
+         1,
+         1,
+         1
+        ]
+       },
+       "BackgroundTransparency": 1,
+       "Size": {
+        "u2": [
+         1,
+         0,
+         0.62,
+         0
+        ]
+       },
+       "ZIndex": 3
+      },
+      "children": [
+       {
+        "class": "UIGradient",
+        "name": "G",
+        "props": {
+         "Color": {
+          "cs": [
+           [
+            0,
+            0.95,
+            0.98,
+            1
+           ],
+           [
+            1,
+            0.45,
+            0.65,
+            1
+           ]
+          ]
+         },
+         "Rotation": 90
+        }
+       },
+       {
+        "class": "UIStroke",
+        "name": "S",
+        "props": {
+         "Color": {
+          "c3": [
+           0.1,
+           0.2,
+           0.45
+          ]
+         },
+         "Thickness": 2,
+         "Transparency": 0
+        }
+       }
+      ]
+     },
+     {
+      "class": "TextLabel",
+      "name": "Odds",
+      "props": {
+       "Text": "1 in 1,200,000,000",
+       "FontFace": {
+        "font": "Sarpanch"
+       },
+       "TextScaled": true,
+       "TextColor3": {
+        "c3": [
+         0.95,
+         0.98,
+         1
+        ]
+       },
+       "BackgroundTransparency": 1,
+       "Size": {
+        "u2": [
+         1,
+         0,
+         0.3,
+         0
+        ]
+       },
+       "Position": {
+        "u2": [
+         0,
+         0,
+         0.66,
+         0
+        ]
+       },
+       "ZIndex": 3
+      },
+      "children": [
+       {
+        "class": "UIStroke",
+        "name": "S",
+        "props": {
+         "Color": {
+          "c3": [
+           0.1,
+           0.2,
+           0.45
+          ]
+         },
+         "Thickness": 1.2
+        }
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "class": "Plane",
+    "name": "Wings",
+    "attach": "UpperTorso",
+    "props": {
+     "Image": "texture://shards",
+     "Size": {
+      "v2": [
+       30,
+       30
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       0,
+       0.6,
+       0.9,
+       0,
+       0,
+       0
+      ]
+     },
+     "Color": {
+      "c3": [
+       0.72,
+       0.86,
+       1
+      ]
+     },
+     "Brightness": 4,
+     "Transparency": 0.0
+    },
+    "anim": {
+     "pulse": {
+      "amp": 0.06,
+      "period": 2.4
+     }
+    }
+   },
+   {
+    "class": "Plane",
+    "name": "WingsBack",
+    "attach": "UpperTorso",
+    "props": {
+     "Image": "texture://shards",
+     "Size": {
+      "v2": [
+       36,
+       36
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       0,
+       0.8,
+       1.2,
+       0,
+       0,
+       8
+      ]
+     },
+     "Color": {
+      "c3": [
+       0.45,
+       0.65,
+       1
+      ]
+     },
+     "Brightness": 2.5,
+     "Transparency": 0.35
+    },
+    "anim": {
+     "pulse": {
+      "amp": 0.08,
+      "period": 3.1
+     }
+    }
+   },
+   {
+    "class": "Plane",
+    "name": "Rays",
+    "attach": "UpperTorso",
+    "props": {
+     "Image": "texture://rays",
+     "Size": {
+      "v2": [
+       26,
+       26
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       0,
+       0.6,
+       1.4,
+       0,
+       0,
+       0
+      ]
+     },
+     "Color": {
+      "c3": [
+       0.72,
+       0.86,
+       1
+      ]
+     },
+     "Brightness": 2,
+     "Transparency": 0.45
+    },
+    "anim": {
+     "spin": 6
+    }
+   },
+   {
+    "class": "BillboardGui",
+    "name": "StarGui",
+    "props": {
+     "Size": {
+      "u2": [
+       15,
+       0,
+       15,
+       0
+      ]
+     },
+     "LightInfluence": 0,
+     "Brightness": 5,
+     "StudsOffset": {
+      "v3": [
+       0,
+       0.4,
+       -0.2
+      ]
+     },
+     "MaxDistance": 200
+    },
+    "children": [
+     {
+      "class": "ImageLabel",
+      "name": "Img",
+      "props": {
+       "Image": "texture://star4",
+       "ImageColor3": {
+        "c3": [
+         0.9,
+         0.96,
+         1
+        ]
+       },
+       "ImageTransparency": 0.0,
+       "BackgroundTransparency": 1,
+       "Size": {
+        "u2": [
+         1,
+         0,
+         1,
+         0
+        ]
+       }
+      }
+     }
+    ],
+    "attach": "UpperTorso"
+   },
+   {
+    "class": "BillboardGui",
+    "name": "CoreGui",
+    "props": {
+     "Size": {
+      "u2": [
+       4.5,
+       0,
+       4.5,
+       0
+      ]
+     },
+     "LightInfluence": 0,
+     "Brightness": 4,
+     "StudsOffset": {
+      "v3": [
+       0,
+       0.4,
+       -0.3
+      ]
+     },
+     "MaxDistance": 200
+    },
+    "children": [
+     {
+      "class": "ImageLabel",
+      "name": "Img",
+      "props": {
+       "Image": "texture://glow_hot",
+       "ImageColor3": {
+        "c3": [
+         1,
+         1,
+         1
+        ]
+       },
+       "ImageTransparency": 0.0,
+       "BackgroundTransparency": 1,
+       "Size": {
+        "u2": [
+         1,
+         0,
+         1,
+         0
+        ]
+       }
+      }
+     }
+    ],
+    "attach": "UpperTorso"
+   },
+   {
+    "class": "Plane",
+    "name": "Ground",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "Image": "texture://glow",
+     "Size": {
+      "v2": [
+       20,
+       20
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       0,
+       -2.95,
+       0,
+       -90,
+       0,
+       0
+      ]
+     },
+     "Color": {
+      "c3": [
+       0.45,
+       0.65,
+       1
+      ]
+     },
+     "Brightness": 2,
+     "Transparency": 0.25
+    },
+    "anim": {
+     "pulse": {
+      "amp": 0.08,
+      "period": 2.4
+     }
+    }
+   },
+   {
+    "class": "Plane",
+    "name": "GroundRing",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "Image": "texture://shockwave",
+     "Size": {
+      "v2": [
+       16,
+       16
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       0,
+       -2.93,
+       0,
+       -90,
+       0,
+       0
+      ]
+     },
+     "Color": {
+      "c3": [
+       0.72,
+       0.86,
+       1
+      ]
+     },
+     "Brightness": 3,
+     "Transparency": 0.35
+    },
+    "anim": {
+     "spin": -12
+    }
+   },
+   {
+    "class": "Attachment",
+    "name": "Body",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "CFrame": {
+      "cf": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "children": [
+     {
+      "class": "ParticleEmitter",
+      "name": "Glints",
+      "props": {
+       "Texture": "texture://sparkle",
+       "Color": {
+        "cs": [
+         [
+          0,
+          1,
+          1,
+          1
+         ],
+         [
+          1,
+          0.72,
+          0.86,
+          1
+         ]
+        ]
+       },
+       "Size": {
+        "ns": [
+         [
+          0,
+          0
+         ],
+         [
+          0.3,
+          0.7,
+          0.25
+         ],
+         [
+          1,
+          0
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0
+         ],
+         [
+          1,
+          0.3
+         ]
+        ]
+       },
+       "Lifetime": {
+        "nr": [
+         0.6,
+         1.2
+        ]
+       },
+       "Rate": 32,
+       "Speed": {
+        "nr": [
+         0.5,
+         2
+        ]
+       },
+       "LightEmission": 1,
+       "Brightness": 3,
+       "Rotation": {
+        "nr": [
+         -180,
+         180
+        ]
+       },
+       "SpreadAngle": {
+        "v2": [
+         180,
+         180
+        ]
+       },
+       "Shape": {
+        "enum": "ParticleEmitterShape.Sphere"
+       }
+      }
+     },
+     {
+      "class": "ParticleEmitter",
+      "name": "Shards",
+      "props": {
+       "Texture": "texture://streak",
+       "Color": {
+        "cs": [
+         [
+          0,
+          1,
+          1,
+          1
+         ],
+         [
+          1,
+          0.45,
+          0.65,
+          1
+         ]
+        ]
+       },
+       "Size": {
+        "ns": [
+         [
+          0,
+          0.9
+         ],
+         [
+          1,
+          0
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0.1
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "Lifetime": {
+        "nr": [
+         0.5,
+         0.9
+        ]
+       },
+       "Rate": 20,
+       "Speed": {
+        "nr": [
+         6,
+         10
+        ]
+       },
+       "LightEmission": 1,
+       "Brightness": 3,
+       "Rotation": {
+        "nr": [
+         -180,
+         180
+        ]
+       },
+       "SpreadAngle": {
+        "v2": [
+         70,
+         70
+        ]
+       },
+       "Orientation": {
+        "enum": "ParticleOrientation.VelocityParallel"
+       },
+       "EmissionDirection": {
+        "enum": "NormalId.Top"
+       }
+      }
+     },
+     {
+      "class": "PointLight",
+      "name": "Light",
+      "props": {
+       "Color": {
+        "c3": [
+         0.72,
+         0.86,
+         1
+        ]
+       },
+       "Range": 16,
+       "Brightness": 2
+      }
+     }
+    ]
+   }
+  ]
+ },
+ "aura_breakthrough": {
+  "tags": [
+   "aura",
+   "character",
+   "sols-rng",
+   "transcendent",
+   "breakthrough",
+   "blue",
+   "violet",
+   "pillar",
+   "crown"
+  ],
+  "use": "BREAKTHROUGH (Sol's RNG Transcendent): a blue-violet pillar of light breaking up through the sky over a crown of light spikes, glowing lantern orbs at either side, spinning rays and rising motes",
+  "rig": "character",
+  "mode": "loop",
+  "sketch": "glow",
+  "host": {
+   "size": {
+    "v3": [
+     2,
+     2,
+     1
+    ]
+   }
+  },
+  "source": {
+   "kind": "recreation",
+   "by": "claude",
+   "set": "sols-rng-transcendent",
+   "ref": "assets/_projects/sols_rng/refs/sol_rng_fandom_com_wiki_Auras"
+  },
+  "nodes": [
+   {
+    "class": "BillboardGui",
+    "name": "TitlePlate",
+    "attach": "Head",
+    "props": {
+     "Size": {
+      "u2": [
+       9,
+       0,
+       2.6,
+       0
+      ]
+     },
+     "StudsOffset": {
+      "v3": [
+       0,
+       3.4,
+       0
+      ]
+     },
+     "LightInfluence": 0,
+     "MaxDistance": 160,
+     "AlwaysOnTop": false
+    },
+    "children": [
+     {
+      "class": "TextLabel",
+      "name": "Name",
+      "props": {
+       "Text": "BREAKTHROUGH",
+       "FontFace": {
+        "font": "Sarpanch",
+        "weight": "Bold"
+       },
+       "TextScaled": true,
+       "TextColor3": {
+        "c3": [
+         1,
+         1,
+         1
+        ]
+       },
+       "BackgroundTransparency": 1,
+       "Size": {
+        "u2": [
+         1,
+         0,
+         0.62,
+         0
+        ]
+       },
+       "ZIndex": 3
+      },
+      "children": [
+       {
+        "class": "UIGradient",
+        "name": "G",
+        "props": {
+         "Color": {
+          "cs": [
+           [
+            0,
+            0.85,
+            0.9,
+            1
+           ],
+           [
+            1,
+            0.62,
+            0.4,
+            1
+           ]
+          ]
+         },
+         "Rotation": 90
+        }
+       },
+       {
+        "class": "UIStroke",
+        "name": "S",
+        "props": {
+         "Color": {
+          "c3": [
+           0.12,
+           0.08,
+           0.35
+          ]
+         },
+         "Thickness": 2,
+         "Transparency": 0
+        }
+       }
+      ]
+     },
+     {
+      "class": "TextLabel",
+      "name": "Odds",
+      "props": {
+       "Text": "1 in 1,999,999,999",
+       "FontFace": {
+        "font": "Sarpanch"
+       },
+       "TextScaled": true,
+       "TextColor3": {
+        "c3": [
+         0.85,
+         0.9,
+         1
+        ]
+       },
+       "BackgroundTransparency": 1,
+       "Size": {
+        "u2": [
+         1,
+         0,
+         0.3,
+         0
+        ]
+       },
+       "Position": {
+        "u2": [
+         0,
+         0,
+         0.66,
+         0
+        ]
+       },
+       "ZIndex": 3
+      },
+      "children": [
+       {
+        "class": "UIStroke",
+        "name": "S",
+        "props": {
+         "Color": {
+          "c3": [
+           0.12,
+           0.08,
+           0.35
+          ]
+         },
+         "Thickness": 1.2
+        }
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "class": "BillboardGui",
+    "name": "PillarGui",
+    "props": {
+     "Size": {
+      "u2": [
+       5,
+       0,
+       34,
+       0
+      ]
+     },
+     "LightInfluence": 0,
+     "Brightness": 4,
+     "StudsOffset": {
+      "v3": [
+       0,
+       17,
+       0
+      ]
+     },
+     "MaxDistance": 200
+    },
+    "children": [
+     {
+      "class": "ImageLabel",
+      "name": "Img",
+      "props": {
+       "Image": "texture://pillar",
+       "ImageColor3": {
+        "c3": [
+         0.75,
+         0.8,
+         1
+        ]
+       },
+       "ImageTransparency": 0.0,
+       "BackgroundTransparency": 1,
+       "Size": {
+        "u2": [
+         1,
+         0,
+         1,
+         0
+        ]
+       }
+      }
+     }
+    ],
+    "attach": "Head"
+   },
+   {
+    "class": "BillboardGui",
+    "name": "PillarGlowGui",
+    "props": {
+     "Size": {
+      "u2": [
+       13,
+       0,
+       13,
+       0
+      ]
+     },
+     "LightInfluence": 0,
+     "Brightness": 3,
+     "StudsOffset": {
+      "v3": [
+       0,
+       2.2,
+       0
+      ]
+     },
+     "MaxDistance": 200
+    },
+    "children": [
+     {
+      "class": "ImageLabel",
+      "name": "Img",
+      "props": {
+       "Image": "texture://glow",
+       "ImageColor3": {
+        "c3": [
+         0.55,
+         0.6,
+         1
+        ]
+       },
+       "ImageTransparency": 0.2,
+       "BackgroundTransparency": 1,
+       "Size": {
+        "u2": [
+         1,
+         0,
+         1,
+         0
+        ]
+       }
+      }
+     }
+    ],
+    "attach": "Head"
+   },
+   {
+    "class": "Plane",
+    "name": "Crown",
+    "attach": "Head",
+    "props": {
+     "Image": "texture://crown_spikes",
+     "Size": {
+      "v2": [
+       14,
+       14
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       0,
+       1.2,
+       0.8,
+       0,
+       0,
+       0
+      ]
+     },
+     "Color": {
+      "c3": [
+       0.55,
+       0.6,
+       1
+      ]
+     },
+     "Brightness": 4,
+     "Transparency": 0.0
+    },
+    "anim": {
+     "pulse": {
+      "amp": 0.05,
+      "period": 2
+     }
+    }
+   },
+   {
+    "class": "Plane",
+    "name": "Rays",
+    "attach": "UpperTorso",
+    "props": {
+     "Image": "texture://rays",
+     "Size": {
+      "v2": [
+       27,
+       27
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       0,
+       0.8,
+       1.3,
+       0,
+       0,
+       0
+      ]
+     },
+     "Color": {
+      "c3": [
+       0.62,
+       0.4,
+       1
+      ]
+     },
+     "Brightness": 2.5,
+     "Transparency": 0.35
+    },
+    "anim": {
+     "spin": 9
+    }
+   },
+   {
+    "class": "Part",
+    "name": "LeftOrb",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "Size": {
+      "v3": [
+       0.2,
+       0.2,
+       0.2
+      ]
+     },
+     "Transparency": 1,
+     "CFrame": {
+      "cf": [
+       -4.5,
+       2.2,
+       0.4,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "children": [
+     {
+      "class": "BillboardGui",
+      "name": "LeftOrbGui",
+      "props": {
+       "Size": {
+        "u2": [
+         4,
+         0,
+         4,
+         0
+        ]
+       },
+       "LightInfluence": 0,
+       "Brightness": 4,
+       "StudsOffset": {
+        "v3": [
+         0,
+         0,
+         0
+        ]
+       },
+       "MaxDistance": 200
+      },
+      "children": [
+       {
+        "class": "ImageLabel",
+        "name": "Img",
+        "props": {
+         "Image": "texture://glow_hot",
+         "ImageColor3": {
+          "c3": [
+           0.8,
+           0.85,
+           1
+          ]
+         },
+         "ImageTransparency": 0.0,
+         "BackgroundTransparency": 1,
+         "Size": {
+          "u2": [
+           1,
+           0,
+           1,
+           0
+          ]
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "anim": {
+     "bob": {
+      "amp": 0.3,
+      "period": 2.2
+     }
+    }
+   },
+   {
+    "class": "Part",
+    "name": "RightOrb",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "Size": {
+      "v3": [
+       0.2,
+       0.2,
+       0.2
+      ]
+     },
+     "Transparency": 1,
+     "CFrame": {
+      "cf": [
+       4.5,
+       2.2,
+       0.4,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "children": [
+     {
+      "class": "BillboardGui",
+      "name": "RightOrbGui",
+      "props": {
+       "Size": {
+        "u2": [
+         4,
+         0,
+         4,
+         0
+        ]
+       },
+       "LightInfluence": 0,
+       "Brightness": 4,
+       "StudsOffset": {
+        "v3": [
+         0,
+         0,
+         0
+        ]
+       },
+       "MaxDistance": 200
+      },
+      "children": [
+       {
+        "class": "ImageLabel",
+        "name": "Img",
+        "props": {
+         "Image": "texture://glow_hot",
+         "ImageColor3": {
+          "c3": [
+           0.8,
+           0.85,
+           1
+          ]
+         },
+         "ImageTransparency": 0.0,
+         "BackgroundTransparency": 1,
+         "Size": {
+          "u2": [
+           1,
+           0,
+           1,
+           0
+          ]
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "anim": {
+     "bob": {
+      "amp": 0.3,
+      "period": 2.6
+     }
+    }
+   },
+   {
+    "class": "Part",
+    "name": "LeftFlare",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "Size": {
+      "v3": [
+       0.2,
+       0.2,
+       0.2
+      ]
+     },
+     "Transparency": 1,
+     "CFrame": {
+      "cf": [
+       -4.5,
+       2.2,
+       0.4,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "children": [
+     {
+      "class": "BillboardGui",
+      "name": "LeftFlareGui",
+      "props": {
+       "Size": {
+        "u2": [
+         8,
+         0,
+         8,
+         0
+        ]
+       },
+       "LightInfluence": 0,
+       "Brightness": 3,
+       "StudsOffset": {
+        "v3": [
+         0,
+         0,
+         0
+        ]
+       },
+       "MaxDistance": 200
+      },
+      "children": [
+       {
+        "class": "ImageLabel",
+        "name": "Img",
+        "props": {
+         "Image": "texture://star4",
+         "ImageColor3": {
+          "c3": [
+           0.55,
+           0.6,
+           1
+          ]
+         },
+         "ImageTransparency": 0.0,
+         "BackgroundTransparency": 1,
+         "Size": {
+          "u2": [
+           1,
+           0,
+           1,
+           0
+          ]
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "anim": {
+     "bob": {
+      "amp": 0.3,
+      "period": 2.2
+     }
+    }
+   },
+   {
+    "class": "Part",
+    "name": "RightFlare",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "Size": {
+      "v3": [
+       0.2,
+       0.2,
+       0.2
+      ]
+     },
+     "Transparency": 1,
+     "CFrame": {
+      "cf": [
+       4.5,
+       2.2,
+       0.4,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "children": [
+     {
+      "class": "BillboardGui",
+      "name": "RightFlareGui",
+      "props": {
+       "Size": {
+        "u2": [
+         8,
+         0,
+         8,
+         0
+        ]
+       },
+       "LightInfluence": 0,
+       "Brightness": 3,
+       "StudsOffset": {
+        "v3": [
+         0,
+         0,
+         0
+        ]
+       },
+       "MaxDistance": 200
+      },
+      "children": [
+       {
+        "class": "ImageLabel",
+        "name": "Img",
+        "props": {
+         "Image": "texture://star4",
+         "ImageColor3": {
+          "c3": [
+           0.55,
+           0.6,
+           1
+          ]
+         },
+         "ImageTransparency": 0.0,
+         "BackgroundTransparency": 1,
+         "Size": {
+          "u2": [
+           1,
+           0,
+           1,
+           0
+          ]
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "anim": {
+     "bob": {
+      "amp": 0.3,
+      "period": 2.6
+     }
+    }
+   },
+   {
+    "class": "Plane",
+    "name": "Ground",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "Image": "texture://card_sigil",
+     "Size": {
+      "v2": [
+       18,
+       18
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       0,
+       -2.95,
+       0,
+       -90,
+       0,
+       0
+      ]
+     },
+     "Color": {
+      "c3": [
+       0.55,
+       0.6,
+       1
+      ]
+     },
+     "Brightness": 2.5,
+     "Transparency": 0.3
+    },
+    "anim": {
+     "spin": 8
+    }
+   },
+   {
+    "class": "Attachment",
+    "name": "Body",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "CFrame": {
+      "cf": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "children": [
+     {
+      "class": "ParticleEmitter",
+      "name": "Motes",
+      "props": {
+       "Texture": "texture://glow",
+       "Color": {
+        "cs": [
+         [
+          0,
+          0.85,
+          0.9,
+          1
+         ],
+         [
+          1,
+          0.62,
+          0.4,
+          1
+         ]
+        ]
+       },
+       "Size": {
+        "ns": [
+         [
+          0,
+          0.4,
+          0.1
+         ],
+         [
+          1,
+          0
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          1
+         ],
+         [
+          0.2,
+          0.2
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "Lifetime": {
+        "nr": [
+         1.5,
+         2.5
+        ]
+       },
+       "Rate": 36,
+       "Speed": {
+        "nr": [
+         2,
+         4
+        ]
+       },
+       "LightEmission": 1,
+       "Brightness": 3,
+       "Rotation": {
+        "nr": [
+         -180,
+         180
+        ]
+       },
+       "SpreadAngle": {
+        "v2": [
+         40,
+         40
+        ]
+       },
+       "Acceleration": {
+        "v3": [
+         0,
+         3,
+         0
+        ]
+       },
+       "EmissionDirection": {
+        "enum": "NormalId.Top"
+       }
+      }
+     },
+     {
+      "class": "ParticleEmitter",
+      "name": "Glints",
+      "props": {
+       "Texture": "texture://sparkle",
+       "Color": {
+        "cs": [
+         [
+          0,
+          1,
+          1,
+          1
+         ],
+         [
+          1,
+          0.55,
+          0.6,
+          1
+         ]
+        ]
+       },
+       "Size": {
+        "ns": [
+         [
+          0,
+          0
+         ],
+         [
+          0.3,
+          0.6,
+          0.2
+         ],
+         [
+          1,
+          0
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0
+         ],
+         [
+          1,
+          0.3
+         ]
+        ]
+       },
+       "Lifetime": {
+        "nr": [
+         0.5,
+         1
+        ]
+       },
+       "Rate": 20,
+       "Speed": {
+        "nr": [
+         0.5,
+         1.5
+        ]
+       },
+       "LightEmission": 1,
+       "Brightness": 3,
+       "Rotation": {
+        "nr": [
+         -180,
+         180
+        ]
+       },
+       "SpreadAngle": {
+        "v2": [
+         180,
+         180
+        ]
+       },
+       "Shape": {
+        "enum": "ParticleEmitterShape.Sphere"
+       }
+      }
+     },
+     {
+      "class": "PointLight",
+      "name": "Light",
+      "props": {
+       "Color": {
+        "c3": [
+         0.55,
+         0.6,
+         1
+        ]
+       },
+       "Range": 16,
+       "Brightness": 2
+      }
+     }
+    ]
+   }
+  ]
  }
 }

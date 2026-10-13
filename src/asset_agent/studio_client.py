@@ -146,11 +146,18 @@ def _vec_arg(schema: dict, v):
 
 
 def run(fn):
-    """Run `async fn(studio)` on a fresh connection and return its result."""
+    """Run `async fn(studio)` on a fresh connection and return its result. An error inside is caught
+    before the connection closes and raised after: raising through the MCP client's exit hangs it."""
     async def main():
         async with Studio() as s:
-            return await fn(s)
-    return asyncio.run(main())
+            try:
+                return True, await fn(s)
+            except Exception as e:  # noqa: BLE001 - re-raised below, outside the client
+                return False, e
+    ok, value = asyncio.run(main())
+    if not ok:
+        raise value
+    return value
 
 
 def describe() -> str:

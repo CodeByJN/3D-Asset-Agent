@@ -60,6 +60,37 @@ end
 
 BUILD = DECODE + "local animate=(function()" + ANIMATE + "end)()\nlocal ANIMATE_SRC=" + "[==[" + ANIMATE + "]==]\n" + r"""
 local HS,TS=game:GetService('HttpService'),game:GetService('TweenService')
+-- textures we haven't uploaded arrive as pixels and become EditableImages (kept in _G so they stay alive)
+_G.AssetAgentTex=_G.AssetAgentTex or {}
+local TEXDATA={}
+local function setTextures(t) for k,v in t do TEXDATA[k]=v end end
+local B64D={} for i=1,64 do B64D[string.byte('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/',i)]=i-1 end
+local function unb64(s,len)
+ local out=buffer.create(len) local o=0
+ for i=1,#s,4 do
+  local a,b,c,d=B64D[string.byte(s,i)],B64D[string.byte(s,i+1)],B64D[string.byte(s,i+2)] or 0,B64D[string.byte(s,i+3)] or 0
+  local v=a*262144+b*4096+c*64+d
+  if o<len then buffer.writeu8(out,o,bit32.rshift(v,16)) end
+  if o+1<len then buffer.writeu8(out,o+1,bit32.band(bit32.rshift(v,8),255)) end
+  if o+2<len then buffer.writeu8(out,o+2,bit32.band(v,255)) end
+  o+=3
+ end
+ return out
+end
+local function tex(name)
+ local key=name..'@'..(TEXDATA[name] and #(TEXDATA[name].a or TEXDATA[name].rgba) or 0)
+ if _G.AssetAgentTex[key] then return _G.AssetAgentTex[key] end
+ local d=TEXDATA[name] if not d then return nil end
+ local n=d.n local buf
+ if d.a then
+  local a=unb64(d.a,n*n) buf=buffer.create(n*n*4)
+  for i=0,n*n-1 do buffer.writeu32(buf,i*4,0x00FFFFFF+buffer.readu8(a,i)*16777216) end
+ else buf=unb64(d.rgba,n*n*4) end
+ local img=game:GetService('AssetService'):CreateEditableImage({Size=Vector2.new(n,n)})
+ img:WritePixelsBuffer(Vector2.zero,img.Size,buf)
+ local c=Content.fromObject(img) _G.AssetAgentTex[key]=c _G.AssetAgentTex[key..'#img']=img
+ return c
+end
 local function build(H,tag,nodes)
  local made,refs,all,anims={}, {}, {}, false
  local model=H.Parent and H.Parent:IsA('Model') and H.Parent or H
@@ -72,9 +103,10 @@ local function build(H,tag,nodes)
   local p=Instance.new('Part') p.Name=nd.name or 'Plane' p.Size=Vector3.new(sz[1],sz[2],0.05) p.Transparency=1
   for _,face in {Enum.NormalId.Front,Enum.NormalId.Back} do
    local g=Instance.new('SurfaceGui') g.Face=face g.LightInfluence=0 g.Brightness=pr.Brightness or 2
-   g.SizingMode=Enum.SurfaceGuiSizingMode.PixelsPerStud g.PixelsPerStud=64 g.Parent=p
+   g.SizingMode=Enum.SurfaceGuiSizingMode.PixelsPerStud g.PixelsPerStud=math.min(64,1000/math.max(sz[1],sz[2])) g.Parent=p  -- big canvases don't render
    local im=Instance.new('ImageLabel') im.Size=UDim2.fromScale(1,1) im.BackgroundTransparency=1
-   im.Image=pr.Image or '' im.ImageColor3=pr.Color and V(pr.Color) or Color3.new(1,1,1)
+   local tc=type(pr.Image)=='string' and pr.Image:sub(1,10)=='texture://' and tex(pr.Image:sub(11))
+   if tc then im.ImageContent=tc else im.Image=pr.Image or '' end im.ImageColor3=pr.Color and V(pr.Color) or Color3.new(1,1,1)
    im.ImageTransparency=pr.Transparency or 0 im.Parent=g
   end
   return p
@@ -92,6 +124,8 @@ local function build(H,tag,nodes)
    elseif type(v)=='table' and v.ref then table.insert(refs,{i,k,v.ref})
    elseif k=='CFrame' and i:IsA('BasePart') then i.CFrame=(parent:IsA('BasePart') and parent or H).CFrame*V(v)
     i:SetAttribute('AssetAgentBase',V(v))
+   elseif type(v)=='string' and v:sub(1,10)=='texture://' then
+    local c=tex(v:sub(11)) if c then if k=='Image' then i.ImageContent=c else i.TextureContent=c end end
    else i[k]=V(v) end
   end
   for k,v in (nd.attrs or {}) do i:SetAttribute(k,V(v)) end

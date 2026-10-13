@@ -61,7 +61,13 @@ a.revise("topology", part="main", target_tris=2000)
   or on one of your characters with `studio(name, on=character)`.
 - `plan` (a game's style guide; also writes `HANDOFF.md` so a new chat can carry on), `rate` (stars plus what you
   liked and didn't)
-- `studio`, `vfx_lab`, `vfx_import` (Roblox Studio)
+- `studio`, `vfx_lab`, `vfx_import` (Roblox Studio). VFX textures we haven't uploaded are sent as pixels and built in
+  Studio as EditableImages, so every library texture renders without an upload; `vfx_lab` plays effects on a dark
+  stage with bloom, the way game captures look.
+- References from the web: `plan(project, references=["https://game.fandom.com/wiki/Auras|TRANSCENDENT"])` imports a
+  wiki page's images (full size, with captions and the page section they sit in; animated GIFs also get a frame
+  sheet) into the project's refs, and `library("transcendent")` finds them again. Test case: Sol's RNG's
+  Transcendent auras, recreated as `aura_equinox`, `aura_luminosity` and `aura_breakthrough`.
 
 ## Your own GPU (optional)
 With an NVIDIA GPU (6 GB+ of VRAM), shape generation runs on your own machine: unlimited and private. The GPU can also be in another machine, such as a home desktop serving your laptop.

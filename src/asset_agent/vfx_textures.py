@@ -324,8 +324,90 @@ def card():
     img.save(OUT / "card.png", optimize=True)
 
 
+def star4():
+    """Four-point star flare: thin bright spikes on a soft core (Transcendent-tier flashes)."""
+    x, y, r, a = _grid()
+    spikes = np.exp(-np.abs(y) / 0.012) * np.exp(-np.abs(x) / 0.55) + np.exp(-np.abs(x) / 0.012) * np.exp(-np.abs(y) / 0.55)
+    diag = (np.exp(-np.abs(x - y) / 0.02) + np.exp(-np.abs(x + y) / 0.02)) * np.exp(-r / 0.25) * 0.35
+    core = np.exp(-(r / 0.09) ** 2) + 0.45 * np.exp(-(r / 0.28) ** 2)
+    _save(np.clip(spikes + diag + core, 0, 1) * _edge(r, 0.8), "star4")
+
+
+def shards(seed=7):
+    """Crystalline wings: long sharp light shards fanning out left and right from the centre."""
+    rng = np.random.default_rng(seed)
+    img = Image.new("L", (N, N), 0)
+    d = ImageDraw.Draw(img)
+    c = N / 2
+    for side in (-1, 1):
+        for k in range(17):
+            ang = math.radians(rng.uniform(-62, 62))
+            L = N * 0.5 * rng.uniform(0.45, 1.0) * (1 - 0.35 * abs(ang) / 1.1)
+            w = rng.uniform(0.012, 0.032) * N
+            tip = (c + side * math.cos(ang) * L, c - math.sin(ang) * L)
+            nx, ny = -math.sin(ang) * w, -math.cos(ang) * w
+            d.polygon([(c + side * nx * 0.2, c + ny * 0.2), (c - side * nx * 0.2, c - ny * 0.2), tip], fill=int(rng.uniform(150, 255)))
+    a = np.asarray(img.filter(ImageFilter.GaussianBlur(1.2)), np.float32) / 255
+    glow_a = np.asarray(img.filter(ImageFilter.GaussianBlur(10)), np.float32) / 255
+    _, _, r, _ = _grid()
+    _save(np.clip(a + 0.6 * glow_a, 0, 1) * _edge(r, 0.85), "shards")
+
+
+def vortex(seed=5):
+    """Swirling cloud disc seen from above, bright rim and calm eye (floor of an aura)."""
+    x, y, r, a = _grid()
+    n = _noise(N, seed)
+    swirl = 0.5 + 0.5 * np.sin(a * 3 + r * 14 + n * 4)
+    band = np.exp(-((r - 0.62) / 0.28) ** 2)
+    eye = 1 - np.exp(-(r / 0.16) ** 2) * 0.85
+    _save(np.clip(swirl * band * eye * (0.55 + 0.6 * n), 0, 1) * _edge(r, 0.8), "vortex")
+
+
+def orb():
+    """A shaded sphere with a bright rim (sun / moon orbs; tint it with the plane colour)."""
+    x, y, r, _ = _grid()
+    inside = r < 0.82
+    shade = np.where(inside, 0.65 + 0.35 * np.sqrt(np.clip(1 - (r / 0.82) ** 2, 0, 1)), 0)
+    rim = np.exp(-((r - 0.82) / 0.045) ** 2)
+    halo = np.exp(-((r - 0.82) / 0.16) ** 2) * (r > 0.82) * 0.5
+    _save(np.clip(shade + rim + halo, 0, 1) * _edge(r, 0.9), "orb")
+
+
+def pillar():
+    """A vertical beam of light, brightest at its core, fading at the ends."""
+    x, y, r, _ = _grid()
+    core = np.exp(-(x / 0.06) ** 2) + 0.55 * np.exp(-(x / 0.22) ** 2)
+    ends = np.clip((1 - np.abs(y)) / 0.35, 0, 1) ** 1.5
+    _save(np.clip(core, 0, 1) * ends, "pillar")
+
+
+def crown_spikes(seed=2):
+    """An arc of tall spikes (a crown of light behind the head)."""
+    rng = np.random.default_rng(seed)
+    img = Image.new("L", (N, N), 0)
+    d = ImageDraw.Draw(img)
+    cx, base = N / 2, N * 0.78
+    for k in range(9):
+        t = (k - 4) / 4
+        x0 = cx + t * N * 0.38
+        h = N * (0.62 - 0.28 * abs(t)) * rng.uniform(0.9, 1.05)
+        w = N * 0.05
+        lean = t * N * 0.08
+        d.polygon([(x0 - w, base - abs(t) * N * 0.12), (x0 + w, base - abs(t) * N * 0.12), (x0 + lean, base - h)], fill=255)
+    d.ellipse((cx - N * 0.4, base - N * 0.06, cx + N * 0.4, base + N * 0.06), fill=200)
+    a = np.asarray(img.filter(ImageFilter.GaussianBlur(1.5)), np.float32) / 255
+    g = np.asarray(img.filter(ImageFilter.GaussianBlur(14)), np.float32) / 255
+    _save(np.clip(a + 0.7 * g, 0, 1), "crown_spikes")
+
+
+def streak():
+    """A thin bright streak (light rays, shards flying off)."""
+    x, y, r, _ = _grid()
+    _save(np.exp(-(x / 0.05) ** 2) * np.clip(1 - np.abs(y), 0, 1) ** 1.2, "streak")
+
+
 ALL = [glow, glow_hot, rays, ring, shockwave, sparkle, smoke, slash, bolts, coin, cash,
-       crest, crown_ring, card_sigil, rune_ring, card]
+       crest, crown_ring, card_sigil, rune_ring, card, star4, shards, vortex, orb, pillar, crown_spikes, streak]
 
 if __name__ == "__main__":
     for fn in ALL:

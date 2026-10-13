@@ -4,6 +4,7 @@ planned assets, and 1-10 ratings that tune the defaults so later assets need few
 Stored in $ASSET_AGENT_HOME/_projects/<name>/: project.json, refs/ (reference images), ratings.jsonl.
 """
 import json
+import re
 import shutil
 import time
 from pathlib import Path
@@ -61,7 +62,18 @@ class Project:
                 self.d.setdefault("sizes", {}).update(v)
             else:
                 self.d[k] = v
+        self.imported = []
         for ref in references or []:
+            if ref.startswith(("http://", "https://")):  # a web page (e.g. the game's wiki): import its images
+                from . import refs
+                url, _, only = ref.partition("|")
+                page = re.sub(r"[^\w]+", "_", url.split("://", 1)[1].split("?")[0]).strip("_")[-60:]
+                line, _ = refs.import_page(url, self.root / "refs" / page, only or None)
+                self.imported.append(line)
+                rel = f"refs/{page}/"
+                if rel not in self.d["references"]:
+                    self.d["references"].append(rel)
+                continue
             src = Path(ref)
             if not src.exists():
                 raise FileNotFoundError(f"reference {ref} not found")

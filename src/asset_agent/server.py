@@ -182,6 +182,9 @@ def library(query: str = "") -> str:
     lines += [f"anim {p.parent.name}: {anim.Animation(p.parent).history().splitlines()[-1]}"
               for p in sorted(home().glob("*/anim.json")) if q in p.parent.name.lower()]
     lines += [f"anim preset {x}" for x in anim.catalog().splitlines() if q in x.lower()]
+    from . import refs  # imported references (wiki images), rarest first
+    lines += [f"ref {e['dir']}/{e['file']}" + (f" (frames {e['frames']})" if e.get("frames") else "") +
+              f": {e['caption'][:90]}" for e in refs.search(home(), query, 12)] if query else []
     return "\n".join(lines) or "nothing found"
 
 
@@ -189,14 +192,16 @@ def library(query: str = "") -> str:
 def plan(project: str, brief: str | None = None, references: list[str] | None = None,
          assets: dict[str, str] | None = None, style: dict | None = None) -> str:
     """Create or update a game's style guide; returns it with the roster and what ratings taught.
-    brief: look appended to every prompt. references: image paths. assets: {name: prompt} to make.
+    brief: look appended to every prompt. references: image paths, or web pages ("url|filter words",
+    e.g. the game's wiki) whose images are imported. assets: {name: prompt} to make.
     style: budget, style (project|flat), palette [[r,g,b]], sizes {word: metres}, target_tris,
     tex_size, ao, roughness, metallic."""
     p = Project.open(home(), project, create=True)
     if brief is not None or references or assets or style or not (p.root / "project.json").exists():
         p.update(references=references, assets=assets, **({"brief": brief} if brief is not None else {}),
                  **(style or {}))
-    return f"{p.summary()}\nhandoff (for a new chat): {p.handoff()}"
+    imported = "".join(f"\n{x}" for x in getattr(p, "imported", []))
+    return f"{p.summary()}{imported}\nhandoff (for a new chat): {p.handoff()}"
 
 
 @tool
@@ -275,7 +280,8 @@ def vfx_lab(preset: str, color: list[float] | None = None, size: float = 1.0, ra
         async def go(s):
             import asyncio
             cam, look = ([float(x) for x in v.split(",")] for v in (await s.luau(code)).strip().split("|"))
-            await asyncio.sleep(0.3 if vfx.presets()[preset].get('mode') == 'burst' else 1.5)  # bursts peak early; loops need to fill in
+            await asyncio.sleep(0.3 if vfx.presets()[preset].get('mode') == 'burst' else 2.5)  # bursts peak early; loops need to fill in
+            await s.capture(out, cam, look)  # the first capture after a rebuild can return the previous frame
             return await s.capture(out, cam, look)
         return Image(path=str(studio_client.run(go)))
     except Exception as e:

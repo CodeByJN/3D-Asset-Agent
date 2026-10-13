@@ -87,8 +87,10 @@ def upload(fbx: Path, name: str, asset_id: str | None = None, timeout: float = 1
 def studio_script(name: str, asset_id: str, revision: str, effects: dict, glow: dict | None = None) -> str:
     """Compact Luau for Studio's execute_luau. Returns a one-line status string when run.
     glow: {part name: [r,g,b]} parts made Neon in that colour (emissive details)."""
-    fx = {n: {"nodes": vfx.resolve_textures(e["nodes"]), "mode": e["mode"]} for n, e in vfx.resolve(effects).items()}
-    return luau.BUILD + f"""local NAME,ID,REV,FX='{name}',{asset_id},'{revision}',HS:JSONDecode({luau.data(fx)})
+    inline = {}
+    fx = {n: {"nodes": vfx.resolve_textures(e["nodes"], inline=inline), "mode": e["mode"]} for n, e in vfx.resolve(effects).items()}
+    return luau.BUILD + f"""setTextures(HS:JSONDecode({luau.data(inline)}))
+local NAME,ID,REV,FX='{name}',{asset_id},'{revision}',HS:JSONDecode({luau.data(fx)})
 local GLOW=HS:JSONDecode({luau.data(glow or {})})
 local m=workspace:FindFirstChild(NAME) local loaded=false
 if not(m and m:GetAttribute('AssetAgentRev')==REV) then
@@ -152,11 +154,13 @@ def lab_script(preset: str, effect: dict | None = None, stand_in: str | None = N
     size = [x * k for x in host] if host and stand_in is None else STAND_INS[stand_in]
     hidden = 1 if host and stand_in is None else 0
     fx = vfx.resolve({preset: {"type": preset, **(effect or {})}})[preset]
-    fx["nodes"] = vfx.resolve_textures(fx["nodes"])
+    inline = {}
+    fx["nodes"] = vfx.resolve_textures(fx["nodes"], inline=inline)
+    tex_line = f"setTextures(HS:JSONDecode({luau.data(inline)}))\n"
     x, y, z = LAB_AT
     if p.get("rig") == "character":
-        return luau.BUILD + RIG_LAB.format(x=x, y=y, z=z, preset=preset, nodes=luau.data(fx["nodes"]))
-    return luau.BUILD + f"""local AT,SZ,FX=Vector3.new({x},{y},{z}),Vector3.new({size[0]:g},{size[1]:g},{size[2]:g}),HS:JSONDecode({luau.data(fx["nodes"])})
+        return luau.BUILD + tex_line + RIG_LAB.format(x=x, y=y, z=z, preset=preset, nodes=luau.data(fx["nodes"]))
+    return luau.BUILD + tex_line + f"""local AT,SZ,FX=Vector3.new({x},{y},{z}),Vector3.new({size[0]:g},{size[1]:g},{size[2]:g}),HS:JSONDecode({luau.data(fx["nodes"])})
 local lab=workspace:FindFirstChild('AssetAgentLab') if lab then lab:Destroy() end
 lab=Instance.new('Model') lab.Name='AssetAgentLab'
 local floor=Instance.new('Part') floor.Name='Floor' floor.Anchored=true floor.Size=Vector3.new(1,1,1)
@@ -189,6 +193,15 @@ local lab=workspace:FindFirstChild('AssetAgentLab') if lab then lab:Destroy() en
 lab=Instance.new('Model') lab.Name='AssetAgentLab'
 local floor=Instance.new('Part') floor.Name='Floor' floor.Anchored=true floor.Size=Vector3.new(120,1,120)
 floor.CFrame=CFrame.new(AT-Vector3.new(0,0.5,0)) floor.Color=Color3.fromRGB(16,18,28) floor.Material=Enum.Material.SmoothPlastic floor.Parent=lab
+-- a dark stage: glow reads against night, as in game captures; a bright sky washes it out
+for _,w in {{{{Vector3.new(0,30,-60),Vector3.new(120,62,1)}},{{Vector3.new(0,30,60),Vector3.new(120,62,1)}},{{Vector3.new(-60,30,0),Vector3.new(1,62,120)}},
+  {{Vector3.new(60,30,0),Vector3.new(1,62,120)}},{{Vector3.new(0,61,0),Vector3.new(120,1,120)}}}} do
+ local p=Instance.new('Part') p.Name='Backdrop' p.Anchored=true p.CanCollide=false p.CastShadow=false p.Size=w[2]
+ p.CFrame=CFrame.new(AT+w[1]) p.Color=Color3.fromRGB(7,8,14) p.Material=Enum.Material.SmoothPlastic p.Parent=lab
+end
+local cam=workspace.CurrentCamera
+local bl=cam:FindFirstChild('AssetAgentLabBloom') or Instance.new('BloomEffect') bl.Name='AssetAgentLabBloom'
+bl.Intensity=1.2 bl.Size=28 bl.Threshold=0.85 bl.Parent=cam
 local rig=Instance.new('Model') rig.Name='StandIn' rig.Parent=lab
 for _,r in """ + _RIG_LUA + """ do
  local p=Instance.new('Part') p.Name=r[1] p.Anchored=true p.CanCollide=false p.Size=r[3] p.CFrame=CFrame.new(AT+r[2])
@@ -199,7 +212,7 @@ local h=rig.HumanoidRootPart
 local list=build(h,'{preset}',HS:JSONDecode({nodes}))
 play(list)
 local n=animate(rig,'{preset}',function() return lab.Parent~=nil end)
-local look=h.Position+Vector3.new(0,1.6,0) local cam=look+Vector3.new(9,4,17)
+local look=h.Position+Vector3.new(0,1.6,0) local cam=look+Vector3.new(7,2.5,15)
 return string.format('%g,%g,%g|%g,%g,%g',cam.X,cam.Y,cam.Z,look.X,look.Y,look.Z)"""
 
 
