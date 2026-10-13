@@ -174,6 +174,31 @@ def test_aura_scaling_and_textures():
     assert "StandIn" in script and "HumanoidRootPart" in script and "animate(rig" in script
 
 
+def test_procedural_meshes():
+    import math
+    from asset_agent import roblox, vfx, vfx_meshes
+    for spec in ("sphere?sub=3", "sphere?sub=2&noise=0.2&seed=1", "torus?tube=0.02", "crystal?sides=7&seed=3",
+                 "blade?hook=0.3", "cube", "shard?seed=4"):
+        d = vfx_meshes.mesh_data("mesh://" + spec)
+        v = [d["v"][i:i + 3] for i in range(0, len(d["v"]), 3)]
+        assert len(d["f"]) % 3 == 0 and max(d["f"]) < len(v)
+        for ax in range(3):  # fits the unit box, so a node's Size is its size in studs
+            assert math.isclose(max(p[ax] for p in v) - min(p[ax] for p in v), 1, abs_tol=2e-3), spec
+        # outward winding: the signed volume of a closed outward mesh is positive
+        vol = sum(a[0] * (b[1] * c[2] - b[2] * c[1]) + a[1] * (b[2] * c[0] - b[0] * c[2]) + a[2] * (b[0] * c[1] - b[1] * c[0])
+                  for a, b, c in ([v[d["f"][i]], v[d["f"][i + 1]], v[d["f"][i + 2]]] for i in range(0, len(d["f"]), 3)))
+        assert vol > 0, spec
+    with pytest.raises(ValueError):
+        vfx_meshes.build("mesh://teapot")
+    nodes = [{"class": "MeshPart", "name": "M", "props": {"MeshId": "mesh://cube?bevel=0.1"},
+              "anim": {"orbit": {"radius": 3, "center": [0, 1, 0]}}}]
+    meshes = {}
+    vfx.resolve_textures(nodes, {}, inline={}, meshes=meshes)
+    assert list(meshes) == ["cube?bevel=0.1"] and meshes["cube?bevel=0.1"]["f"]
+    assert vfx.transform(nodes, k=2)[0]["anim"]["orbit"]["center"] == [0, 2, 0]
+    assert "setMeshes(" in roblox.lab_script("aura_equinox")
+
+
 def test_recolor_revision(tmp_path, monkeypatch):
     import colorsys
     import shutil

@@ -87,9 +87,11 @@ def upload(fbx: Path, name: str, asset_id: str | None = None, timeout: float = 1
 def studio_script(name: str, asset_id: str, revision: str, effects: dict, glow: dict | None = None) -> str:
     """Compact Luau for Studio's execute_luau. Returns a one-line status string when run.
     glow: {part name: [r,g,b]} parts made Neon in that colour (emissive details)."""
-    inline = {}
-    fx = {n: {"nodes": vfx.resolve_textures(e["nodes"], inline=inline), "mode": e["mode"]} for n, e in vfx.resolve(effects).items()}
+    inline, meshes = {}, {}
+    fx = {n: {"nodes": vfx.resolve_textures(e["nodes"], inline=inline, meshes=meshes), "mode": e["mode"]}
+          for n, e in vfx.resolve(effects).items()}
     return luau.BUILD + f"""setTextures(HS:JSONDecode({luau.data(inline)}))
+setMeshes(HS:JSONDecode({luau.data(meshes)}))
 local NAME,ID,REV,FX='{name}',{asset_id},'{revision}',HS:JSONDecode({luau.data(fx)})
 local GLOW=HS:JSONDecode({luau.data(glow or {})})
 local m=workspace:FindFirstChild(NAME) local loaded=false
@@ -154,9 +156,9 @@ def lab_script(preset: str, effect: dict | None = None, stand_in: str | None = N
     size = [x * k for x in host] if host and stand_in is None else STAND_INS[stand_in]
     hidden = 1 if host and stand_in is None else 0
     fx = vfx.resolve({preset: {"type": preset, **(effect or {})}})[preset]
-    inline = {}
-    fx["nodes"] = vfx.resolve_textures(fx["nodes"], inline=inline)
-    tex_line = f"setTextures(HS:JSONDecode({luau.data(inline)}))\n"
+    inline, meshes = {}, {}
+    fx["nodes"] = vfx.resolve_textures(fx["nodes"], inline=inline, meshes=meshes)
+    tex_line = f"setTextures(HS:JSONDecode({luau.data(inline)}))\nsetMeshes(HS:JSONDecode({luau.data(meshes)}))\n"
     x, y, z = LAB_AT
     if p.get("rig") == "character":
         return luau.BUILD + tex_line + RIG_LAB.format(x=x, y=y, z=z, preset=preset, nodes=luau.data(fx["nodes"]))

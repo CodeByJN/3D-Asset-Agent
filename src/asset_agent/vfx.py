@@ -46,14 +46,19 @@ STAND_INS = {"smoke": "rbxasset://textures/particles/smoke_main.dds"}
 STAND_IN = "rbxasset://textures/particles/sparkles_main.dds"
 
 
-def resolve_textures(nodes, ids=None, inline=None):
+def resolve_textures(nodes, ids=None, inline=None, meshes=None):
     """Copy of a node tree with texture://name swapped for its uploaded asset id. One not uploaded
     stays texture://name when `inline` (a dict) is given, and its pixels go into inline[name] for
-    Studio to build as an EditableImage (no upload needed); otherwise a built-in stand-in is used."""
+    Studio to build as an EditableImage (no upload needed); otherwise a built-in stand-in is used.
+    Procedural meshes (MeshId mesh://kind?params) go into `meshes` the same way."""
     ids = uploads() if ids is None else ids
     out = copy.deepcopy(nodes)
 
     def walk(n):
+        mid = (n.get("props") or {}).get("MeshId")
+        if meshes is not None and isinstance(mid, str) and mid.startswith("mesh://") and mid[7:] not in meshes:
+            from . import vfx_meshes
+            meshes[mid[7:]] = vfx_meshes.mesh_data(mid)
         for key in ("Texture", "Image", "TextureID"):
             v = (n.get("props") or {}).get(key)
             if isinstance(v, str) and v.startswith("texture://"):
@@ -253,6 +258,8 @@ def transform(nodes, k=1.0, rate=1.0, rgb=None):
         if k != 1 and n.get("anim", {}).get("orbit"):
             o = n["anim"]["orbit"]
             n["anim"]["orbit"] = {**o, "radius": o.get("radius", 3) * k, "y": o.get("y", 0) * k}
+            if "center" in o:
+                n["anim"]["orbit"]["center"] = [c * k for c in o["center"]]
         tw = n.get("tween")
         if tw and k != 1:
             tw["props"] = {p: _scale_value(v, k) if p in STUD_PROPS else v for p, v in tw["props"].items()}

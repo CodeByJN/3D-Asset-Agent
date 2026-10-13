@@ -24,9 +24,12 @@ local function V(x)
 end
 """
 
-# Animates parts tagged with an AssetAgentAnim attribute (JSON: spin deg/s about the plane normal, orbit
-# {radius, speed deg/s, phase, y}, bob {amp, period}, pulse {amp, period}) relative to their parent part,
-# every frame. Returns a function(model, tag|nil, alive()) that connects to Heartbeat.
+# Animates parts tagged with an AssetAgentAnim attribute relative to their parent part, every frame:
+#   orbit {radius, speed deg/s, phase, y, tilt [x,z] deg, center [x,y,z]}: circles the anchor (a tilted ring)
+#   bob {amp, period, phase}, spin deg/s about the plane normal, tumble [x,y,z] deg/s about its own axes,
+#   pulse {amp, period, phase} (planes grow in their plane, meshes in all three axes),
+#   shimmer {min, max, period, phase}: transparency of the part (or of its images) breathes between min and max.
+# Returns a function(model, tag|nil, alive()) that connects to Heartbeat.
 ANIMATE = r"""
 local RS,HS=game:GetService('RunService'),game:GetService('HttpService')
 return function(model,tag,alive)
@@ -34,7 +37,8 @@ return function(model,tag,alive)
  for _,p in model:GetDescendants() do
   local a=p:GetAttribute('AssetAgentAnim')
   if a and p:IsA('BasePart') and (tag==nil or p:GetAttribute('AssetAgentVFX')==tag) then
-   table.insert(items,{p=p,a=HS:JSONDecode(a),base=p:GetAttribute('AssetAgentBase') or CFrame.new(),size=p.Size})
+   local imgs={} for _,d in p:GetDescendants() do if d:IsA('ImageLabel') then table.insert(imgs,d) end end
+   table.insert(items,{p=p,a=HS:JSONDecode(a),base=p:GetAttribute('AssetAgentBase') or CFrame.new(),size=p.Size,imgs=imgs})
   end
  end
  local t0=os.clock() local conn
@@ -45,12 +49,18 @@ return function(model,tag,alive)
    local a,anchor=it.a,it.p.Parent
    if anchor and anchor:IsA('BasePart') then
     local cf=it.base
-    if a.orbit then local o=a.orbit
-     cf=CFrame.Angles(0,math.rad((o.phase or 0)+(o.speed or 30)*t),0)*CFrame.new(o.radius or 3,o.y or 0,0)*it.base.Rotation end
-    if a.bob then cf=CFrame.new(0,a.bob.amp*math.sin(2*math.pi*t/a.bob.period),0)*cf end
+    if a.orbit then local o=a.orbit local c,tl=o.center or {0,0,0},o.tilt or {0,0}
+     cf=CFrame.new(c[1],c[2],c[3])*CFrame.Angles(math.rad(tl[1]),0,math.rad(tl[2]))
+      *CFrame.Angles(0,math.rad((o.phase or 0)+(o.speed or 30)*t),0)*CFrame.new(o.radius or 3,o.y or 0,0)*it.base.Rotation end
+    if a.bob then cf=CFrame.new(0,a.bob.amp*math.sin(2*math.pi*t/a.bob.period+(a.bob.phase or 0)),0)*cf end
     if a.spin then cf=cf*CFrame.Angles(0,0,math.rad(a.spin*t)) end
+    if a.tumble then local u=a.tumble cf=cf*CFrame.Angles(math.rad(u[1]*t),math.rad(u[2]*t),math.rad(u[3]*t)) end
     it.p.CFrame=anchor.CFrame*cf
-    if a.pulse then local k=1+a.pulse.amp*math.sin(2*math.pi*t/a.pulse.period) it.p.Size=it.size*Vector3.new(k,k,1) end
+    if a.pulse then local k=1+a.pulse.amp*math.sin(2*math.pi*t/a.pulse.period+(a.pulse.phase or 0))
+     it.p.Size=it.size*(it.p:IsA('MeshPart') and Vector3.new(k,k,k) or Vector3.new(k,k,1)) end
+    if a.shimmer then local s=a.shimmer
+     local v=s.min+(s.max-s.min)*(0.5+0.5*math.sin(2*math.pi*t/s.period+(s.phase or 0)))
+     if #it.imgs>0 then for _,im in it.imgs do im.ImageTransparency=v end else it.p.Transparency=v end end
    end
   end
  end)
@@ -102,6 +112,22 @@ local function tex(name)
  local c=Content.fromObject(img) _G.AssetAgentTex[key]=c _G.AssetAgentTex[key..'#img']=img
  return c
 end
+-- procedural meshes (mesh://kind?params, see vfx_meshes.py) arrive as vertices and triangles and become
+-- EditableMeshes, cached in _G and shared by every MeshPart that uses them
+_G.AssetAgentMesh=_G.AssetAgentMesh or {}
+local MESHDATA={}
+local function setMeshes(t) for k,v in t do MESHDATA[k]=v end end
+local function meshContent(spec)
+ local d=MESHDATA[spec] if not d then return nil end
+ local key=spec..'#'..#d.v..'#'..#d.f
+ if _G.AssetAgentMesh[key] then return _G.AssetAgentMesh[key] end
+ local em=game:GetService('AssetService'):CreateEditableMesh()
+ local ids,v,f={},d.v,d.f
+ for k=1,#v,3 do table.insert(ids,em:AddVertex(Vector3.new(v[k],v[k+1],v[k+2]))) end
+ for k=1,#f,3 do em:AddTriangle(ids[f[k]+1],ids[f[k+1]+1],ids[f[k+2]+1]) end
+ local c=Content.fromObject(em) _G.AssetAgentMesh[key]=c _G.AssetAgentMesh[key..'#em']=em
+ return c
+end
 local function build(H,tag,nodes)
  local made,refs,all,anims={}, {}, {}, false
  local model=H.Parent and H.Parent:IsA('Model') and H.Parent or H
@@ -127,7 +153,9 @@ local function build(H,tag,nodes)
   parent=anchorFor(nd,parent)
   if nd.class=='Plane' then i=plane(nd,parent)
   elseif nd.class=='MeshPart' and nd.props and nd.props.MeshId then
-   i=game:GetService('AssetService'):CreateMeshPartAsync(nd.props.MeshId)
+   local id=nd.props.MeshId
+   local src=type(id)=='string' and id:sub(1,7)=='mesh://' and meshContent(id:sub(8)) or Content.fromUri(id)
+   i=game:GetService('AssetService'):CreateMeshPartAsync(src,{CollisionFidelity=Enum.CollisionFidelity.Box})
   else i=Instance.new(nd.class) end
   i.Name=nd.name or nd.class
   for k,v in (nd.class=='Plane' and {CFrame=(nd.props or {}).CFrame} or nd.props or {}) do
