@@ -60,7 +60,7 @@ def main(argv=None):
     s = sub.add_parser("roblox", help="save Roblox Open Cloud credentials for sending assets to Studio")
     s.add_argument("--user", help="your Roblox user id (the number in your profile URL)")
     s.add_argument("--group", help="upload to a group instead (group id)")
-    s.add_argument("--key", help="Open Cloud API key with Assets read+write")
+    s.add_argument("--key", help="Open Cloud API key with Assets read+write ('-' or left out: asked for at a prompt)")
     a = p.parse_args(argv)
     try:
         if a.cmd == "doctor":
@@ -86,7 +86,18 @@ def main(argv=None):
         elif a.cmd == "connect":
             print(connect(a.url, a.key))
         elif a.cmd == "roblox":
-            kv = {k: v for k, v in (("roblox_user", a.user), ("roblox_group", a.group), ("roblox_key", a.key)) if v}
+            key = a.key
+            if key is None and not config.load().get("roblox_key") or key == "-":  # asked for: no shell quoting to mangle it
+                import getpass
+                key = getpass.getpass("Open Cloud API key (paste it, then Enter; it stays hidden): ")
+            if key is not None:
+                key = key.strip().strip("'\"")
+                if len(key) < 40:  # names, ids and cut-off pastes; real keys are much longer
+                    print(f"error: that key is {len(key)} characters; an Open Cloud API key is much longer. Copy the "
+                          "secret shown after Create or Regenerate at create.roblox.com/dashboard/credentials, then "
+                          "run `python -m asset_agent roblox --key -` and paste it at the prompt", file=sys.stderr)
+                    return 1
+            kv = {k: v for k, v in (("roblox_user", a.user), ("roblox_group", a.group), ("roblox_key", key)) if v}
             c = config.save(**kv)
             print(f"roblox: user={c.get('roblox_user')} group={c.get('roblox_group')} "
                   f"key={'set' if c.get('roblox_key') else 'missing'} -> {config.path()}")
