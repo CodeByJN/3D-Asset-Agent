@@ -95,7 +95,8 @@ avoided, and writes `HANDOFF.md` so a new chat carries on where the last one sto
   - motion: orbits (tilted, around any centre), bob, spin, tumble, pulse, shimmer and looping shockwave `wave`s;
   - a `Highlight` node that outlines the whole character.
 - `review`: every new version from `make_asset`, `build`, `import_mesh` or `revise` is reviewed before it goes into
-  your game. `review(name)` opens a browser window with a 3D viewer (orbit, zoom) and the grade: 1-10 stars,
+  your game. `review(name)` opens a browser window with a 3D viewer (orbit, zoom, a light-shaft stage, wireframe, an R15
+  figure for scale) and the grade: 1-10 stars,
   pros and cons, and
   - **Back** / **Next ›**: step through what you reviewed before;
   - **Place**: records the rating, uploads the model if it changed and puts it in the open Studio place;

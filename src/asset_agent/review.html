@@ -5,7 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Asset Review</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Rubik:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
-<script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@3.5.0/dist/model-viewer.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <style>
 /* One dark theme by choice, like the VFX viewer: models are judged against a dark stage, as in Studio at night. */
 :root {
@@ -20,7 +22,7 @@ html, body { height: 100%; margin: 0; }
 body { background: var(--bg); color: var(--fg); font: 400 14px/1.45 var(--body); }
 .app { height: 100%; display: grid; grid-template-columns: minmax(0, 1fr) 340px; }
 .stage { position: relative; min-height: 0; background: radial-gradient(ellipse at 50% 40%, #1a2140 0%, #070910 70%); }
-model-viewer { width: 100%; height: 100%; --poster-color: transparent; }
+#view { position: absolute; inset: 0; } #view canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 .empty { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); text-align: center; padding: 24px; }
 .hud { position: absolute; left: 16px; top: 14px; right: 16px; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; pointer-events: none; }
 .hud h1 { font: 400 30px/1 var(--display); margin: 0; letter-spacing: .01em; }
@@ -60,12 +62,14 @@ textarea:disabled { color: var(--muted); }
 <body>
 <div class="app">
   <section class="stage">
-    <model-viewer id="mv" camera-controls auto-rotate shadow-intensity="1" exposure="1.05" environment-image="neutral"
-                  interaction-prompt="none" alt="3D model under review"></model-viewer>
+    <div id="view" role="img" aria-label="3D model under review"></div>
     <div class="empty" id="empty" hidden></div>
     <div class="hud"><h1 id="name">Asset Review</h1><span class="ver" id="ver"></span><span class="count" id="count"></span></div>
     <div class="tools">
       <button class="chip" id="spin" aria-pressed="true" title="Auto-rotate (R)">Rotate</button>
+      <button class="chip" id="beam" aria-pressed="false" title="A light shaft from above, like a shrine (L)">Light shaft</button>
+      <button class="chip" id="wire" aria-pressed="false" title="Show the triangles (W)">Wireframe</button>
+      <button class="chip" id="player" aria-pressed="false" title="A 5.5-stud R15 figure beside it (P)">Player</button>
       <button class="chip" id="reset" title="Reset the camera (F)">Reset view</button>
     </div>
     <div class="stats" id="stats"></div>
@@ -85,13 +89,136 @@ textarea:disabled { color: var(--muted); }
       <button class="btn place" id="place" title="Rate it and put it in Roblox Studio">Place</button>
       <button class="btn next" id="next" title="Send the rating back for a new version (→ to step forward)">Next</button>
     </div>
-    <div class="hint">Drag to orbit · scroll to zoom · ← → step through reviews</div>
+    <div class="hint">Drag to orbit · scroll to zoom · right-drag to pan · ← → step through reviews</div>
   </aside>
 </div>
 <script>
+// The 3D view (three.js): orbit/zoom/pan, auto-rotate, wireframe, an R15-sized figure for scale and an optional
+// light shaft (a spotlight, an additive cone and a floating orb). Roblox imports GLB metres at 0.28 m a stud.
+function makeViewer(el) {
+  const STUD = 0.28, BG = 0x0b0d16;
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  el.append(renderer.domElement);
+  const scene = new THREE.Scene(); scene.fog = new THREE.Fog(BG, 8, 20);
+  const camera = new THREE.PerspectiveCamera(40, 1, 0.01, 100);
+  const controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true; controls.autoRotate = true; controls.autoRotateSpeed = 1.5;
+  controls.minDistance = 0.2; controls.maxDistance = 15; controls.maxPolarAngle = Math.PI * 0.53;
+
+  const hemi = new THREE.HemisphereLight(0x9aa4d0, 0x0a0a0c, 0.9); scene.add(hemi);
+  const key = new THREE.DirectionalLight(0xfff3e6, 1.6); key.position.set(2, 4, -3); key.castShadow = true;
+  key.shadow.mapSize.set(1024, 1024); key.shadow.bias = -0.0005; scene.add(key);
+  const rim = new THREE.DirectionalLight(0x6f8cff, 0.35); rim.position.set(-3, 2, 3); scene.add(rim);
+  const floor = new THREE.Mesh(new THREE.CircleGeometry(10, 64), new THREE.MeshStandardMaterial({ color: 0x141826, roughness: 0.95 }));
+  floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+
+  const beamGroup = new THREE.Group(); beamGroup.visible = false; scene.add(beamGroup);
+  const spot = new THREE.SpotLight(0xfff3dc, 9, 14, 0.22, 0.6, 1.2);
+  spot.castShadow = true; spot.shadow.mapSize.set(1024, 1024); spot.shadow.bias = -0.0005;
+  beamGroup.add(spot, spot.target);
+  const beamMat = new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
+    uniforms: { uTime: { value: 0 } },
+    vertexShader: "varying float vY; varying vec3 vN; varying vec3 vV; void main(){ vY = uv.y; vec4 mv = modelViewMatrix*vec4(position,1.0); vN = normalize(normalMatrix*normal); vV = normalize(-mv.xyz); gl_Position = projectionMatrix*mv; }",
+    fragmentShader: "uniform float uTime; varying float vY; varying vec3 vN; varying vec3 vV; void main(){ float edge = pow(abs(dot(vN, vV)), 1.6); float fade = smoothstep(0.0, 0.25, vY) * smoothstep(1.0, 0.55, vY); float shimmer = 0.85 + 0.15*sin(vY*30.0 - uTime*1.5); gl_FragColor = vec4(vec3(1.0,0.96,0.88) * edge * fade * shimmer * 0.22, 1.0); }"
+  });
+  let beamMesh = null;
+  const glow = (() => {
+    const c = document.createElement("canvas"); c.width = c.height = 128;
+    const g = c.getContext("2d"), r = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+    r.addColorStop(0, "rgba(255,255,255,1)"); r.addColorStop(0.25, "rgba(255,255,255,0.45)"); r.addColorStop(1, "rgba(255,255,255,0)");
+    g.fillStyle = r; g.fillRect(0, 0, 128, 128); return new THREE.CanvasTexture(c);
+  })();
+  const orb = new THREE.Mesh(new THREE.SphereGeometry(0.035, 16, 12), new THREE.MeshBasicMaterial({ color: 0xdfe8ff }));
+  const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glow, color: 0xbcd0ff, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
+  halo.scale.set(0.45, 0.45, 1); orb.add(halo, new THREE.PointLight(0xbcd0ff, 0.8, 3));
+  beamGroup.add(orb);
+
+  const figure = new THREE.Group(); figure.visible = false; scene.add(figure);
+  {
+    const m = new THREE.MeshStandardMaterial({ color: 0x5b5e6b, roughness: 0.8, transparent: true, opacity: 0.85 });
+    const part = (w, h, d, x, y) => { const b = new THREE.Mesh(new THREE.BoxGeometry(w * STUD, h * STUD, d * STUD), m); b.position.set(x * STUD, y * STUD, 0); b.castShadow = true; figure.add(b); };
+    part(0.9, 2, 1, -0.5, 1); part(0.9, 2, 1, 0.5, 1); part(2, 2, 1, 0, 3);
+    part(0.9, 2, 1, -1.5, 3); part(0.9, 2, 1, 1.5, 3); part(1.2, 1.2, 1.2, 0, 4.7);
+  }
+
+  let model = null, src = null, wireOn = false;
+  const size = new THREE.Vector3(1, 1.7, 1), loader = new THREE.GLTFLoader();
+  const eachMat = fn => model && model.traverse(o => { if (o.isMesh) (Array.isArray(o.material) ? o.material : [o.material]).forEach(fn); });
+
+  function frame() {
+    const h = Math.max(size.y, 0.3);
+    controls.target.set(0, h * 0.5, 0);
+    camera.position.set(h * 0.9, h * 0.75, -h * 1.6);  // in front: models face -Z after the glTF axis swap
+    controls.update();
+  }
+  function stage() {  // the shaft, orb, shadows and figure follow the model's size
+    const h = Math.max(size.y, 0.3), top = new THREE.Vector3(0.9 * h, 3.2 * h, -0.4 * h);
+    spot.position.copy(top); spot.target.position.set(0, h * 0.45, 0);
+    if (beamMesh) { beamGroup.remove(beamMesh); beamMesh.geometry.dispose(); }
+    const len = top.length() * 1.05, geo = new THREE.CylinderGeometry(0.06 * h, 0.55 * h, len, 48, 1, true);
+    geo.translate(0, -len / 2, 0);
+    beamMesh = new THREE.Mesh(geo, beamMat); beamMesh.position.copy(top);
+    beamMesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, -1, 0), spot.target.position.clone().sub(top).normalize());
+    beamGroup.add(beamMesh);
+    const s = Math.max(size.x, size.y, size.z) * 1.2;
+    Object.assign(key.shadow.camera, { left: -s, right: s, top: s, bottom: -s }); key.shadow.camera.updateProjectionMatrix();
+    figure.position.set(-(size.x / 2 + 0.6), 0, 0);  // the far side from the camera, so it never blocks the view
+  }
+
+  function resize() {
+    const w = el.clientWidth || 1, h = el.clientHeight || 1;
+    renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+  }
+  new ResizeObserver(resize).observe(el); resize();
+  const still = matchMedia("(prefers-reduced-motion: reduce)").matches, clock = new THREE.Clock();
+  renderer.setAnimationLoop(() => {
+    const t = still ? 0 : clock.getElapsedTime(), h = Math.max(size.y, 0.3);
+    beamMat.uniforms.uTime.value = t;
+    orb.position.set(-0.55 * h + Math.sin(t * 0.6) * 0.08, h * 1.05 + Math.sin(t * 1.3) * 0.05, -0.2 * h + Math.cos(t * 0.6) * 0.08);
+    controls.update(); renderer.render(scene, camera);
+  });
+
+  return {
+    load(url) {
+      if (url === src) return;
+      src = url;
+      loader.load(url, gltf => {
+        if (url !== src) return;  // a newer version was picked while this one loaded
+        if (model) scene.remove(model);
+        model = gltf.scene;
+        model.traverse(o => {
+          if (!o.isMesh) return;
+          o.castShadow = o.receiveShadow = true;
+          (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => {
+            if (m.map) m.map.encoding = THREE.sRGBEncoding;
+            if (m.emissive && m.emissive.getHex()) m.emissiveIntensity = 2.5;
+            m.wireframe = wireOn;
+          });
+        });
+        const box = new THREE.Box3().setFromObject(model), c = box.getCenter(new THREE.Vector3());
+        box.getSize(size);
+        model.position.set(-c.x, -box.min.y, -c.z);
+        scene.add(model); stage(); frame();
+      }, undefined, () => { if (url === src) src = null; });
+    },
+    clear() { if (model) scene.remove(model); model = null; src = null; },
+    reset: frame,
+    spin(on) { controls.autoRotate = on; },
+    beam(on) { beamGroup.visible = on; key.visible = !on; hemi.intensity = on ? 0.35 : 0.9; },
+    wire(on) { wireOn = on; eachMat(m => { m.wireframe = on; }); },
+    player(on) { figure.visible = on; },
+  };
+}
+</script>
+<script>
 const T = new URLSearchParams(location.search).get("t") || "";
 const $ = id => document.getElementById(id);
-const mv = $("mv");
+const mv = makeViewer($("view"));
 let items = [], idx = -1, follow = true, busy = false;
 const drafts = {};  // per item id: {stars, pros, cons}, so polling never wipes what you typed
 let shownKey = "";
@@ -121,7 +248,7 @@ function render(force) {
   $("back").disabled = busy || idx <= 0;
   if (!it) {
     $("empty").hidden = false; $("empty").textContent = "Nothing to review yet. Make, build or revise an asset and it shows up here.";
-    mv.removeAttribute("src"); $("place").disabled = $("next").disabled = true; return;
+    mv.clear(); $("place").disabled = $("next").disabled = true; return;
   }
   const pending = open(it);
   $("place").disabled = busy || !pending;
@@ -136,9 +263,9 @@ function render(force) {
   if (it.has_glb) {
     $("empty").hidden = true;
     const src = `/glb/${it.id}?t=${encodeURIComponent(T)}`;
-    if (mv.getAttribute("src") !== src) mv.setAttribute("src", src);
+    mv.load(src);
   } else {
-    mv.removeAttribute("src"); $("empty").hidden = false;
+    mv.clear(); $("empty").hidden = false;
     $("empty").textContent = "This version has no GLB to show (its export target makes FBX only).";
   }
   const d = it.decision;
@@ -208,14 +335,19 @@ $("next").onclick = () => {
   if (idx < items.length - 1) { idx++; follow = idx === items.length - 1; render(true); }
 };
 $("place").onclick = () => send("place");
-$("spin").onclick = () => { const on = !mv.hasAttribute("auto-rotate"); mv.toggleAttribute("auto-rotate", on); $("spin").setAttribute("aria-pressed", on); };
-$("reset").onclick = () => { mv.cameraOrbit = "auto auto auto"; mv.cameraTarget = "auto auto auto"; mv.fieldOfView = "auto"; };
+for (const [id, fn] of [["spin", mv.spin], ["beam", mv.beam], ["wire", mv.wire], ["player", mv.player]]) {
+  $(id).onclick = () => { const on = $(id).getAttribute("aria-pressed") !== "true"; $(id).setAttribute("aria-pressed", on); fn(on); };
+}
+$("reset").onclick = () => mv.reset();
 document.addEventListener("keydown", e => {
   if (e.target.tagName === "TEXTAREA") return;
   if (e.key === "ArrowLeft") $("back").click();
   else if (e.key === "ArrowRight" && !open(item())) $("next").click();
   else if (e.key === "r" || e.key === "R") $("spin").click();
   else if (e.key === "f" || e.key === "F") $("reset").click();
+  else if (e.key === "l" || e.key === "L") $("beam").click();
+  else if (e.key === "w" || e.key === "W") $("wire").click();
+  else if (e.key === "p" || e.key === "P") $("player").click();
 });
 poll(); setInterval(poll, 1500);
 </script>
