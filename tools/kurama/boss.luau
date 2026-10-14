@@ -143,8 +143,9 @@ function Boss:idlePose(t, pose)
 	mul(pose, "Jaw", turn(F, -U, 0.06 + 0.04 * math.sin(t * 1.7) + 0.08 * cloak))
 	for i, tl in self.tails do
 		for k = 1, 3 do
-			local a = (0.045 + 0.035 * k) * math.sin(t * (2.3 + 0.4 * cloak) - 0.9 * k + 0.8 * i)
-			local b = (0.03 + 0.02 * k) * math.sin(t * 1.6 - 0.7 * k + 1.9 * i)
+			-- a slow sway rippling out to the tip, plus a lazier lift and curl (faster in the cloak)
+			local a = (0.07 + 0.05 * k) * math.sin(t * (1.5 + 0.5 * cloak) - 1.0 * k + 0.8 * i)
+			local b = (0.05 + 0.03 * k) * math.sin(t * 1.1 - 0.8 * k + 1.9 * i)
 			mul(pose, "Tail" .. i .. "_" .. k, CFrame.fromAxisAngle(tl.side, a) * CFrame.fromAxisAngle(tl.slamAxis, b))
 		end
 	end

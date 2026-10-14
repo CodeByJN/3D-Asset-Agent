@@ -68,7 +68,7 @@ def rig_world(R, s, t) -> dict:
     tails = []
     for i in range(rig.TAILS):
         path = rig.tail_path(i)
-        d = _unit(np.subtract(path[12], path[0]))
+        d = _unit(np.subtract(path[len(path) * 2 // 3], path[0]))
         h = np.array([d[0], d[1], 0.0])
         h = _unit(h) if np.linalg.norm(h) > 0.3 else np.array([0.0, 1.0, 0.0])
         aim = _unit(h * math.cos(math.radians(28)) + np.array([0, 0, -1.0]) * math.sin(math.radians(28)))
@@ -143,12 +143,15 @@ local b=Boss.new(m) _G.KuramaPreview.b=b
 %(action)s
 local P=m:GetPivot() local D=b.D
 local F,U,L=P:VectorToWorldSpace(Vector3.new(unpack(D.F))),P:VectorToWorldSpace(Vector3.new(unpack(D.U))),P:VectorToWorldSpace(Vector3.new(unpack(D.L)))
-local look=P.Position+U*%(look_up)s+F*%(look_fwd)s
+local look=%(look_at)s
 local cam=look+(F*%(cf)s+L*%(cl)s+U*%(cu)s)
 return game:GetService('HttpService'):JSONEncode({cam={cam.X,cam.Y,cam.Z},look={look.X,look.Y,look.Z}})"""
 
-VIEWS = {"3q": dict(cf=190, cl=150, cu=40, look_up=60, look_fwd=0), "front": dict(cf=230, cl=0, cu=20, look_up=60, look_fwd=0),
-         "side": dict(cf=0, cl=240, cu=30, look_up=60, look_fwd=0), "wide": dict(cf=330, cl=330, cu=140, look_up=40, look_fwd=200)}
+BODY, AHEAD = "P.Position+U*60", "P.Position+U*40+F*200"
+FACE = "b:point('Skull', Vector3.new(unpack(D.mouth)))+U*6-F*10"  # just behind the nose
+VIEWS = {"3q": dict(cf=190, cl=150, cu=40, look_at=BODY), "front": dict(cf=230, cl=0, cu=20, look_at=BODY),
+         "side": dict(cf=0, cl=240, cu=30, look_at=BODY), "wide": dict(cf=330, cl=330, cu=140, look_at=AHEAD),
+         "face": dict(cf=45, cl=22, cu=4, look_at=FACE), "face_front": dict(cf=50, cl=0, cu=3, look_at=FACE)}
 
 
 def pose(shots, view="3q") -> str:

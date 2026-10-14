@@ -23,8 +23,16 @@ def model_code() -> str:
 
 def build() -> str:
     from asset_agent.make import build_model
+    from asset_agent.asset import Asset
     from asset_agent.server import home
-    line, img = build_model(home() / NAME, model_code(), budget="roblox_boss")
+    root = home() / NAME
+    if (root / "manifest.json").exists():  # no baked AO on the tails: it darkens every joint where segments overlap
+        a = Asset(root)
+        for part, p in a.m["params"]["surface"].items():
+            if part.startswith("Tail"):
+                p["ao"] = 0
+        a._save()
+    line, img = build_model(root, model_code(), budget="roblox_boss")
     return f"{line}\npreview: {img}"
 
 
@@ -38,7 +46,8 @@ if __name__ == "__main__":
     elif cmd == "pose":
         import studio
         args = sys.argv[2:]
-        print(studio.pose([(args[k], float(args[k + 1])) for k in range(0, len(args), 2)]))
+        view = args.pop() if len(args) % 2 else "3q"
+        print(studio.pose([(args[k], float(args[k + 1])) for k in range(0, len(args), 2)], view))
     elif cmd == "play":
         import studio
         a = sys.argv[2:]

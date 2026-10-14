@@ -6,7 +6,7 @@ import math
 TAIL_ROOT = (0.0, 30.0, 52.0)
 TAILS = 9
 TAIL_SEGS = 3
-TAIL_SAMPLES = 19  # points along each tail; segment k spans samples [6k, 6k+6]
+TAIL_SAMPLES = 25  # points along each tail; segment k spans samples [8k, 8k+8]
 
 
 def _add(a, b, k=1.0):
@@ -51,15 +51,15 @@ def tail_path(i):
     back = 0.55 - 0.35 * abs(deg) / 105  # the upright tails lean back over the rump
     p0 = TAIL_ROOT
     p1 = _add(p0, (0, 13, 6))
-    p2 = _add(p1, _fan(deg * 0.85 - side * wig * 0.6, back), 32)
-    p3 = _add(p2, _fan(deg + side * wig * 0.5, back * 0.5), 32)
-    p4 = _add(p3, _fan(deg + side * 45, -0.2 if abs(deg) < 60 else 0.1), 26)
+    p2 = _add(p1, _fan(deg * 0.85 - side * wig * 0.6, back), 44)
+    p3 = _add(p2, _fan(deg + side * wig * 0.5, back * 0.5), 44)
+    p4 = _add(p3, _fan(deg + side * 45, -0.2 if abs(deg) < 60 else 0.1), 36)
     return _catmull([p0, p1, p2, p3, p4], TAIL_SAMPLES)
 
 
 def tail_radius(s):
     """Tail thickness at s in [0, 1]: slim at the rump, a fat brush, pointed tip."""
-    keys = [(0, 5.0), (0.15, 8.5), (0.45, 12.5), (0.75, 10.5), (0.92, 5.0), (1.0, 0.0)]
+    keys = [(0, 3.8), (0.12, 5.2), (0.5, 6.3), (0.8, 5.2), (0.94, 2.8), (1.0, 0.0)]
     for (s0, r0), (s1, r1) in zip(keys, keys[1:]):
         if s <= s1:
             t = (s - s0) / (s1 - s0)
