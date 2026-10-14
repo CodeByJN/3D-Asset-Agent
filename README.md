@@ -99,11 +99,24 @@ avoided, and writes `HANDOFF.md` so a new chat carries on where the last one sto
   figure for scale, and its effects playing: particles and lights, approximated in the browser) and the grade: 1-10 stars,
   pros and cons, and
   - **Back** / **Next ›**: step through what you reviewed before;
-  - **Place**: records the rating, uploads the model if it changed and puts it in the open Studio place;
+  - **Place**: records the rating and builds the model, with its effects, in the open Studio place;
   - **Next**: records the rating and sends it back, so Claude makes the next version from your note.
   `review` waits for that choice, so you never type the grade in chat. `ASSET_AGENT_REVIEW_PORT` changes the
   port (8765).
 - `studio`: puts an asset, character, animation or lighting preset (`lighting:shader_night`) into the open place.
+
+### Getting assets into your game
+
+Everything goes in through Roblox Studio's own MCP server: Studio must be open with **Enable Studio as MCP server**
+on, and that's all. `studio(name)` (or **Place** in the review window) sends the model to Studio and **builds it
+there live**, as EditableMeshes with EditableImage textures, plus its effects, next to the camera or in place of the
+old copy. **No Roblox account setup, API key or upload.** Characters and VFX meshes arrive the same way.
+
+Live-built meshes aren't saved in the place file: they're there for building and testing in the open session, and
+`studio(name)` rebuilds one in a second. To keep them in a published game, turn uploads on once
+(`python -m asset_agent roblox --upload on`, with an [Open Cloud API key](https://create.roblox.com/dashboard/credentials)
+that has **Assets** read+write and your IP allowed, pasted at the prompt of `roblox --key -`): `studio(name)` then
+uploads the mesh to your account and inserts it. If an upload fails it falls back to the live build and says why.
 - `preview`: geometry, topology, colour and texture breakdowns, or the model in Studio from four angles next to
   your references.
 - `plan`, `rate`, `library`: projects, grades and search. `plan(project, references=["https://game.fandom.com/wiki/Auras"])`

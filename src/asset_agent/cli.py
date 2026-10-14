@@ -57,7 +57,8 @@ def main(argv=None):
     s = sub.add_parser("connect", help="use a shape server on another machine")
     s.add_argument("url", help="e.g. http://192.168.1.50:8080")
     s.add_argument("--key", help="printed by `asset-agent serve --remote`")
-    s = sub.add_parser("roblox", help="save Roblox Open Cloud credentials for sending assets to Studio")
+    s = sub.add_parser("roblox", help="optional: upload assets to Roblox (Open Cloud) so they save with the place")
+    s.add_argument("--upload", choices=["on", "off"], help="on: studio() uploads and inserts assets; off (default): builds them live")
     s.add_argument("--user", help="your Roblox user id (the number in your profile URL)")
     s.add_argument("--group", help="upload to a group instead (group id)")
     s.add_argument("--key", help="Open Cloud API key with Assets read+write ('-' or left out: asked for at a prompt)")
@@ -87,7 +88,7 @@ def main(argv=None):
             print(connect(a.url, a.key))
         elif a.cmd == "roblox":
             key = a.key
-            if key is None and not config.load().get("roblox_key") or key == "-":  # asked for: no shell quoting to mangle it
+            if key is None and not config.load().get("roblox_key") and a.upload != "off" or key == "-":  # asked for: no shell quoting to mangle it
                 import getpass
                 key = getpass.getpass("Open Cloud API key (paste it, then Enter; it stays hidden): ")
             if key is not None:
@@ -98,8 +99,11 @@ def main(argv=None):
                           "run `python -m asset_agent roblox --key -` and paste it at the prompt", file=sys.stderr)
                     return 1
             kv = {k: v for k, v in (("roblox_user", a.user), ("roblox_group", a.group), ("roblox_key", key)) if v}
+            if a.upload:
+                kv["roblox_upload"] = True if a.upload == "on" else None
             c = config.save(**kv)
-            print(f"roblox: user={c.get('roblox_user')} group={c.get('roblox_group')} "
+            print(f"roblox: upload={'on' if c.get('roblox_upload') else 'off (studio() builds assets live)'} "
+                  f"user={c.get('roblox_user')} group={c.get('roblox_group')} "
                   f"key={'set' if c.get('roblox_key') else 'missing'} -> {config.path()}")
     except gpu.SetupError as e:
         print(f"error: {e}", file=sys.stderr)

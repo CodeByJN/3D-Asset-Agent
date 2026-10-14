@@ -492,11 +492,25 @@ class Asset:
         return status, rb["asset_id"], rev
 
     def to_studio(self) -> tuple[str, str]:
-        """Upload if changed, then write the Studio script that places the asset and adds its effects.
-        Returns (one-line status, Luau script)."""
-        from . import roblox
+        """The Studio script that places the asset and adds its effects. Returns (one-line status, Luau).
+
+        The default is a live build: the model is sent to Studio through its MCP and built there as
+        EditableMeshes, like characters and VFX, so no Roblox account, API key or upload is involved.
+        Those meshes aren't saved with the place file; `asset-agent roblox --upload on` switches to
+        uploading (Open Cloud) and inserting the asset, which is saved (falls back to live on failure)."""
+        from . import config, roblox
         name = self.m["name"]
-        status, _, rev = self.upload()
+
+        def live(why: str):
+            script = roblox.live_script(name, f"v{self.m['version']}", self.studio_mesh(), self.effects, self.glow())
+            (self.root / "studio.luau").write_text(script)
+            return f"live build ({why}) | effects: {vfx.describe(self.effects)}", script
+        if not config.load().get("roblox_upload"):
+            return live("no upload")
+        try:
+            status, _, rev = self.upload()
+        except roblox.RobloxError as e:
+            return live("upload failed: " + " ".join(str(e).split())[:110])
         rb = self.m["roblox"]
         script = roblox.studio_script(name, rb["asset_id"], rev, self.effects, self.glow())
         (self.root / "studio.luau").write_text(script)
@@ -505,6 +519,23 @@ class Asset:
     def glow(self) -> dict[str, list[float]]:
         """Emissive parts (named glow*) and their colours: Neon in Roblox."""
         return {p: self.finish["parts"].get(p, {}).get("tint", [1, 1, 1]) for p in self.m["parts"] if p.startswith("glow")}
+
+    def studio_mesh(self, v: int | None = None, tex_size: int = 256) -> dict:
+        """Version v's export as data Studio builds without an upload (studio() without Roblox upload),
+        with each part's texture packed for transport. Made once per version (export/versions/v<N>/studio/)."""
+        v = v or self.m["version"]
+        glb = self.path(f"export/versions/v{v}/{self.m['name']}.glb")
+        if not glb.exists():
+            raise FileNotFoundError(f"no GLB for {self.m['name']} v{v} (export target {self.m['params']['export'].get('target')})")
+        out = glb.parent / "studio" / "mesh.json"
+        mesh = json.loads(out.read_text()) if out.exists() else {}
+        if mesh.get("units") != "studs":  # missing, or made in metres by an older harness
+            run_steps([{"op": "studio_mesh", "glb": str(glb), "out": str(out), "tex_size": tex_size}])
+            mesh = json.loads(out.read_text())
+        for d in mesh["parts"].values():
+            if d.get("tex"):
+                d["tex_data"] = vfx.image_data(out.parent / d["tex"], tex_size)
+        return mesh
 
     def params_snapshot(self) -> dict:
         """The settings ratings learn from (first part for per-part ones)."""

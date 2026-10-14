@@ -267,8 +267,8 @@ def _rate(name: str, stars: int, note: str = "") -> str:
 
 @server.tool(structured_output=False)
 def studio(name: str, on: str | None = None) -> str:
-    """Upload the asset to your Roblox account (only if its model changed) and put it in the open
-    Studio place, replacing the old copy, with its effects. R15 characters become a rigged character.
+    """Put the asset in the open Studio place, replacing the old copy, with its effects: built live,
+    no upload or key (not saved with the place). R15 characters become a rigged character.
     Animations play on a test dummy, or on character `on`. name 'lighting[:preset]': shader lighting."""
     try:
         return _place(name, on)

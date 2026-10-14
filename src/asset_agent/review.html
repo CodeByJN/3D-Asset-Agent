@@ -452,7 +452,7 @@ function render(force) {
   $("pros").disabled = $("cons").disabled = !pending;
   document.querySelectorAll(".star").forEach(b => b.disabled = !pending);
   if (it.error) setStatus(it.error, "err");
-  else if (it.placing) setStatus("Placing in Studio: uploading if the model changed…");
+  else if (it.placing) setStatus("Placing in Studio…");
   else if (d && d.action === "next" && it.current) setStatus("Rating sent. Claude is making the next version; it opens here when it's ready.");
   else if (d && d.result) setStatus(d.result, "ok");
   else if (!d) setStatus("");

@@ -114,6 +114,45 @@ local n=0 for tag,e in FX do play(build(h,tag,e.nodes)) n+=1 end
 return (loaded and 'loaded ' or 'kept model, ')..NAME..' with '..n..' effect(s)'"""
 
 
+def live_script(name: str, revision: str, mesh: dict, effects: dict, glow: dict | None = None) -> str:
+    """Like studio_script, but the model is built in Studio from `mesh` (Asset.studio_mesh: EditableMeshes
+    and EditableImages), so nothing is uploaded. Those meshes aren't saved with the place file."""
+    inline, meshes = {}, {}
+    fx = {n: {"nodes": vfx.resolve_textures(e["nodes"], inline=inline, meshes=meshes), "mode": e["mode"]}
+          for n, e in vfx.resolve(effects).items()}
+    parts = {}
+    for part, d in mesh["parts"].items():
+        key = f"{name}/{revision}/{part}"
+        meshes[key] = {"v": d["v"], "f": d["f"], "uv": d["uv"]}
+        if d.get("tex_data"):
+            inline[key] = d["tex_data"]
+        parts[part] = {"mesh": key, "tex": key if d.get("tex_data") else None, "c": d["c"], "color": d["color"]}
+    return luau.BUILD + f"""setTextures(HS:JSONDecode({luau.data(inline)}))
+setMeshes(HS:JSONDecode({luau.data(meshes)}))
+local AS=game:GetService('AssetService')
+local NAME,REV,FX='{name}','{revision}',HS:JSONDecode({luau.data(fx)})
+local P,GLOW=HS:JSONDecode({luau.data(parts)}),HS:JSONDecode({luau.data(glow or {})})
+local old=workspace:FindFirstChild(NAME)
+local n=Instance.new('Model') n.Name=NAME n:SetAttribute('AssetAgentRev',REV) n:SetAttribute('AssetAgentLive',true)
+local big,h=0,nil
+for part,d in P do
+ local mp=AS:CreateMeshPartAsync(meshContent(d.mesh),{{CollisionFidelity=Enum.CollisionFidelity.Box}})
+ mp.Name=part mp.Anchored=true mp.CFrame=CFrame.new(d.c[1],d.c[2],d.c[3])
+ mp.Material=Enum.Material.SmoothPlastic mp.Color=Color3.new(d.color[1],d.color[2],d.color[3])
+ if d.tex then local c=tex(d.tex) if c then mp.TextureContent=c end end
+ local g=GLOW[part] if g then mp.Material=Enum.Material.Neon mp.Color=Color3.new(g[1],g[2],g[3]) mp.TextureContent=Content.none end
+ mp.Parent=n
+ local vol=mp.Size.X*mp.Size.Y*mp.Size.Z if vol>big then big,h=vol,mp end
+end
+n.PrimaryPart=h
+if old then n:PivotTo(old:GetPivot()) old:Destroy() else
+ local cf=workspace.CurrentCamera.CFrame local at=cf.Position+cf.LookVector*20
+ local bc,bs=n:GetBoundingBox() n:PivotTo(n:GetPivot()+(Vector3.new(at.X,bs.Y/2,at.Z)-bc.Position)) end
+n.Parent=workspace
+local k=0 for tag,e in FX do play(build(h,tag,e.nodes)) k+=1 end
+return 'built '..NAME..' live in Studio with '..k..' effect(s) (not uploaded: it will not be saved with the place)'"""
+
+
 # ---------------------------------------------------------------- VFX lab and import
 
 LAB_AT = (0, 200, 600)  # out of the way of the game: a floating stage above the map

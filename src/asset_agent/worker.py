@@ -871,6 +871,65 @@ def op_validate(s):
     return validate([o], s["budget"])
 
 
+def op_studio_mesh(s):
+    """An exported GLB as data Studio builds without an upload (placing it live): per part
+    {c: centre, size, v: [x,y,z..] around c, f: [a,b,c..] 0-based, uv: [u,v..], color, tex: png name}.
+    Roblox axes (x = -x, y = z, z = y; GLB metres -> studs); uv v flipped (Roblox images start top-left). One vertex
+    per (corner, uv) so seams keep their UVs; textures saved next to `out`, at most tex_size px."""
+    sys.path.insert(0, str(Path(__file__).parent))
+    import kit
+    bpy.ops.import_scene.gltf(filepath=s["glb"])
+    out = Path(s["out"])
+    out.parent.mkdir(parents=True, exist_ok=True)
+    parts = {}
+    for o in [o for o in bpy.data.objects if o.type == "MESH"]:
+        me = o.data
+        me.transform(Matrix.Scale(1 / kit.STUD, 4) @ o.matrix_world)
+        bm = bmesh.new()
+        bm.from_mesh(me)
+        bmesh.ops.triangulate(bm, faces=bm.faces[:])
+        uvl = bm.loops.layers.uv.active
+        verts, uvs, faces, index = [], [], [], {}
+        for f in bm.faces:
+            tri = []
+            for loop in f.loops:
+                u = tuple(loop[uvl].uv) if uvl else (0.0, 0.0)
+                key = (loop.vert.index, round(u[0], 4), round(u[1], 4))
+                if key not in index:
+                    co = loop.vert.co
+                    index[key] = len(verts)
+                    verts.append((-co.x, co.z, co.y))
+                    uvs.append((u[0], 1 - u[1]))
+                tri.append(index[key])
+            faces.append(tri)  # the axis swap is a rotation (det +1): winding stays as it is, like rig_mesh
+        bm.free()
+        if not faces:
+            continue
+        lo = [min(p[i] for p in verts) for i in range(3)]
+        hi = [max(p[i] for p in verts) for i in range(3)]
+        c = [(a + b) / 2 for a, b in zip(lo, hi)]
+        part = {"c": [rnd(x) for x in c], "size": [rnd(max(b - a, 0.05)) for a, b in zip(lo, hi)],
+                "v": [round(p[i] - c[i], 3) for p in verts for i in range(3)], "f": [i for t in faces for i in t],
+                "uv": [round(x, 4) for p in uvs for x in p], "color": [0.8, 0.8, 0.8], "tex": None}
+        mat = me.materials[0] if me.materials else None
+        bsdf = mat and mat.node_tree and next((n for n in mat.node_tree.nodes if n.type == "BSDF_PRINCIPLED"), None)
+        if bsdf:
+            part["color"] = [rnd(x) for x in bsdf.inputs["Base Color"].default_value[:3]]
+        img = next((n.image for _, n in image_nodes(o)), None)
+        if img and img.size[0]:
+            n = min(s.get("tex_size", 256), img.size[0])
+            img = img.copy()
+            img.scale(n, n)
+            img.filepath_raw = str(out.parent / f"{o.name}.png")
+            img.file_format = "PNG"
+            img.save()
+            part["tex"] = f"{o.name}.png"
+            part["color"] = [1, 1, 1]  # the texture carries the colour
+        parts[o.name] = part
+    out.write_text(json.dumps({"units": "studs", "parts": parts}, separators=(",", ":")))
+    return {"parts": len(parts), "tris": sum(len(p["f"]) // 3 for p in parts.values())}
+
+
 OPS = {k[3:]: v for k, v in globals().items() if k.startswith("op_")}
 
 

@@ -80,6 +80,8 @@ def test_vfx_only_change_touches_nothing_else(fixtures, tmp_path, monkeypatch): 
     a = Asset.create(tmp_path / "torch", {"body": fixtures / "body.glb"}, max_tris=800, tex_size=128)
     a.build()
     uploads = []
+    monkeypatch.setenv("ASSET_AGENT_CONFIG", str(tmp_path / "config.json"))
+    (tmp_path / "config.json").write_text('{"roblox_upload": true}')  # uploads are opt-in; live builds are the default
     monkeypatch.setattr(roblox, "upload", lambda fbx, name, asset_id=None: uploads.append(asset_id) or "777")
     line, script = a.to_studio()
     assert line.startswith("asset 777 created") and "LoadAsset(ID)" in script and uploads == [None]

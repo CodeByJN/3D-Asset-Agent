@@ -96,7 +96,7 @@ def note(pros: str = "", cons: str = "") -> str:
 def decide(home, item_id: int, action: str, stars: int | None = None, pros: str = "", cons: str = "",
            background: bool = False) -> dict:
     """What the Place and Next buttons do. Returns {ok, line} or {ok: False, error}. background: Place
-    (an upload, then Studio) runs on its own thread; the item shows `placing`, then its decision or
+    (building it in Studio, or an upload) runs on its own thread; the item shows `placing`, then its decision or
     `error`, so the page never waits on a long request."""
     b = board(home)
     with _cv:

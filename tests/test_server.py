@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from asset_agent import Asset, server
-from asset_agent.blender import find_blender
+from asset_agent.blender import find_blender, run_steps
 
 from .test_pipeline import HERE
 
@@ -137,6 +137,25 @@ def test_review_asks_again_for_a_reviewed_version(home, monkeypatch):
     threading.Timer(0.5, review.decide, (home, item["id"], "next", 7, "", "lid too thin")).start()
     out = text(call("review", name="crate"))
     assert out.startswith(f"next: crate v{v} rated 7/10 (cons: lid too thin)"), out
+
+
+def test_place_without_upload_builds_it_live(home, monkeypatch, tmp_path):
+    from asset_agent import config
+    monkeypatch.setenv("ASSET_AGENT_CONFIG", str(tmp_path / "none.json"))  # no Roblox key saved
+    for k in ("ROBLOX_API_KEY", "ROBLOX_USER_ID", "ROBLOX_GROUP_ID"):
+        monkeypatch.delenv(k, raising=False)
+    assert not config.load()
+    a = Asset(home / "crate")
+    line, script = a.to_studio()
+    assert line.startswith("live build (no upload)"), line
+    assert "AssetAgentLive" in script and f"crate/v{a.m['version']}/body" in script
+    config.save(roblox_upload=True)  # uploads on, but no key: falls back to the live build and says why
+    line, script = a.to_studio()
+    assert line.startswith("live build (upload failed: Roblox upload isn't set up") and "AssetAgentLive" in script, line
+    mesh = a.studio_mesh()
+    tallest = max(d["c"][1] + d["size"][1] / 2 for d in mesh["parts"].values()) -         min(d["c"][1] - d["size"][1] / 2 for d in mesh["parts"].values())
+    lo, hi = run_steps([{"op": "measure", "src": str(a.path(a.cur("export")["files"]["main"]))}])[0]["stats"]["bbox"]
+    assert abs(tallest - (hi[2] - lo[2]) / 0.28) < 0.05, "the live mesh is in studs (0.28 m), the GLB in metres"
 
 
 def test_lighting_presets():
