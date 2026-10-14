@@ -72,16 +72,17 @@ def url() -> str:
         return f"http://127.0.0.1:{_httpd.server_address[1]}/?t={TOKEN}"
 
 
-def add(home, name: str, v: int, glb: Path | None, line: str, kind: str = "model") -> str:
+def add(home, name: str, v: int, glb: Path | None, line: str, kind: str = "model", fx: dict | None = None) -> str:
     """Queue version v of an asset for review (once; again after its review went back to Claude, so
-    reviewing an unchanged version asks the user again). Returns the page's address."""
+    reviewing an unchanged version asks the user again). fx: its effects (vfx.resolve), which the
+    page plays around the model. Returns the page's address."""
     b = board(home)
     with _cv:
         last = b.latest(name)
         if not (last and last["v"] == v and not (last["decision"] or {}).get("delivered")):
             b.items.append({"id": max((i["id"] for i in b.items), default=0) + 1, "name": name, "v": v,
                             "kind": kind, "glb": str(glb) if glb and Path(glb).exists() else None,
-                            "line": line, "added": time.time(), "decision": None})
+                            "line": line, "added": time.time(), "decision": None, "fx": fx or {}})
             b.save()
             _cv.notify_all()
     return url()
@@ -186,8 +187,9 @@ def state(b: Board) -> dict:
     latest = {}
     for i in b.items:
         latest[i["name"]] = i["id"]
-    return {"items": [{k: v for k, v in i.items() if k not in ("glb", "rated")} |
-                      {"has_glb": bool(i["glb"]), "current": latest[i["name"]] == i["id"]} for i in b.items]}
+    return {"items": [{k: v for k, v in i.items() if k not in ("glb", "rated", "fx")} |
+                      {"has_glb": bool(i["glb"]), "has_fx": bool(i.get("fx")), "current": latest[i["name"]] == i["id"]}
+                      for i in b.items]}
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -232,6 +234,10 @@ class Handler(BaseHTTPRequestHandler):
             if item and item["glb"] and Path(item["glb"]).exists():
                 return self._send(200, Path(item["glb"]).read_bytes(), "model/gltf-binary")
             return self._send(404, b"no model", "text/plain")
+        if u.path.startswith("/fx/"):
+            with _cv:
+                item = _board.get(int(u.path[4:])) if u.path[4:].isdigit() else None
+            return self._json(200, (item or {}).get("fx") or {})
         self._send(404, b"not found", "text/plain")
 
     def do_POST(self):

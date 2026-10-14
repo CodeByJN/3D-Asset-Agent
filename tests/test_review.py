@@ -55,6 +55,16 @@ def test_queue_page_and_model_are_served(board):
     assert json.loads((home / "_review" / "queue.json").read_text())["items"][0]["line"] == "ok tris=900/1500"
 
 
+def test_effects_are_served_for_the_viewer(board):
+    home, glb, _ = board
+    fx = {"aura": {"type": "legendary_blade", "nodes": [{"class": "PointLight", "props": {"Range": 9}}]}}
+    url = review.add(home, "crate", 1, glb, "ok", fx=fx)
+    item = json.loads(http(url, "/state")[1])["items"][0]
+    assert item["has_fx"] and "fx" not in item  # the poll stays small; the page fetches effects once
+    assert json.loads(http(url, f"/fx/{item['id']}")[1]) == fx
+    assert json.loads(http(url, "/fx/99")[1]) == {}
+
+
 def test_next_records_the_rating_then_returns_it_to_the_waiting_tool(board):
     home, glb, calls = board
     url = review.add(home, "crate", 1, glb, "ok")

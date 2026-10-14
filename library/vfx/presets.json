@@ -58243,5 +58243,303 @@
   ],
   "score": 7,
   "note": "v5 good enough; still short of the wiki's next-level quality"
+ },
+ "legendary_blade": {
+  "tags": [
+   "sword",
+   "weapon",
+   "legendary",
+   "holy",
+   "light",
+   "subtle"
+  ],
+  "use": "a legendary blade: gold motes drifting up the blade, slow star glints, a soft warm haze and light",
+  "sketch": "sparkles",
+  "mode": "loop",
+  "source": {
+   "kind": "original",
+   "by": "claude",
+   "set": "master-sword-2026-10-14"
+  },
+  "nodes": [
+   {
+    "class": "Part",
+    "name": "BladeAura",
+    "props": {
+     "CFrame": {
+      "cf": [
+       0,
+       -0.05,
+       0,
+       0,
+       0,
+       0
+      ]
+     },
+     "Size": {
+      "v3": [
+       0.7,
+       2.5,
+       0.25
+      ]
+     },
+     "Transparency": 1
+    },
+    "children": [
+     {
+      "class": "ParticleEmitter",
+      "name": "Motes",
+      "props": {
+       "Texture": "rbxasset://textures/particles/sparkles_main.dds",
+       "LightEmission": 1,
+       "Color": {
+        "cs": [
+         [
+          0,
+          1,
+          0.95,
+          0.75
+         ],
+         [
+          1,
+          1,
+          0.8,
+          0.35
+         ]
+        ]
+       },
+       "Size": {
+        "ns": [
+         [
+          0,
+          0
+         ],
+         [
+          0.2,
+          0.22
+         ],
+         [
+          1,
+          0
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0.1
+         ],
+         [
+          0.7,
+          0.3
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "Lifetime": {
+        "nr": [
+         1.4,
+         2.2
+        ]
+       },
+       "Speed": {
+        "nr": [
+         0.2,
+         0.5
+        ]
+       },
+       "Rate": 14,
+       "SpreadAngle": {
+        "v2": [
+         25,
+         25
+        ]
+       },
+       "Acceleration": {
+        "v3": [
+         0,
+         0.5,
+         0
+        ]
+       },
+       "Drag": 0.5,
+       "Rotation": {
+        "nr": [
+         0,
+         360
+        ]
+       },
+       "RotSpeed": {
+        "nr": [
+         -40,
+         40
+        ]
+       }
+      }
+     },
+     {
+      "class": "ParticleEmitter",
+      "name": "Glints",
+      "props": {
+       "Texture": "rbxasset://textures/particles/sparkles_main.dds",
+       "LightEmission": 1,
+       "Color": {
+        "cs": [
+         [
+          0,
+          1,
+          1,
+          0.95
+         ],
+         [
+          1,
+          1,
+          0.92,
+          0.7
+         ]
+        ]
+       },
+       "Size": {
+        "ns": [
+         [
+          0,
+          0
+         ],
+         [
+          0.35,
+          0.8
+         ],
+         [
+          1,
+          0
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0
+         ],
+         [
+          1,
+          0.6
+         ]
+        ]
+       },
+       "Lifetime": {
+        "nr": [
+         0.5,
+         0.8
+        ]
+       },
+       "Speed": {
+        "nr": [
+         0,
+         0
+        ]
+       },
+       "Rate": 1.5,
+       "Rotation": {
+        "nr": [
+         0,
+         90
+        ]
+       },
+       "RotSpeed": {
+        "nr": [
+         60,
+         120
+        ]
+       }
+      }
+     },
+     {
+      "class": "ParticleEmitter",
+      "name": "Haze",
+      "props": {
+       "Texture": "rbxasset://textures/particles/forcefield_glow_main.dds",
+       "LightEmission": 1,
+       "Color": {
+        "cs": [
+         [
+          0,
+          1,
+          0.93,
+          0.7
+         ],
+         [
+          1,
+          1,
+          0.85,
+          0.5
+         ]
+        ]
+       },
+       "Size": {
+        "ns": [
+         [
+          0,
+          0.9
+         ],
+         [
+          1,
+          1.4
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          1
+         ],
+         [
+          0.4,
+          0.82
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "Lifetime": {
+        "nr": [
+         1.8,
+         2.6
+        ]
+       },
+       "Speed": {
+        "nr": [
+         0.05,
+         0.15
+        ]
+       },
+       "Rate": 3
+      }
+     }
+    ]
+   },
+   {
+    "class": "PointLight",
+    "name": "Light",
+    "props": {
+     "Color": {
+      "c3": [
+       1,
+       0.88,
+       0.6
+      ]
+     },
+     "Range": 9,
+     "Brightness": 1.2
+    }
+   }
+  ]
  }
 }

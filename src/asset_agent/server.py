@@ -48,7 +48,7 @@ def _queue(name: str, line: str) -> str:
         a = _asset(name)
         v = a.m["version"]
         glb = a.root / "export" / "versions" / f"v{v}" / f"{name}.glb"
-        return f"{line} | review: {review_board.add(home(), name, v, glb, a.summary())}"
+        return f"{line} | review: {review_board.add(home(), name, v, glb, a.summary(), fx=vfx.resolve(a.effects))}"
     except Exception as e:  # the review window never breaks making the asset
         return f"{line} | review unavailable: {type(e).__name__}: {e}"[:400]
 

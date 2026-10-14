@@ -68,6 +68,7 @@ textarea:disabled { color: var(--muted); }
     <div class="hud"><h1 id="name">Asset Review</h1><span class="ver" id="ver"></span><span class="count" id="count"></span></div>
     <div class="tools">
       <button class="chip" id="spin" aria-pressed="true" title="Auto-rotate (R)">Rotate</button>
+      <button class="chip" id="fx" aria-pressed="true" title="Play the asset's effects (E)">Effects</button>
       <button class="chip" id="beam" aria-pressed="false" title="A light shaft from above, like a shrine (L)">Light shaft</button>
       <button class="chip" id="wire" aria-pressed="false" title="Show the triangles (W)">Wireframe</button>
       <button class="chip" id="player" aria-pressed="false" title="A 5.5-stud R15 figure beside it (P)">Player</button>
@@ -171,23 +172,184 @@ function makeViewer(el) {
     figure.position.set(-(size.x / 2 + 0.6), 0, 0);  // the far side from the camera, so it never blocks the view
   }
 
+
+  // ---- effects: the asset's VFX presets (vfx.resolve node trees), played approximately in three.js.
+  // ParticleEmitters (in a Part they fill its volume), PointLights and SpotLights; Roblox studs and axes
+  // (x right, y up, -z front) become metres with x and z flipped, like the GLB. Beams and trails aren't drawn.
+  const fxGroup = new THREE.Group(); scene.add(fxGroup);
+  let emitters = [], pxScale = 1;
+  const sprites = {};
+  function spriteTex(kind) {
+    if (sprites[kind]) return sprites[kind];
+    const c = document.createElement("canvas"); c.width = c.height = 128;
+    const g = c.getContext("2d");
+    const r = g.createRadialGradient(64, 64, 0, 64, 64, kind === "star" ? 26 : 64);
+    r.addColorStop(0, "rgba(255,255,255,1)"); r.addColorStop(kind === "star" ? 0.35 : 0.3, "rgba(255,255,255,0.5)"); r.addColorStop(1, "rgba(255,255,255,0)");
+    g.fillStyle = r; g.fillRect(0, 0, 128, 128);
+    if (kind === "star") {  // four thin rays, like Roblox's sparkles
+      g.globalCompositeOperation = "lighter";
+      for (const [w, h] of [[128, 7], [7, 128]]) {
+        const lg = w > h ? g.createLinearGradient(0, 0, 128, 0) : g.createLinearGradient(0, 0, 0, 128);
+        lg.addColorStop(0, "rgba(255,255,255,0)"); lg.addColorStop(0.5, "rgba(255,255,255,1)"); lg.addColorStop(1, "rgba(255,255,255,0)");
+        g.fillStyle = lg; g.fillRect(64 - w / 2, 64 - h / 2, w, h);
+      }
+    }
+    return (sprites[kind] = new THREE.CanvasTexture(c));
+  }
+  const toV = (x, y, z) => new THREE.Vector3(-x, y, -z);  // Roblox axes -> these
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  const num = (v, d) => v == null ? d : typeof v === "number" ? v : v.nr ? rnd(v.nr[0], v.nr[1]) : d;
+  const maxOf = (v, d) => v == null ? d : typeof v === "number" ? v : v.nr ? v.nr[1] : d;
+  function seq(v, d) {  // NumberSequence {ns: [[t, value], ...]} -> f(t)
+    if (v == null) return () => d;
+    if (typeof v === "number") return () => v;
+    const k = v.ns || [[0, d], [1, d]];
+    return t => {
+      for (let i = 1; i < k.length; i++) if (t <= k[i][0]) {
+        const a = k[i - 1], b = k[i], u = (t - a[0]) / Math.max(b[0] - a[0], 1e-6);
+        return a[1] + (b[1] - a[1]) * u;
+      }
+      return k[k.length - 1][1];
+    };
+  }
+  function cseq(v) {  // ColorSequence {cs: [[t, r, g, b], ...]} or Color3 {c3: [r, g, b]} -> f(t) [r, g, b]
+    if (!v) return () => [1, 1, 1];
+    if (v.c3) return () => v.c3;
+    const k = v.cs;
+    return t => {
+      for (let i = 1; i < k.length; i++) if (t <= k[i][0]) {
+        const a = k[i - 1], b = k[i], u = (t - a[0]) / Math.max(b[0] - a[0], 1e-6);
+        return [1, 2, 3].map(j => a[j] + (b[j] - a[j]) * u);
+      }
+      const e = k[k.length - 1]; return [e[1], e[2], e[3]];
+    };
+  }
+  const DIRS = { Top: [0, 1, 0], Bottom: [0, -1, 0], Right: [1, 0, 0], Left: [-1, 0, 0], Front: [0, 0, -1], Back: [0, 0, 1] };
+  const pointsMat = (tex, additive) => new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, blending: additive ? THREE.AdditiveBlending : THREE.NormalBlending,
+    uniforms: { uTex: { value: tex }, uScale: { value: 1 } },
+    vertexShader: "attribute float aSize; attribute float aAlpha; attribute float aRot; attribute vec3 aColor; uniform float uScale; varying float vAlpha; varying float vRot; varying vec3 vColor; void main(){ vAlpha = aAlpha; vRot = aRot; vColor = aColor; vec4 mv = modelViewMatrix*vec4(position,1.0); gl_PointSize = aSize * uScale / max(-mv.z, 0.01); gl_Position = projectionMatrix*mv; }",
+    fragmentShader: "uniform sampler2D uTex; varying float vAlpha; varying float vRot; varying vec3 vColor; void main(){ vec2 p = gl_PointCoord - 0.5; float c = cos(vRot), s = sin(vRot); p = vec2(c*p.x - s*p.y, s*p.x + c*p.y) + 0.5; vec4 t = texture2D(uTex, p); if (vAlpha <= 0.0) discard; gl_FragColor = vec4(vColor * t.rgb, t.a * vAlpha); }"
+  });
+
+  class Emitter {
+    constructor(p, frame) {
+      this.p = p; this.frame = frame;
+      this.rate = num(p.Rate, 5);
+      const life = maxOf(p.Lifetime, 1);
+      this.max = Math.min(3000, Math.ceil(this.rate * life * 1.3) + 4);
+      this.size = seq(p.Size, 1); this.trans = seq(p.Transparency, 0); this.color = cseq(p.Color);
+      const dir = DIRS[((p.EmissionDirection || {}).enum || "NormalId.Top").split(".")[1]] || DIRS.Top;
+      this.dir = toV(...dir).normalize();
+      const a = (p.Acceleration || {}).v3 || [0, 0, 0];
+      this.accel = toV(...a).multiplyScalar(STUD);
+      const sp = (p.SpreadAngle || {}).v2 || [0, 0];
+      this.spread = [sp[0] * Math.PI / 180, sp[1] * Math.PI / 180];
+      this.drag = num(p.Drag, 0);
+      this.parts = [];
+      for (let i = 0; i < this.max; i++) this.parts.push({ alive: false, pos: new THREE.Vector3(), vel: new THREE.Vector3() });
+      const g = new THREE.BufferGeometry();
+      this.posA = new Float32Array(this.max * 3); this.colA = new Float32Array(this.max * 3);
+      this.sizeA = new Float32Array(this.max); this.alphaA = new Float32Array(this.max); this.rotA = new Float32Array(this.max);
+      g.setAttribute("position", new THREE.BufferAttribute(this.posA, 3));
+      g.setAttribute("aColor", new THREE.BufferAttribute(this.colA, 3));
+      g.setAttribute("aSize", new THREE.BufferAttribute(this.sizeA, 1));
+      g.setAttribute("aAlpha", new THREE.BufferAttribute(this.alphaA, 1));
+      g.setAttribute("aRot", new THREE.BufferAttribute(this.rotA, 1));
+      this.geo = g;
+      const kind = /spark|star|glint|twinkle|shine/i.test(String(p.Texture || "")) ? "star" : "soft";
+      this.mat = pointsMat(spriteTex(kind), num(p.LightEmission, 0) >= 0.5);
+      this.points = new THREE.Points(g, this.mat); this.points.frustumCulled = false;
+      fxGroup.add(this.points);
+      this.acc = Math.random();
+    }
+    spawn() {
+      const q = this.parts.find(x => !x.alive); if (!q) return;
+      const f = this.frame, s = f.size;
+      q.pos.copy(f.pos);
+      if (s) q.pos.add(new THREE.Vector3(rnd(-0.5, 0.5) * s[0], rnd(-0.5, 0.5) * s[1], rnd(-0.5, 0.5) * s[2]).multiplyScalar(STUD));
+      const d = this.dir.clone();
+      const ax = Math.abs(d.y) < 0.9 ? new THREE.Vector3(0, 1, 0) : new THREE.Vector3(1, 0, 0);
+      const u = new THREE.Vector3().crossVectors(d, ax).normalize(), w = new THREE.Vector3().crossVectors(d, u).normalize();
+      d.applyAxisAngle(u, rnd(-this.spread[0], this.spread[0])).applyAxisAngle(w, rnd(-this.spread[1], this.spread[1]));
+      q.vel.copy(d).multiplyScalar(num(this.p.Speed, 1) * STUD);
+      q.age = 0; q.life = Math.max(num(this.p.Lifetime, 1), 0.05);
+      q.rot = num(this.p.Rotation, 0) * Math.PI / 180; q.spin = num(this.p.RotSpeed, 0) * Math.PI / 180;
+      q.alive = true;
+    }
+    update(dt) {
+      this.acc += this.rate * dt;
+      while (this.acc >= 1) { this.spawn(); this.acc -= 1; }
+      const damp = Math.exp(-this.drag * dt);
+      this.parts.forEach((q, i) => {
+        if (q.alive) {
+          q.age += dt;
+          if (q.age >= q.life) q.alive = false;
+        }
+        if (!q.alive) { this.alphaA[i] = 0; this.sizeA[i] = 0; return; }
+        q.vel.addScaledVector(this.accel, dt).multiplyScalar(damp);
+        q.pos.addScaledVector(q.vel, dt); q.rot += q.spin * dt;
+        const t = q.age / q.life, c = this.color(t);
+        this.posA.set([q.pos.x, q.pos.y, q.pos.z], i * 3); this.colA.set(c, i * 3);
+        this.sizeA[i] = Math.max(this.size(t), 0) * STUD; this.alphaA[i] = 1 - Math.min(Math.max(this.trans(t), 0), 1);
+        this.rotA[i] = q.rot;
+      });
+      for (const k of ["position", "aColor", "aSize", "aAlpha", "aRot"]) this.geo.attributes[k].needsUpdate = true;
+      this.mat.uniforms.uScale.value = pxScale;
+    }
+    dispose() { fxGroup.remove(this.points); this.geo.dispose(); this.mat.dispose(); }
+  }
+
+  function buildFx(nodes, frame) {
+    for (const nd of nodes || []) {
+      const p = nd.props || {};
+      let sub = frame;
+      if (nd.class === "Part" || nd.class === "Attachment") {
+        const cf = (p.CFrame || {}).cf || [0, 0, 0];
+        sub = { pos: frame.pos.clone().add(toV(cf[0], cf[1], cf[2]).multiplyScalar(STUD)),
+                size: nd.class === "Part" ? ((p.Size || {}).v3 || [1, 1, 1]) : null };
+      } else if (nd.class === "ParticleEmitter") {
+        emitters.push(new Emitter(p, frame));
+      } else if (nd.class === "PointLight" || nd.class === "SpotLight") {
+        const c = (p.Color || {}).c3 || [1, 1, 1];
+        const l = new THREE.PointLight(new THREE.Color(c[0], c[1], c[2]), num(p.Brightness, 1) * 0.6, num(p.Range, 8) * STUD * 1.5, 1);
+        l.position.copy(frame.pos); fxGroup.add(l);
+      }
+      buildFx(nd.children, sub);
+    }
+  }
+  function clearFx() {
+    emitters.forEach(e => e.dispose()); emitters = [];
+    [...fxGroup.children].forEach(o => fxGroup.remove(o));
+  }
+  function playFx(fx) {  // effects attach to the host part; here, the model's bounding box
+    clearFx();
+    const frame = { pos: new THREE.Vector3(0, size.y / 2, 0), size: [size.x / STUD, size.y / STUD, size.z / STUD] };
+    for (const e of Object.values(fx || {})) buildFx(e.nodes, frame);
+  }
+
   function resize() {
     const w = el.clientWidth || 1, h = el.clientHeight || 1;
     renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+    pxScale = renderer.domElement.height / (2 * Math.tan(camera.fov * Math.PI / 360));
   }
   new ResizeObserver(resize).observe(el); resize();
   const still = matchMedia("(prefers-reduced-motion: reduce)").matches, clock = new THREE.Clock();
+  let last = 0;
   renderer.setAnimationLoop(() => {
-    const t = still ? 0 : clock.getElapsedTime(), h = Math.max(size.y, 0.3);
+    const now = clock.getElapsedTime(), dt = Math.min(now - last, 0.1); last = now;
+    const t = still ? 0 : now, h = Math.max(size.y, 0.3);
+    if (fxGroup.visible) emitters.forEach(e => e.update(dt));
     beamMat.uniforms.uTime.value = t;
     orb.position.set(-0.55 * h + Math.sin(t * 0.6) * 0.08, h * 1.05 + Math.sin(t * 1.3) * 0.05, -0.2 * h + Math.cos(t * 0.6) * 0.08);
     controls.update(); renderer.render(scene, camera);
   });
 
   return {
-    load(url) {
+    load(url, fxUrl) {
       if (url === src) return;
       src = url;
+      clearFx();
       loader.load(url, gltf => {
         if (url !== src) return;  // a newer version was picked while this one loaded
         if (model) scene.remove(model);
@@ -205,9 +367,11 @@ function makeViewer(el) {
         box.getSize(size);
         model.position.set(-c.x, -box.min.y, -c.z);
         scene.add(model); stage(); frame();
+        if (fxUrl) fetch(fxUrl, { cache: "no-store" }).then(r => r.json()).then(fx => { if (url === src) playFx(fx); }).catch(() => {});
       }, undefined, () => { if (url === src) src = null; });
     },
-    clear() { if (model) scene.remove(model); model = null; src = null; },
+    clear() { if (model) scene.remove(model); model = null; src = null; clearFx(); },
+    fx(on) { fxGroup.visible = on; },
     reset: frame,
     spin(on) { controls.autoRotate = on; },
     beam(on) { beamGroup.visible = on; key.visible = !on; hemi.intensity = on ? 0.35 : 0.9; },
@@ -264,7 +428,7 @@ function render(force) {
   if (it.has_glb) {
     $("empty").hidden = true;
     const src = `/glb/${it.id}?t=${encodeURIComponent(T)}`;
-    mv.load(src);
+    mv.load(src, it.has_fx ? `/fx/${it.id}?t=${encodeURIComponent(T)}` : null);
   } else {
     mv.clear(); $("empty").hidden = false;
     $("empty").textContent = "This version has no GLB to show (its export target makes FBX only).";
@@ -336,7 +500,7 @@ $("next").onclick = () => {
   if (idx < items.length - 1) { idx++; follow = idx === items.length - 1; render(true); }
 };
 $("place").onclick = () => send("place");
-for (const [id, fn] of [["spin", mv.spin], ["beam", mv.beam], ["wire", mv.wire], ["player", mv.player]]) {
+for (const [id, fn] of [["spin", mv.spin], ["fx", mv.fx], ["beam", mv.beam], ["wire", mv.wire], ["player", mv.player]]) {
   $(id).onclick = () => { const on = $(id).getAttribute("aria-pressed") !== "true"; $(id).setAttribute("aria-pressed", on); fn(on); };
 }
 $("reset").onclick = () => mv.reset();
@@ -346,6 +510,7 @@ document.addEventListener("keydown", e => {
   else if (e.key === "ArrowRight" && !open(item())) $("next").click();
   else if (e.key === "r" || e.key === "R") $("spin").click();
   else if (e.key === "f" || e.key === "F") $("reset").click();
+  else if (e.key === "e" || e.key === "E") $("fx").click();
   else if (e.key === "l" || e.key === "L") $("beam").click();
   else if (e.key === "w" || e.key === "W") $("wire").click();
   else if (e.key === "p" || e.key === "P") $("player").click();
