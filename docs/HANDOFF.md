@@ -11,12 +11,12 @@ Where the last session stopped, for the next one. Delete or update this when it'
   upload), effects playing, R15 stand-in for scale, camera framed. The **Asset Review** dock panel (local plugin,
   auto-installed on first review or `python -m asset_agent studio-plugin`) grades it. Browser window is the fallback.
 - `vfx_import` folded into `vfx_lab(name, import_from=...)` to stay at 15 tools / under 2000 tokens (now ~1995: step 6 is due).
-- 92 tests pass (`tests/test_review.py`, new cases in `tests/test_server.py`).
+- 101 tests pass (with main merged) (`tests/test_review.py`, new cases in `tests/test_server.py`).
 
 ## Not verified yet: needs Jordan's PC with Studio
 Built in a Linux cloud container (no Studio, no GPU). The plugin and stage script compile and type-check against
 Roblox's API, but have never run in real Studio. First test:
-1. Pull `review-window`, restart the asset-agent MCP server, make or revise any asset, call `review`.
+1. Pull `main`, restart the asset-agent MCP server, make or revise any asset, call `review`.
 2. Restart Studio once to load the plugin; allow its HTTP requests to 127.0.0.1.
 3. Check: model appears on the stage with the right texture orientation (UV v is flipped in `op_studio_mesh`;
    if textures look upside down, that's the place), faces not inside-out, particles playing, panel buttons work.
