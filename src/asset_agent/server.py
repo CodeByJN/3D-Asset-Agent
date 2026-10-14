@@ -22,7 +22,7 @@ server = MCPServer("asset-agent", instructions=(
     "make_asset generates organic shapes (slow) and returns one line. Fix things with revise (only that layer and what depends on it "
     "rebuilds), not by regenerating. preview only when you must see it (layer='breakdown' shows geometry, "
     "topology, colour, texture). After each make_asset, build or revise, call review(name): the user "
-    "sees it in a 3D window, rates it and presses Place (into Studio) or Next (revise from their note). studio(name) puts an asset in the user's open Roblox Studio place. VFX: "
+    "sees it on a review stage in Studio (or a browser), rates it and presses Place or Next (revise from their note). studio(name) puts an asset in the user's open Roblox Studio place. VFX: "
     "vfx_lab shows a preset playing in Studio; rate(preset, stars) scores it; vfx_lab(import_from=) saves effects "
     "already in the place (e.g. Creator Store packs inserted with Studio's insert_asset) as presets. "
     "Animation: animate (R15 presets or your own tracks; revise by calling it again with what changes)."))
@@ -302,17 +302,38 @@ def _place_from_review(name: str) -> str:
     return f"{line} | studio: {studio_client.run(lambda s: s.luau(script))}"
 
 
-review_board.hooks.update(rate=_rate, place=_place_from_review)
+def _stage(name: str, v: int | None = None) -> str:
+    """Version v (default: current) on the review stage in Studio, its effects playing, the camera on it;
+    the Asset Review plugin there grades it. Built without an upload."""
+    a = _asset(name)
+    if a.m.get("rig") == "r15":
+        raise ValueError("characters are reviewed in the browser window")
+    v = v or a.m["version"]
+    script = roblox.review_script(name, v, a.studio_mesh(v), a.effects, a.glow(), review_board.url())
+    return studio_client.run(lambda s: s.luau(script))
+
+
+review_board.hooks.update(rate=_rate, place=_place_from_review, show=_stage)
 
 
 @server.tool(structured_output=False)
 async def review(name: str) -> str:
-    """Open the newest version in the user's 3D review window; waits for their stars, pros/cons and
-    choice: placed in Studio, or next (revise)."""
+    """Show the newest version on a Studio review stage (browser if Studio is closed); waits for the
+    user's stars, pros/cons and choice: placed, or next (revise)."""
     try:
         _asset(name)  # only models have a review window
         _queue(name, "")  # its current version, if not queued yet
-        return await asyncio.to_thread(review_board.wait, home(), name)
+        try:
+            shown = await asyncio.to_thread(_stage, name)
+            try:
+                shown += " | " + studio_client.install_plugin()
+            except studio_client.StudioError:
+                pass
+            browser = False
+        except Exception as e:  # Studio closed, or a character: the browser window instead
+            shown, browser = f"shown in the browser (no Studio stage: {' '.join(str(e).split())[:120]})", True
+        out = await asyncio.to_thread(review_board.wait, home(), name, None, browser)
+        return f"{out} | {shown}"
     except Exception as e:
         return f"error: {type(e).__name__}: {' '.join(str(e).split())}"[:300]
 

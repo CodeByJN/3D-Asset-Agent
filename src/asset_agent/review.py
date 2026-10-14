@@ -36,7 +36,8 @@ class Board:
         self.home = Path(home)
         self.file = self.home / "_review" / "queue.json"
         self.items = json.loads(self.file.read_text())["items"] if self.file.exists() else []
-        self.polled = 0.0  # last time an open page asked for the state
+        self.polled = 0.0  # last time an open page or the Studio plugin asked for the state
+        self.shown = None  # the item on the Studio review stage
 
     def save(self):
         self.file.parent.mkdir(parents=True, exist_ok=True)
@@ -73,10 +74,12 @@ def url() -> str:
 
 
 def add(home, name: str, v: int, glb: Path | None, line: str, kind: str = "model") -> str:
-    """Queue version v of an asset for review (once). Returns the page's address."""
+    """Queue version v of an asset for review (once; again after its review went back to Claude, so
+    reviewing an unchanged version asks the user again). Returns the page's address."""
     b = board(home)
     with _cv:
-        if not any(i["name"] == name and i["v"] == v for i in b.items):
+        last = b.latest(name)
+        if not (last and last["v"] == v and not (last["decision"] or {}).get("delivered")):
             b.items.append({"id": max((i["id"] for i in b.items), default=0) + 1, "name": name, "v": v,
                             "kind": kind, "glb": str(glb) if glb and Path(glb).exists() else None,
                             "line": line, "added": time.time(), "decision": None})
@@ -90,8 +93,11 @@ def note(pros: str = "", cons: str = "") -> str:
     return "; ".join(p for p in parts if p)
 
 
-def decide(home, item_id: int, action: str, stars: int | None = None, pros: str = "", cons: str = "") -> dict:
-    """What the page's Place and Next buttons do. Returns {ok, line} or {ok: False, error}."""
+def decide(home, item_id: int, action: str, stars: int | None = None, pros: str = "", cons: str = "",
+           background: bool = False) -> dict:
+    """What the Place and Next buttons do. Returns {ok, line} or {ok: False, error}. background: Place
+    (an upload, then Studio) runs on its own thread; the item shows `placing`, then its decision or
+    `error`, so the page and the Studio plugin never wait on a long request."""
     b = board(home)
     with _cv:
         item = b.get(item_id)
@@ -99,6 +105,8 @@ def decide(home, item_id: int, action: str, stars: int | None = None, pros: str 
             return {"ok": False, "error": "no such item"}
         if item["decision"]:
             return {"ok": False, "error": f"already {item['decision']['action']}"}
+        if item.get("placing"):
+            return {"ok": False, "error": "already placing it in Studio"}
         if b.latest(item["name"]) is not item:
             return {"ok": False, "error": f"this is an older version: roll {item['name']} back to v{item['v']} first"}
     if action not in ("next", "place"):
@@ -107,21 +115,57 @@ def decide(home, item_id: int, action: str, stars: int | None = None, pros: str 
         return {"ok": False, "error": "give it 1-10 stars so the next version knows what to fix"}
     if stars is not None and not 1 <= int(stars) <= 10:
         return {"ok": False, "error": "stars must be 1-10"}
-    text, lines = note(pros, cons), []
+    stars = int(stars) if stars else None
+    if action == "place" and background:
+        with _cv:
+            item["placing"], item["error"] = True, None
+        threading.Thread(target=_apply, args=(b, item, action, stars, note(pros, cons)), daemon=True).start()
+        return {"ok": True, "line": "placing in Studio", "pending": True}
+    return _apply(b, item, action, stars, note(pros, cons))
+
+
+def _apply(b: Board, item: dict, action: str, stars: int | None, text: str) -> dict:
+    lines = []
     try:
-        if stars and item.get("rated") != [int(stars), text]:  # not twice when Place failed, then Next
-            lines.append(hooks["rate"](item["name"], int(stars), text))
-            item["rated"] = [int(stars), text]
+        if stars and item.get("rated") != [stars, text]:  # not twice when Place failed, then Next
+            lines.append(hooks["rate"](item["name"], stars, text))
+            item["rated"] = [stars, text]
         if action == "place":
             lines.append(hooks["place"](item["name"]))
     except Exception as e:  # e.g. Studio not open: the rating stays, the item stays open
-        return {"ok": False, "error": f"{type(e).__name__}: {' '.join(str(e).split())}"[:300], "lines": lines}
+        msg = f"{type(e).__name__}: {' '.join(str(e).split())}"[:300]
+        with _cv:
+            item["placing"], item["error"] = False, " | ".join([*lines, msg])
+            b.save()
+        return {"ok": False, "error": msg, "lines": lines}
     with _cv:
-        item["decision"] = {"action": action, "stars": int(stars) if stars else None, "note": text,
-                            "result": " | ".join(lines), "at": time.time(), "delivered": False}
+        item["placing"], item["error"] = False, None
+        item["decision"] = {"action": action, "stars": stars, "note": text, "result": " | ".join(lines),
+                            "at": time.time(), "delivered": False}
         b.save()
         _cv.notify_all()
     return {"ok": True, "line": " | ".join(lines)}
+
+
+def show(home, item_id: int) -> dict:
+    """Put that item's version on the Studio review stage (Back/Next in the Studio plugin). Runs on
+    its own thread: building the stage goes through Studio, which is busy answering this request."""
+    b = board(home)
+    with _cv:
+        item = b.get(item_id)
+    if item is None or "show" not in hooks:
+        return {"ok": False, "error": "no such item" if item is None else "no Studio stage in this harness"}
+
+    def go():
+        try:
+            hooks["show"](item["name"], item["v"])
+            with _cv:
+                b.shown = item_id
+        except Exception as e:
+            with _cv:
+                item["error"] = f"stage: {type(e).__name__}: {' '.join(str(e).split())}"[:300]
+    threading.Thread(target=go, daemon=True).start()
+    return {"ok": True, "line": f"showing {item['name']} v{item['v']} on the stage"}
 
 
 def _answer(item: dict) -> str:
@@ -164,8 +208,9 @@ def state(b: Board) -> dict:
     latest = {}
     for i in b.items:
         latest[i["name"]] = i["id"]
-    return {"items": [{k: v for k, v in i.items() if k != "glb"} | {"has_glb": bool(i["glb"]),
-                       "current": latest[i["name"]] == i["id"]} for i in b.items]}
+    return {"shown": b.shown,
+            "items": [{k: v for k, v in i.items() if k not in ("glb", "rated")} |
+                      {"has_glb": bool(i["glb"]), "current": latest[i["name"]] == i["id"]} for i in b.items]}
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -216,12 +261,15 @@ class Handler(BaseHTTPRequestHandler):
         u = urlparse(self.path)
         if not self._authed(parse_qs(u.query)):
             return
-        if u.path != "/decide" or _board is None:
+        if u.path not in ("/decide", "/show") or _board is None:
             return self._send(404, b"not found", "text/plain")
         try:
             body = json.loads(self.rfile.read(int(self.headers.get("Content-Length") or 0)) or b"{}")
-            res = decide(_board.home, int(body["id"]), body.get("action", ""), body.get("stars") or None,
-                         body.get("pros", ""), body.get("cons", ""))
+            if u.path == "/show":
+                res = show(_board.home, int(body["id"]))
+            else:
+                res = decide(_board.home, int(body["id"]), body.get("action", ""), body.get("stars") or None,
+                             body.get("pros", ""), body.get("cons", ""), background=True)
         except (ValueError, KeyError) as e:
             res = {"ok": False, "error": f"bad request: {e}"}
         self._json(200 if res["ok"] else 409, res)

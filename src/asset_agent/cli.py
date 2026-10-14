@@ -45,6 +45,7 @@ def main(argv=None):
     s = sub.add_parser("doctor", help="check everything the harness needs here and say what to fix")
     s.add_argument("--offline", action="store_true", help="skip connecting to Roblox Studio")
     sub.add_parser("studio-mcp", help="run Roblox Studio's MCP server over stdio (used by .mcp.json)")
+    sub.add_parser("studio-plugin", help="install the Asset Review panel into Roblox Studio's Plugins folder")
     sub.add_parser("status", help="what is installed and which backend auto will use")
     s = sub.add_parser("setup", help="install Hunyuan3D-2 for this machine's NVIDIA GPU")
     s.add_argument("--dir", help="install folder (default ~/.asset-agent/Hunyuan3D-2)")
@@ -77,6 +78,14 @@ def main(argv=None):
                 print(f"error: {e}", file=sys.stderr)
                 return 1
             return subprocess.call([p.command, *p.args])
+        if a.cmd == "studio-plugin":
+            from .studio_client import StudioError, install_plugin
+            try:
+                print(install_plugin())
+            except StudioError as e:
+                print(f"error: {e}", file=sys.stderr)
+                return 1
+            return 0
         if a.cmd == "status":
             print(status())
         elif a.cmd == "setup":

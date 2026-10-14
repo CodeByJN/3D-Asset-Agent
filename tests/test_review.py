@@ -45,7 +45,7 @@ def http(url, path, body=None, token=True):
 def test_queue_page_and_model_are_served(board):
     home, glb, _ = board
     url = review.add(home, "crate", 1, glb, "ok tris=900/1500")
-    review.add(home, "crate", 1, glb, "again")  # the same version is queued once
+    review.add(home, "crate", 1, glb, "again")  # the same version is queued once...
     assert http(url, "/")[0] == 200 and b"Asset Review" in http(url, "/")[1]
     assert http(url, "/state", token=False)[0] == 401
     items = json.loads(http(url, "/state")[1])["items"]
@@ -71,6 +71,8 @@ def test_next_records_the_rating_then_returns_it_to_the_waiting_tool(board):
     assert calls == [("rate", "crate", 6, "pros: chunky shape; cons: lid too thin")]
     assert out["line"].startswith("next: crate v1 rated 6/10 (pros: chunky shape; cons: lid too thin)")
     assert http(url, "/decide", {"id": 1, "action": "next", "stars": 7})[0] == 409  # decided once
+    review.add(home, "crate", 1, glb, "ok")  # ...and again once its review went back to Claude
+    assert [i["v"] for i in review.board(home).items] == [1, 1] and review.board(home).latest("crate")["id"] == 2
 
 
 def test_place_and_back_history(board):
@@ -82,8 +84,9 @@ def test_place_and_back_history(board):
     code, body = http(url, "/decide", {"id": 2, "action": "place"})
     assert code == 409 and b"roll crate back to v2" in body  # only the current version can be placed
     code, body = http(url, "/decide", {"id": 3, "action": "place", "stars": 9, "pros": "great"})
-    assert code == 200 and calls[-2:] == [("rate", "crate", 9, "pros: great"), ("place", "crate")]
-    assert review.wait(home, "crate", 1, open_page=False).startswith("placed crate v3 in Studio, 9/10 (pros: great)")
+    assert code == 200 and json.loads(body)["pending"]  # placing runs on its own thread
+    assert review.wait(home, "crate", 5, open_page=False).startswith("placed crate v3 in Studio, 9/10 (pros: great)")
+    assert calls[-2:] == [("rate", "crate", 9, "pros: great"), ("place", "crate")]
     items = json.loads(http(url, "/state")[1])["items"]  # Back walks this list, oldest first
     assert [(i["v"], (i["decision"] or {}).get("action"), i["current"]) for i in items] == [
         (1, "next", False), (2, None, False), (3, "place", True)]
@@ -116,3 +119,33 @@ def test_wait_times_out_and_follows_new_versions(board):
     review.decide(home, 2, "next", 4, cons="worse")
     t.join(5)
     assert out["line"].startswith("next: crate v2 rated 4/10")
+
+
+def test_background_place_failure_and_stage_show(board, monkeypatch):
+    home, glb, calls = board
+    gate = threading.Event()
+
+    def slow_down(name):
+        gate.wait(5)
+        raise RuntimeError("Studio not reachable")
+    shown = []
+    monkeypatch.setitem(review.hooks, "place", slow_down)
+    monkeypatch.setitem(review.hooks, "show", lambda name, v: shown.append((name, v)))
+    url = review.add(home, "crate", 1, glb, "ok")
+    assert http(url, "/decide", {"id": 1, "action": "place", "stars": 7})[0] == 200
+    item = json.loads(http(url, "/state")[1])["items"][0]
+    assert item["placing"] and "rated" not in item
+    assert http(url, "/decide", {"id": 1, "action": "place"})[0] == 409  # no double press while placing
+    gate.set()
+    for _ in range(50):
+        item = json.loads(http(url, "/state")[1])["items"][0]
+        if not item["placing"]:
+            break
+        time.sleep(0.05)
+    assert item["error"] == "rated crate 7/10 | RuntimeError: Studio not reachable" and item["decision"] is None
+    assert http(url, "/show", {"id": 1})[0] == 200  # Back/Next in the Studio plugin swap the stage
+    for _ in range(50):
+        if shown:
+            break
+        time.sleep(0.05)
+    assert shown == [("crate", 1)] and json.loads(http(url, "/state")[1])["shown"] == 1

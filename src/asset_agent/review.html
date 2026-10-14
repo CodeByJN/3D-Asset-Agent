@@ -104,7 +104,7 @@ for (let s = 1; s <= 10; s++) {
 }
 const item = () => items[idx];
 const draft = () => (drafts[item()?.id] ??= {stars: 0, pros: "", cons: ""});
-const open = it => it && !it.decision && it.current;
+const open = it => it && !it.decision && it.current && !it.placing;
 $("pros").oninput = e => { draft().pros = e.target.value; };
 $("cons").oninput = e => { draft().cons = e.target.value; };
 
@@ -116,7 +116,7 @@ function setStatus(text, cls = "") { $("status").textContent = text; $("status")
 
 function render(force) {
   const it = item();
-  const key = it ? `${it.id}:${JSON.stringify(it.decision)}:${it.current}` : "none";
+  const key = it ? `${it.id}:${JSON.stringify([it.decision, it.current, it.placing, it.error])}` : "none";
   $("count").textContent = items.length ? `${idx + 1} / ${items.length}` : "";
   $("back").disabled = busy || idx <= 0;
   if (!it) {
@@ -148,6 +148,8 @@ function render(force) {
     badge.textContent = d.action === "place" ? "placed in studio" : "sent for a new version";
     const [pros, cons] = splitNote(d.note);
     $("pros").value = pros; $("cons").value = cons; paintStars(d.stars || 0);
+  } else if (it.placing) {
+    badge.className = "badge placed"; badge.textContent = "placing in studio…";
   } else if (!it.current) {
     badge.className = "badge old"; badge.textContent = "older version, not reviewed";
     $("pros").value = $("cons").value = ""; paintStars(0);
@@ -157,7 +159,9 @@ function render(force) {
   }
   $("pros").disabled = $("cons").disabled = !pending;
   document.querySelectorAll(".star").forEach(b => b.disabled = !pending);
-  if (d && d.action === "next" && it.current) setStatus("Rating sent. Claude is making the next version; it opens here when it's ready.");
+  if (it.error) setStatus(it.error, "err");
+  else if (it.placing) setStatus("Placing in Studio: uploading if the model changed…");
+  else if (d && d.action === "next" && it.current) setStatus("Rating sent. Claude is making the next version; it opens here when it's ready.");
   else if (d && d.result) setStatus(d.result, "ok");
   else if (!d) setStatus("");
 }
