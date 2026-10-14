@@ -87,13 +87,18 @@ avoided, and writes `HANDOFF.md` so a new chat carries on where the last one sto
 - `animate`: R15 animations from presets (idle, walk, run, sprint, jump, fall, wave, punch, slash, dance) or tracks
   you write per joint, with overlap and leg IK so feet never sink or slide. Revisions pass only what changes, e.g.
   `params={"speed": 1.3}`. `studio(name)` plays it live on a test dummy, or on a character with `on=`.
-- `vfx_lab`, `vfx_import`: play a VFX preset on a stand-in in Studio and get a screenshot; save effects already in
-  the place (e.g. Creator Store packs) as presets. Presets are trees of real Roblox instances plus:
+- `vfx_lab`: play a VFX preset on a stand-in in Studio and get a screenshot; `vfx_lab(name, import_from="workspace.Pack.Blast")`
+  saves effects already in the place (e.g. Creator Store packs) as presets. Presets are trees of real Roblox instances plus:
   - procedural HD meshes, built in Studio as EditableMeshes: `mesh://sphere`, `globe` (UV-mapped, wears a texture),
     `torus`, `crystal`, `blade`, `cube`, `shard`, and glowing outlines `frame` and `blade_edge`;
   - textures sent as pixels and built as EditableImages, so nothing needs uploading;
   - motion: orbits (tilted, around any centre), bob, spin, tumble, pulse, shimmer and looping shockwave `wave`s;
   - a `Highlight` node that outlines the whole character.
+- `review`: every new version from `make_asset`, `build`, `import_mesh` or `revise` goes into a local 3D review
+  window (the link is on the tool's line). Orbit the model, give it 1-10 stars with pros and cons, then:
+  **Back** steps through what you reviewed before, **Place** records the rating and puts it in Studio, **Next**
+  records the rating and sends it back so Claude makes the next version from your note. `review(name)` waits for
+  that choice, so you never have to type the grade in chat. Set `ASSET_AGENT_REVIEW_PORT` to change the port (8765).
 - `studio`: puts an asset, character, animation or lighting preset (`lighting:shader_night`) into the open place.
 - `preview`: geometry, topology, colour and texture breakdowns, or the model in Studio from four angles next to
   your references.

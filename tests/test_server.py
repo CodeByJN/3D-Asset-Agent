@@ -45,6 +45,7 @@ def home(tmp_path_factory):
     Asset.create(h / "crate", {"body": fx / "body.glb", "lid": fx / "lid.glb"}, max_tris=1500, tex_size=128).build()
     mp = pytest.MonkeyPatch()
     mp.setenv("ASSET_AGENT_HOME", str(h))
+    mp.setenv("ASSET_AGENT_REVIEW_PORT", "0")
     yield h
     mp.undo()
 
@@ -106,6 +107,22 @@ def test_revise_recolors_a_preset(home, tmp_path, monkeypatch):
     line = text(call("revise", name="aura_black_card", layer="preset", change={"recolor": [0.2, 0.4, 1]}))
     assert line.startswith("aura_black_card v") and "\n" not in line, line
     assert vfx.raw_presets()["aura_black_card"]["recolor"] == [0.2, 0.4, 1]
+
+
+def test_review_window_gets_every_new_version(home, monkeypatch):
+    import threading
+    from asset_agent import review
+    monkeypatch.setattr(review.webbrowser, "open", lambda *a, **k: None)
+    line = text(call("revise", name="crate", layer="finish", change={"roughness": 0.4}))
+    assert "| review: http://127.0.0.1:" in line and "\n" not in line, line
+    item = review.board(home).latest("crate")
+    v = Asset(home / "crate").m["version"]
+    assert item["v"] == v and item["glb"].endswith(f"v{v}/crate.glb") and item["line"].startswith("ok tris=")
+    threading.Timer(0.3, review.decide, (home, item["id"], "next", 6, "solid planks", "lid too thin")).start()
+    out = text(call("review", name="crate"))
+    assert out.startswith(f"next: crate v{v} rated 6/10 (pros: solid planks; cons: lid too thin)"), out
+    assert Asset(home / "crate").m["ratings"][-1] == {"v": v, "stars": 6, "note": "pros: solid planks; cons: lid too thin"}
+    assert text(call("review", name="nope")).startswith("error: KeyError")
 
 
 def test_lighting_presets():
