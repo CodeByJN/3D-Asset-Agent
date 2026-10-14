@@ -1,0 +1,151 @@
+"""Review window: queue, Back history, Next/Place decisions and the blocking wait, over real HTTP."""
+import json
+import threading
+import time
+import urllib.error
+import urllib.request
+
+import pytest
+
+from asset_agent import review
+
+
+@pytest.fixture
+def board(tmp_path, monkeypatch):
+    monkeypatch.setenv("ASSET_AGENT_REVIEW_PORT", "0")
+    monkeypatch.setattr(review, "_board", None)
+    calls = []
+
+    def rate(name, stars, note):
+        calls.append(("rate", name, stars, note))
+        return f"rated {name} {stars}/10"
+
+    def place(name):
+        calls.append(("place", name))
+        return f"placed {name}"
+    monkeypatch.setattr(review, "hooks", {"rate": rate, "place": place})
+    glb = tmp_path / "crate.glb"
+    glb.write_bytes(b"glTF fake model")
+    return tmp_path, glb, calls
+
+
+def http(url, path, body=None, token=True):
+    base = url.split("/?")[0]
+    sep = "&" if "?" in path else "?"
+    full = base + path + (f"{sep}t={review.TOKEN}" if token else "")
+    req = urllib.request.Request(full, data=json.dumps(body).encode() if body is not None else None,
+                                 headers={"Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=5) as r:
+            return r.status, r.read()
+    except urllib.error.HTTPError as e:
+        return e.code, e.read()
+
+
+def test_queue_page_and_model_are_served(board):
+    home, glb, _ = board
+    url = review.add(home, "crate", 1, glb, "ok tris=900/1500")
+    review.add(home, "crate", 1, glb, "again")  # the same version is queued once...
+    assert http(url, "/")[0] == 200 and b"Asset Review" in http(url, "/")[1]
+    assert http(url, "/state", token=False)[0] == 401
+    items = json.loads(http(url, "/state")[1])["items"]
+    assert [(i["name"], i["v"], i["current"], i["has_glb"]) for i in items] == [("crate", 1, True, True)]
+    assert "glb" not in items[0]  # no file paths leave the server
+    assert http(url, f"/glb/{items[0]['id']}") == (200, b"glTF fake model")
+    assert json.loads((home / "_review" / "queue.json").read_text())["items"][0]["line"] == "ok tris=900/1500"
+
+
+def test_next_records_the_rating_then_returns_it_to_the_waiting_tool(board):
+    home, glb, calls = board
+    url = review.add(home, "crate", 1, glb, "ok")
+    out = {}
+    t = threading.Thread(target=lambda: out.setdefault("line", review.wait(home, "crate", 10, open_page=False)))
+    t.start()
+    time.sleep(0.2)
+    code, body = http(url, "/decide", {"id": 1, "action": "next"})
+    assert code == 409 and b"stars" in body  # Next needs a rating
+    code, body = http(url, "/decide", {"id": 1, "action": "next", "stars": 6, "pros": "chunky shape",
+                                       "cons": "lid too thin"})
+    assert code == 200, body
+    t.join(5)
+    assert calls == [("rate", "crate", 6, "pros: chunky shape; cons: lid too thin")]
+    assert out["line"].startswith("next: crate v1 rated 6/10 (pros: chunky shape; cons: lid too thin)")
+    assert http(url, "/decide", {"id": 1, "action": "next", "stars": 7})[0] == 409  # decided once
+    review.add(home, "crate", 1, glb, "ok")  # ...and again once its review went back to Claude
+    assert [i["v"] for i in review.board(home).items] == [1, 1] and review.board(home).latest("crate")["id"] == 2
+
+
+def test_place_and_back_history(board):
+    home, glb, calls = board
+    url = review.add(home, "crate", 1, glb, "ok")
+    review.decide(home, 1, "next", 5, cons="too plain")
+    review.add(home, "crate", 2, glb, "ok")
+    review.add(home, "crate", 3, glb, "ok")  # v2 was skipped, never reviewed
+    code, body = http(url, "/decide", {"id": 2, "action": "place"})
+    assert code == 409 and b"roll crate back to v2" in body  # only the current version can be placed
+    code, body = http(url, "/decide", {"id": 3, "action": "place", "stars": 9, "pros": "great"})
+    assert code == 200 and json.loads(body)["pending"]  # placing runs on its own thread
+    assert review.wait(home, "crate", 5, open_page=False).startswith("placed crate v3 in Studio, 9/10 (pros: great)")
+    assert calls[-2:] == [("rate", "crate", 9, "pros: great"), ("place", "crate")]
+    items = json.loads(http(url, "/state")[1])["items"]  # Back walks this list, oldest first
+    assert [(i["v"], (i["decision"] or {}).get("action"), i["current"]) for i in items] == [
+        (1, "next", False), (2, None, False), (3, "place", True)]
+    assert review.Board(home).items[0]["decision"]["note"] == "cons: too plain"  # kept across restarts
+
+
+def test_place_failure_keeps_the_rating_and_the_item_open(board, monkeypatch):
+    home, glb, calls = board
+
+    def down(name):
+        raise RuntimeError("Studio not reachable")
+    monkeypatch.setitem(review.hooks, "place", down)
+    review.add(home, "crate", 1, glb, "ok")
+    res = review.decide(home, 1, "place", 8)
+    assert not res["ok"] and "Studio not reachable" in res["error"] and res["lines"] == ["rated crate 8/10"]
+    assert review.board(home).get(1)["decision"] is None  # still open: Next or Place again
+    assert review.decide(home, 1, "next", 8)["ok"] and [c[0] for c in calls] == ["rate"]  # rated once
+
+
+def test_wait_times_out_and_follows_new_versions(board):
+    home, glb, _ = board
+    assert review.wait(home, "nope", 0.1, open_page=False).startswith("nothing queued")
+    review.add(home, "crate", 1, glb, "ok")
+    assert review.wait(home, "crate", 0.2, open_page=False).startswith("still waiting for the review of crate v1")
+    out = {}
+    t = threading.Thread(target=lambda: out.setdefault("line", review.wait(home, "crate", 10, open_page=False)))
+    t.start()
+    time.sleep(0.2)
+    review.add(home, "crate", 2, glb, "ok")  # a newer version arrives while waiting
+    review.decide(home, 2, "next", 4, cons="worse")
+    t.join(5)
+    assert out["line"].startswith("next: crate v2 rated 4/10")
+
+
+def test_background_place_failure_and_stage_show(board, monkeypatch):
+    home, glb, calls = board
+    gate = threading.Event()
+
+    def slow_down(name):
+        gate.wait(5)
+        raise RuntimeError("Studio not reachable")
+    shown = []
+    monkeypatch.setitem(review.hooks, "place", slow_down)
+    monkeypatch.setitem(review.hooks, "show", lambda name, v: shown.append((name, v)))
+    url = review.add(home, "crate", 1, glb, "ok")
+    assert http(url, "/decide", {"id": 1, "action": "place", "stars": 7})[0] == 200
+    item = json.loads(http(url, "/state")[1])["items"][0]
+    assert item["placing"] and "rated" not in item
+    assert http(url, "/decide", {"id": 1, "action": "place"})[0] == 409  # no double press while placing
+    gate.set()
+    for _ in range(50):
+        item = json.loads(http(url, "/state")[1])["items"][0]
+        if not item["placing"]:
+            break
+        time.sleep(0.05)
+    assert item["error"] == "rated crate 7/10 | RuntimeError: Studio not reachable" and item["decision"] is None
+    assert http(url, "/show", {"id": 1})[0] == 200  # Back/Next in the Studio plugin swap the stage
+    for _ in range(50):
+        if shown:
+            break
+        time.sleep(0.05)
+    assert shown == [("crate", 1)] and json.loads(http(url, "/state")[1])["shown"] == 1

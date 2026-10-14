@@ -2,6 +2,7 @@
 
 Assets live in $ASSET_AGENT_HOME (default ./assets); generations are cached in ./library/cache.
 """
+import asyncio
 import functools
 import json
 import os
@@ -12,7 +13,7 @@ from mcp.server.mcpserver import Image, MCPServer
 from . import generators, lighting
 from .asset import Asset
 from .make import build_model, kit_help, make_asset as _make_asset
-from . import anim, brief, characters, roblox, studio_client, vfx
+from . import anim, brief, characters, review as review_board, roblox, studio_client, vfx
 from .project import Project
 
 server = MCPServer("asset-agent", instructions=(
@@ -22,9 +23,9 @@ server = MCPServer("asset-agent", instructions=(
     "and what past ratings liked/avoided; pass project=. Best quality: build (you model it in code, ~5s); "
     "make_asset generates organic shapes (slow) and returns one line. Fix things with revise (only that layer and what depends on it "
     "rebuilds), not by regenerating. preview only when you must see it (layer='breakdown' shows geometry, "
-    "topology, colour, texture). After each make_asset or revise the user looks at, ask for a 1-10 "
-    "rating and call rate. studio(name) puts an asset in the user's open Roblox Studio place. VFX: "
-    "vfx_lab shows a preset playing in Studio; rate(preset, stars) scores it; vfx_import saves effects "
+    "topology, colour, texture). After each make_asset, build or revise, call review(name): the user "
+    "sees it on a review stage in Studio (or a browser), rates it and presses Place or Next (revise from their note). studio(name) puts an asset in the user's open Roblox Studio place. VFX: "
+    "vfx_lab shows a preset playing in Studio; rate(preset, stars) scores it; vfx_lab(import_from=) saves effects "
     "already in the place (e.g. Creator Store packs inserted with Studio's insert_asset) as presets. "
     "Animation: animate (R15 presets or your own tracks; revise by calling it again with what changes)."))
 
@@ -39,6 +40,17 @@ def _asset(name: str) -> Asset:
         have = sorted(p.parent.name for p in home().glob("*/manifest.json"))
         raise KeyError(f"no asset {name!r}; have: {', '.join(have) or 'none'}")
     return Asset(root)
+
+
+def _queue(name: str, line: str) -> str:
+    """Put the asset's current version in the review window; the line gets the window's address."""
+    try:
+        a = _asset(name)
+        v = a.m["version"]
+        glb = a.root / "export" / "versions" / f"v{v}" / f"{name}.glb"
+        return f"{line} | review: {review_board.add(home(), name, v, glb, a.summary())}"
+    except Exception as e:  # the review window never breaks making the asset
+        return f"{line} | review unavailable: {type(e).__name__}: {e}"[:400]
 
 
 def one_line(fn):
@@ -67,8 +79,8 @@ def make_asset(name: str, prompt: str | None = None, image: str | None = None, s
     questions = [] if ready else brief.gaps(prompt, image, color, budget, proj)
     if questions:
         return brief.ask(questions)
-    return _make_asset(home() / name, prompt=prompt, image=image, budget=budget, style=style, color=color,
-                       backend=backend, textured=textured, project=proj)
+    return _queue(name, _make_asset(home() / name, prompt=prompt, image=image, budget=budget, style=style, color=color,
+                                    backend=backend, textured=textured, project=proj))
 
 
 @server.tool(structured_output=False)
@@ -81,7 +93,7 @@ def build(name: str, code: str, spec: dict | None = None, budget: str | None = N
         if code.strip() == "help":
             return kit_help()
         line, img = build_model(home() / name, code, spec, budget, Project.open(home(), project) if project else None)
-        return [line, Image(path=str(img))]
+        return [_queue(name, line), Image(path=str(img))]
     except Exception as e:
         return f"error: {type(e).__name__}: {' '.join(str(e).split())}"[:300]
 
@@ -93,7 +105,7 @@ def import_mesh(name: str, path: str, image: str | None = None, style: str = "au
     style: auto (keep its texture) | project (needs image) | flat."""
     a = Asset.create(home() / name, {"main": path}, budget, images={"main": image} if image else None,
                      surface_mode=style)
-    return a.build()
+    return _queue(name, a.build())
 
 
 @tool
@@ -105,7 +117,7 @@ def revise(name: str, layer: str, change: dict, part: str | None = None) -> str:
     collision {max_tris} | export {scale_to (m), target} | preset (name = VFX preset/aura) {recolor [r,g,b] | null}."""
     if layer == "preset":
         return vfx.revise_preset(name, **change)
-    return _asset(name).revise(layer, part=part, **change)
+    return _queue(name, _asset(name).revise(layer, part=part, **change))
 
 
 @tool
@@ -214,6 +226,10 @@ def plan(project: str, brief: str | None = None, references: list[str] | None = 
 def rate(name: str, stars: int, note: str = "") -> str:
     """Rate an asset's current version (or a VFX or animation preset) 1-10 with a short note on what's
     good or wrong. Ratings tune the project's defaults and show up in plan() and animate('help')."""
+    return _rate(name, stars, note)
+
+
+def _rate(name: str, stars: int, note: str = "") -> str:
     if not 1 <= stars <= 10:
         raise ValueError("stars must be 1-10")
     if not (home() / name / "manifest.json").exists() and name in vfx.presets():
@@ -255,35 +271,88 @@ def studio(name: str, on: str | None = None) -> str:
     Studio place, replacing the old copy, with its effects. R15 characters become a rigged character.
     Animations play on a test dummy, or on character `on`. name 'lighting[:preset]': shader lighting."""
     try:
-        if name.startswith("lighting"):
-            preset = name.partition(":")[2]
-            return studio_client.run(lambda s: s.luau(lighting.script(preset))) if preset else lighting.catalog()
-        if anim.Animation.exists(home() / name):
-            d = anim.Animation(home() / name).resolved()
-            return studio_client.run(lambda s: s.luau(anim.studio_script(name, d, rig=on)))
-        rec = home() / name / "character.json"
-        if rec.exists() and json.loads(rec.read_text()).get("pick"):
-            return characters.find(home() / name, None, json.loads(rec.read_text())["pick"], None)[0]
-        a = _asset(name)
-        if a.m.get("rig") == "r15":
-            mesh = json.loads((a.root / Path(a.m["build"]["code"]).parent / "rig_mesh.json").read_text())
-            rev = f"build v{a.m['build']['v']}"
-            return studio_client.run(lambda s: s.luau(roblox.character_script(name, rev, mesh)))
-        line, script = a.to_studio()
+        return _place(name, on)
+    except Exception as e:
+        return f"error: {type(e).__name__}: {' '.join(str(e).split())}"[:300]
+
+
+def _place(name: str, on: str | None = None) -> str:
+    if name.startswith("lighting"):
+        preset = name.partition(":")[2]
+        return studio_client.run(lambda s: s.luau(lighting.script(preset))) if preset else lighting.catalog()
+    if anim.Animation.exists(home() / name):
+        d = anim.Animation(home() / name).resolved()
+        return studio_client.run(lambda s: s.luau(anim.studio_script(name, d, rig=on)))
+    rec = home() / name / "character.json"
+    if rec.exists() and json.loads(rec.read_text()).get("pick"):
+        return characters.find(home() / name, None, json.loads(rec.read_text())["pick"], None)[0]
+    a = _asset(name)
+    if a.m.get("rig") == "r15":
+        mesh = json.loads((a.root / Path(a.m["build"]["code"]).parent / "rig_mesh.json").read_text())
+        rev = f"build v{a.m['build']['v']}"
+        return studio_client.run(lambda s: s.luau(roblox.character_script(name, rev, mesh)))
+    line, script = a.to_studio()
+    try:
+        return f"{line} | studio: {studio_client.run(lambda s: s.luau(script))}"
+    except studio_client.StudioError as e:
+        return f"{line} | Studio not reachable ({e}); run via Roblox Studio MCP execute_luau (Edit):\n{script}"
+
+
+def _place_from_review(name: str) -> str:
+    """The review window's Place button: like studio(name), but Studio must take it."""
+    a = _asset(name)
+    if a.m.get("rig") == "r15":
+        return _place(name)
+    line, script = a.to_studio()
+    return f"{line} | studio: {studio_client.run(lambda s: s.luau(script))}"
+
+
+def _stage(name: str, v: int | None = None) -> str:
+    """Version v (default: current) on the review stage in Studio, its effects playing, the camera on it;
+    the Asset Review plugin there grades it. Built without an upload."""
+    a = _asset(name)
+    if a.m.get("rig") == "r15":
+        raise ValueError("characters are reviewed in the browser window")
+    v = v or a.m["version"]
+    script = roblox.review_script(name, v, a.studio_mesh(v), a.effects, a.glow(), review_board.url())
+    return studio_client.run(lambda s: s.luau(script))
+
+
+review_board.hooks.update(rate=_rate, place=_place_from_review, show=_stage)
+
+
+@server.tool(structured_output=False)
+async def review(name: str) -> str:
+    """Show the newest version on a Studio review stage (else a browser); waits for the user's stars,
+    pros/cons and choice: placed, or next (revise)."""
+    try:
+        _asset(name)  # only models have a review window
+        _queue(name, "")  # its current version, if not queued yet
         try:
-            return f"{line} | studio: {studio_client.run(lambda s: s.luau(script))}"
-        except studio_client.StudioError as e:
-            return f"{line} | Studio not reachable ({e}); run via Roblox Studio MCP execute_luau (Edit):\n{script}"
+            shown = await asyncio.to_thread(_stage, name)
+            try:
+                shown += " | " + studio_client.install_plugin()
+            except studio_client.StudioError:
+                pass
+            browser = False
+        except Exception as e:  # Studio closed, or a character: the browser window instead
+            shown, browser = f"shown in the browser (no Studio stage: {' '.join(str(e).split())[:120]})", True
+        out = await asyncio.to_thread(review_board.wait, home(), name, None, browser)
+        return f"{out} | {shown}"
     except Exception as e:
         return f"error: {type(e).__name__}: {' '.join(str(e).split())}"[:300]
 
 
 @server.tool(structured_output=False)
 def vfx_lab(preset: str, color: list[float] | None = None, size: float = 1.0, rate: float = 1.0,
-            stand_in: str | None = None):
+            stand_in: str | None = None, import_from: str | None = None, use: str = "",
+            tags: list[str] | None = None, asset_id: str | None = None):
     """Play a VFX preset in the open Studio place (a lab stage above the map) and return a screenshot.
-    color/size/rate preview a variant. stand_in: character | item | rarity | base | default."""
+    color/size/rate preview a variant. stand_in: character | item | rarity | base | default.
+    import_from: save the effect at this path (workspace.Pack.Blast) as `preset`; .* lists."""
     try:
+        if import_from:
+            return _vfx_import(import_from, preset, use, tags, asset_id)
         fx = {k: v for k, v in (("color", color), ("size", size), ("rate", rate)) if v not in (None, 1.0)}
         code = roblox.lab_script(preset, fx, stand_in)
         out = home() / "_vfx" / f"{preset}.png"
@@ -299,11 +368,8 @@ def vfx_lab(preset: str, color: list[float] | None = None, size: float = 1.0, ra
         return f"error: {type(e).__name__}: {' '.join(str(e).split())}"[:300]
 
 
-@tool
-def vfx_import(path: str, name: str = "", use: str = "", tags: list[str] | None = None,
-               asset_id: str | None = None) -> str:
-    """Save an effect that's in the open Studio place as VFX preset `name`. path: dot path like
-    workspace.Pack.Blast; end it with .* to list the effects under it instead."""
+def _vfx_import(path: str, name: str = "", use: str = "", tags: list[str] | None = None,
+                asset_id: str | None = None) -> str:
     if path.endswith(".*"):
         return studio_client.run(lambda s: s.luau(roblox.list_script(path[:-2]))) or "no effects found"
     raw = studio_client.run(lambda s: s.luau(roblox.serialize_script(path)))

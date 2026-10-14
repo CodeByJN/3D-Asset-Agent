@@ -87,13 +87,25 @@ avoided, and writes `HANDOFF.md` so a new chat carries on where the last one sto
 - `animate`: R15 animations from presets (idle, walk, run, sprint, jump, fall, wave, punch, slash, dance) or tracks
   you write per joint, with overlap and leg IK so feet never sink or slide. Revisions pass only what changes, e.g.
   `params={"speed": 1.3}`. `studio(name)` plays it live on a test dummy, or on a character with `on=`.
-- `vfx_lab`, `vfx_import`: play a VFX preset on a stand-in in Studio and get a screenshot; save effects already in
-  the place (e.g. Creator Store packs) as presets. Presets are trees of real Roblox instances plus:
+- `vfx_lab`: play a VFX preset on a stand-in in Studio and get a screenshot; `vfx_lab(name, import_from="workspace.Pack.Blast")`
+  saves effects already in the place (e.g. Creator Store packs) as presets. Presets are trees of real Roblox instances plus:
   - procedural HD meshes, built in Studio as EditableMeshes: `mesh://sphere`, `globe` (UV-mapped, wears a texture),
     `torus`, `crystal`, `blade`, `cube`, `shard`, and glowing outlines `frame` and `blade_edge`;
   - textures sent as pixels and built as EditableImages, so nothing needs uploading;
   - motion: orbits (tilted, around any centre), bob, spin, tumble, pulse, shimmer and looping shockwave `wave`s;
   - a `Highlight` node that outlines the whole character.
+- `review`: every new version from `make_asset`, `build`, `import_mesh` or `revise` is reviewed before it goes into
+  your game. With Studio open, `review(name)` builds it on a dark **review stage** above the map (no upload: the
+  mesh and textures are sent as EditableMeshes and EditableImages), with its particles playing, a grey R15 stand-in
+  beside it for scale, and the camera on it. The **Asset Review** panel (a local Studio plugin, installed on the
+  first review or with `python -m asset_agent studio-plugin`; restart Studio once, and allow its HTTP requests to
+  127.0.0.1) holds the grade: 1-10 stars, pros and cons, and
+  - **Back** / **Next ›**: step through what you reviewed before; the stage shows that version;
+  - **Place**: records the rating, uploads the model if it changed and puts it in the place;
+  - **Next**: records the rating and sends it back, so Claude makes the next version from your note.
+  `review` waits for that choice, so you never type the grade in chat. With Studio closed (or for R15 characters)
+  the same review opens in a browser window with a 3D viewer instead. `ASSET_AGENT_REVIEW_PORT` changes the
+  port (8765). The stage is for looking: its meshes aren't saved with the place, so test gameplay after Place.
 - `studio`: puts an asset, character, animation or lighting preset (`lighting:shader_night`) into the open place.
 - `preview`: geometry, topology, colour and texture breakdowns, or the model in Studio from four angles next to
   your references.

@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Asset Review</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Rubik:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@3.5.0/dist/model-viewer.min.js"></script>
+<style>
+/* One dark theme by choice, like the VFX viewer: models are judged against a dark stage, as in Studio at night. */
+:root {
+  --bg: #0b0d16; --panel: #141a2c; --panel-2: #1a2138; --line: #283153; --fg: #eef1fb; --muted: #94a0c4;
+  --accent: #ffc83d; --accent-ink: #1d1600; --good: #3ccf8e; --bad: #ff6b6b; --info: #6cb6ff;
+  --display: "Lilita One", "Arial Rounded MT Bold", "Trebuchet MS", sans-serif;
+  --body: "Rubik", "Segoe UI", system-ui, sans-serif; --mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { background: var(--bg); color: var(--fg); font: 400 14px/1.45 var(--body); }
+.app { height: 100%; display: grid; grid-template-columns: minmax(0, 1fr) 340px; }
+.stage { position: relative; min-height: 0; background: radial-gradient(ellipse at 50% 40%, #1a2140 0%, #070910 70%); }
+model-viewer { width: 100%; height: 100%; --poster-color: transparent; }
+.empty { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); text-align: center; padding: 24px; }
+.hud { position: absolute; left: 16px; top: 14px; right: 16px; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; pointer-events: none; }
+.hud h1 { font: 400 30px/1 var(--display); margin: 0; letter-spacing: .01em; }
+.ver { font: 500 13px var(--mono); color: var(--accent); }
+.count { margin-left: auto; font: 500 12px var(--mono); color: var(--muted); }
+.stats { position: absolute; left: 16px; bottom: 14px; right: 16px; font: 400 12px/1.5 var(--mono); color: var(--muted); }
+.stats .fail { color: var(--bad); }
+.tools { position: absolute; right: 14px; top: 52px; display: flex; flex-direction: column; gap: 6px; }
+.chip { font: 500 12px var(--body); color: var(--fg); background: rgba(20, 26, 44, .85); border: 1px solid var(--line); border-radius: 7px; padding: 6px 9px; cursor: pointer; }
+.chip[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+aside { background: var(--panel); border-left: 1px solid var(--line); display: flex; flex-direction: column; gap: 16px; padding: 18px; overflow-y: auto; }
+.badge { align-self: flex-start; font: 600 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; border-radius: 5px; padding: 5px 7px; border: 1px solid currentColor; }
+.badge.pending { color: var(--accent); } .badge.placed { color: var(--good); } .badge.next { color: var(--info); } .badge.old { color: var(--muted); }
+h2 { font: 500 11px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin: 0 0 8px; }
+.stars { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; }
+.star { aspect-ratio: 1; border: 1px solid var(--line); background: var(--panel-2); color: var(--muted); border-radius: 6px; font: 600 13px var(--body); cursor: pointer; padding: 0; }
+.star.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.star:disabled { cursor: default; }
+.score { font: 400 22px/1 var(--display); color: var(--accent); margin-top: 8px; min-height: 22px; }
+textarea { width: 100%; min-height: 76px; resize: vertical; font: 400 13px/1.4 var(--body); color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+textarea:focus, .star:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+textarea:disabled { color: var(--muted); }
+.buttons { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: auto; }
+.btn { font: 600 14px var(--body); padding: 11px 0; border-radius: 9px; border: 1px solid var(--line); background: var(--panel-2); color: var(--fg); cursor: pointer; }
+.btn.place { background: var(--good); border-color: var(--good); color: #04140c; }
+.btn.next { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn:disabled { opacity: .35; cursor: default; }
+.status { min-height: 40px; font-size: 13px; color: var(--muted); }
+.status.err { color: var(--bad); } .status.ok { color: var(--good); }
+.hint { font: 400 11px var(--mono); color: var(--muted); }
+@media (max-width: 760px) {
+  .app { grid-template-columns: 1fr; grid-template-rows: 55vh auto; height: auto; }
+  aside { border-left: 0; border-top: 1px solid var(--line); }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <section class="stage">
+    <model-viewer id="mv" camera-controls auto-rotate shadow-intensity="1" exposure="1.05" environment-image="neutral"
+                  interaction-prompt="none" alt="3D model under review"></model-viewer>
+    <div class="empty" id="empty" hidden></div>
+    <div class="hud"><h1 id="name">Asset Review</h1><span class="ver" id="ver"></span><span class="count" id="count"></span></div>
+    <div class="tools">
+      <button class="chip" id="spin" aria-pressed="true" title="Auto-rotate (R)">Rotate</button>
+      <button class="chip" id="reset" title="Reset the camera (F)">Reset view</button>
+    </div>
+    <div class="stats" id="stats"></div>
+  </section>
+  <aside>
+    <span class="badge pending" id="badge">waiting</span>
+    <div>
+      <h2>Rating</h2>
+      <div class="stars" id="stars"></div>
+      <div class="score" id="score"></div>
+    </div>
+    <div><h2><label for="pros">Pros</label></h2><textarea id="pros" placeholder="What works: shape, colours, detail…"></textarea></div>
+    <div><h2><label for="cons">Cons</label></h2><textarea id="cons" placeholder="What to fix in the next version…"></textarea></div>
+    <div class="status" id="status" role="status"></div>
+    <div class="buttons">
+      <button class="btn" id="back" title="See what you reviewed before (←)">Back</button>
+      <button class="btn place" id="place" title="Rate it and put it in Roblox Studio">Place</button>
+      <button class="btn next" id="next" title="Send the rating back for a new version (→ to step forward)">Next</button>
+    </div>
+    <div class="hint">Drag to orbit · scroll to zoom · ← → step through reviews</div>
+  </aside>
+</div>
+<script>
+const T = new URLSearchParams(location.search).get("t") || "";
+const $ = id => document.getElementById(id);
+const mv = $("mv");
+let items = [], idx = -1, follow = true, busy = false;
+const drafts = {};  // per item id: {stars, pros, cons}, so polling never wipes what you typed
+let shownKey = "";
+
+for (let s = 1; s <= 10; s++) {
+  const b = document.createElement("button");
+  b.className = "star"; b.textContent = s; b.dataset.s = s; b.setAttribute("aria-label", `${s} out of 10`);
+  b.onclick = () => { const d = draft(); d.stars = s; paintStars(s); };
+  $("stars").append(b);
+}
+const item = () => items[idx];
+const draft = () => (drafts[item()?.id] ??= {stars: 0, pros: "", cons: ""});
+const open = it => it && !it.decision && it.current && !it.placing;
+$("pros").oninput = e => { draft().pros = e.target.value; };
+$("cons").oninput = e => { draft().cons = e.target.value; };
+
+function paintStars(n) {
+  document.querySelectorAll(".star").forEach(b => b.classList.toggle("on", +b.dataset.s <= n));
+  $("score").textContent = n ? `${n}/10` : "";
+}
+function setStatus(text, cls = "") { $("status").textContent = text; $("status").className = "status " + cls; }
+
+function render(force) {
+  const it = item();
+  const key = it ? `${it.id}:${JSON.stringify([it.decision, it.current, it.placing, it.error])}` : "none";
+  $("count").textContent = items.length ? `${idx + 1} / ${items.length}` : "";
+  $("back").disabled = busy || idx <= 0;
+  if (!it) {
+    $("empty").hidden = false; $("empty").textContent = "Nothing to review yet. Make, build or revise an asset and it shows up here.";
+    mv.removeAttribute("src"); $("place").disabled = $("next").disabled = true; return;
+  }
+  const pending = open(it);
+  $("place").disabled = busy || !pending;
+  $("next").disabled = busy || (!pending && idx >= items.length - 1);
+  $("next").textContent = pending ? "Next" : "Next ›";
+  if (key === shownKey && !force) return;
+  shownKey = key;
+  $("name").textContent = it.name; $("ver").textContent = `v${it.v}`;
+  const fail = /(^|\| )FAIL/.test(it.line);
+  $("stats").innerHTML = ""; const s = document.createElement("span");
+  s.textContent = it.line; if (fail) s.className = "fail"; $("stats").append(s);
+  if (it.has_glb) {
+    $("empty").hidden = true;
+    const src = `/glb/${it.id}?t=${encodeURIComponent(T)}`;
+    if (mv.getAttribute("src") !== src) mv.setAttribute("src", src);
+  } else {
+    mv.removeAttribute("src"); $("empty").hidden = false;
+    $("empty").textContent = "This version has no GLB to show (its export target makes FBX only).";
+  }
+  const d = it.decision;
+  const badge = $("badge");
+  if (d) {
+    badge.className = "badge " + (d.action === "place" ? "placed" : "next");
+    badge.textContent = d.action === "place" ? "placed in studio" : "sent for a new version";
+    const [pros, cons] = splitNote(d.note);
+    $("pros").value = pros; $("cons").value = cons; paintStars(d.stars || 0);
+  } else if (it.placing) {
+    badge.className = "badge placed"; badge.textContent = "placing in studio…";
+  } else if (!it.current) {
+    badge.className = "badge old"; badge.textContent = "older version, not reviewed";
+    $("pros").value = $("cons").value = ""; paintStars(0);
+  } else {
+    badge.className = "badge pending"; badge.textContent = "waiting for your review";
+    const dr = draft(); $("pros").value = dr.pros; $("cons").value = dr.cons; paintStars(dr.stars);
+  }
+  $("pros").disabled = $("cons").disabled = !pending;
+  document.querySelectorAll(".star").forEach(b => b.disabled = !pending);
+  if (it.error) setStatus(it.error, "err");
+  else if (it.placing) setStatus("Placing in Studio: uploading if the model changed…");
+  else if (d && d.action === "next" && it.current) setStatus("Rating sent. Claude is making the next version; it opens here when it's ready.");
+  else if (d && d.result) setStatus(d.result, "ok");
+  else if (!d) setStatus("");
+}
+function splitNote(n) {
+  const pros = (n || "").match(/pros: (.*?)(?:; cons: |$)/), cons = (n || "").match(/cons: (.*)$/);
+  return [pros ? pros[1] : "", cons ? cons[1] : ""];
+}
+
+async function poll() {
+  try {
+    const r = await fetch(`/state?t=${encodeURIComponent(T)}`, {cache: "no-store"});
+    if (r.status === 401) { setStatus("The harness restarted: open the newest review link.", "err"); return; }
+    const data = await r.json();
+    const before = items.length, wasId = item()?.id;
+    items = data.items;
+    if (idx < 0 || (follow && items.length !== before)) {
+      const pend = items.map((x, i) => open(x) ? i : -1).filter(i => i >= 0);
+      idx = pend.length ? pend[pend.length - 1] : items.length - 1;
+    } else {
+      idx = Math.max(0, items.findIndex(x => x.id === wasId));
+    }
+    render(item()?.id !== wasId);
+  } catch (e) { setStatus("Can't reach the harness. Is the MCP server still running?", "err"); }
+}
+
+async function send(action) {
+  const it = item(), d = draft();
+  if (action === "next" && !d.stars) { setStatus("Pick 1-10 stars first so the next version knows what to fix.", "err"); return; }
+  busy = true; render(true); setStatus(action === "place" ? "Placing in Studio…" : "Sending…");
+  try {
+    const r = await fetch(`/decide?t=${encodeURIComponent(T)}`, {method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({id: it.id, action, stars: d.stars || null, pros: d.pros, cons: d.cons})});
+    const res = await r.json();
+    if (!res.ok) setStatus((res.lines?.length ? res.lines.join(" | ") + " | " : "") + res.error, "err");
+    follow = true;
+    await poll();
+    if (res.ok) render(true);
+  } finally { busy = false; render(); }
+}
+
+$("back").onclick = () => { if (idx > 0) { idx--; follow = false; render(true); } };
+$("next").onclick = () => {
+  if (open(item())) return send("next");
+  if (idx < items.length - 1) { idx++; follow = idx === items.length - 1; render(true); }
+};
+$("place").onclick = () => send("place");
+$("spin").onclick = () => { const on = !mv.hasAttribute("auto-rotate"); mv.toggleAttribute("auto-rotate", on); $("spin").setAttribute("aria-pressed", on); };
+$("reset").onclick = () => { mv.cameraOrbit = "auto auto auto"; mv.cameraTarget = "auto auto auto"; mv.fieldOfView = "auto"; };
+document.addEventListener("keydown", e => {
+  if (e.target.tagName === "TEXTAREA") return;
+  if (e.key === "ArrowLeft") $("back").click();
+  else if (e.key === "ArrowRight" && !open(item())) $("next").click();
+  else if (e.key === "r" || e.key === "R") $("spin").click();
+  else if (e.key === "f" || e.key === "F") $("reset").click();
+});
+poll(); setInterval(poll, 1500);
+</script>
+</body>
+</html>

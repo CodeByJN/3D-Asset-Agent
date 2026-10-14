@@ -219,6 +219,79 @@ local look=h.Position+Vector3.new(0,1.6,0) local cam=look+Vector3.new(7,2.5,-15)
 return string.format('%g,%g,%g|%g,%g,%g',cam.X,cam.Y,cam.Z,look.X,look.Y,look.Z)"""
 
 
+# ---------------------------------------------------------------- review stage
+
+REVIEW_AT = (400, 200, 600)  # beside the VFX lab, above the map
+_STAND_IN_LUA = "{" + ",".join("{'%s',Vector3.new(%g,%g,%g),Vector3.new(%g,%g,%g)}" % (n, *p, *sz) for n, p, sz in RIG) + "}"
+
+
+def review_script(name: str, v: int, mesh: dict, effects: dict, glow: dict | None = None, url: str = "",
+                  tex_size: int = 256) -> str:
+    """Luau: the review stage. A dark room above the map with version v of the asset built from `mesh`
+    (worker op studio_mesh: EditableMeshes and EditableImages, so no upload), its effects playing, a
+    grey R15 stand-in beside it for scale, and the editor camera framed on it. The stage carries the
+    review window's address for the Studio plugin (studio_plugin.lua). Returns a one-line status."""
+    inline, meshes = {}, {}
+    fx = {n: {"nodes": vfx.resolve_textures(e["nodes"], inline=inline, meshes=meshes), "mode": e["mode"]}
+          for n, e in vfx.resolve(effects).items()}
+    parts = {}
+    for part, d in mesh["parts"].items():
+        key = f"{name}/v{v}/{part}"
+        meshes[key] = {"v": d["v"], "f": d["f"], "uv": d["uv"]}
+        if d.get("tex_data"):
+            inline[key] = d["tex_data"]
+        parts[part] = {"mesh": key, "tex": key if d.get("tex_data") else None, "c": d["c"], "color": d["color"],
+                       "glow": (glow or {}).get(part)}
+    x, y, z = REVIEW_AT
+    return luau.BUILD + f"""setTextures(HS:JSONDecode({luau.data(inline)}))
+setMeshes(HS:JSONDecode({luau.data(meshes)}))
+local AS=game:GetService('AssetService')
+local AT,NAME,LABEL,URL=Vector3.new({x},{y},{z}),'{name}','{name} v{v}','{url}'
+local P,FX=HS:JSONDecode({luau.data(parts)}),HS:JSONDecode({luau.data(fx)})
+local st=workspace:FindFirstChild('AssetAgentReview') if st then st:Destroy() end
+st=Instance.new('Model') st.Name='AssetAgentReview' st:SetAttribute('ReviewURL',URL) st:SetAttribute('Showing',LABEL)
+local m=Instance.new('Model') m.Name=NAME m.Parent=st
+local low,big,h=math.huge,0,nil
+for part,d in P do
+ local mp=AS:CreateMeshPartAsync(meshContent(d.mesh),{{CollisionFidelity=Enum.CollisionFidelity.Box}})
+ mp.Name=part mp.Anchored=true mp.CanCollide=false mp.CFrame=CFrame.new(AT+Vector3.new(d.c[1],d.c[2],d.c[3]))
+ mp.Material=Enum.Material.SmoothPlastic mp.Color=Color3.new(d.color[1],d.color[2],d.color[3])
+ if d.tex then local c=tex(d.tex) if c then mp.TextureContent=c end end
+ if d.glow then mp.Material=Enum.Material.Neon mp.Color=Color3.new(d.glow[1],d.glow[2],d.glow[3]) mp.TextureContent=Content.none end
+ mp.Parent=m
+ low=math.min(low,mp.Position.Y-mp.Size.Y/2)
+ local vol=mp.Size.X*mp.Size.Y*mp.Size.Z if vol>big then big,h=vol,mp end
+end
+m:PivotTo(m:GetPivot()+Vector3.new(0,AT.Y-low,0))  -- stands on the floor
+local bc,bs=m:GetBoundingBox() local e=math.max(bs.X,bs.Y,bs.Z,4)
+local W=math.max(120,e*10)
+local floor=Instance.new('Part') floor.Name='Floor' floor.Anchored=true floor.Size=Vector3.new(W,1,W)
+floor.CFrame=CFrame.new(AT-Vector3.new(0,0.5,0)) floor.Color=Color3.fromRGB(16,18,28) floor.Material=Enum.Material.SmoothPlastic floor.Parent=st
+-- a dark room: glow and particles read against night, as in game captures
+for _,w in {{{{Vector3.new(0,W/4,-W/2),Vector3.new(W,W/2,1)}},{{Vector3.new(0,W/4,W/2),Vector3.new(W,W/2,1)}},{{Vector3.new(-W/2,W/4,0),Vector3.new(1,W/2,W)}},
+  {{Vector3.new(W/2,W/4,0),Vector3.new(1,W/2,W)}},{{Vector3.new(0,W/2,0),Vector3.new(W,1,W)}}}} do
+ local p=Instance.new('Part') p.Name='Backdrop' p.Anchored=true p.CanCollide=false p.CastShadow=false p.Size=w[2]
+ p.CFrame=CFrame.new(AT+w[1]) p.Color=Color3.fromRGB(7,8,14) p.Material=Enum.Material.SmoothPlastic p.Parent=st
+end
+local key=Instance.new('PointLight') key.Brightness=1.5 key.Range=math.max(30,e*4) key.Parent=floor
+local rig=Instance.new('Model') rig.Name='ScaleStandIn' rig.Parent=st
+local side=Vector3.new(-(bs.X/2+3),0,0)+Vector3.new(bc.X-AT.X,0,bc.Z-AT.Z)
+for _,r in {_STAND_IN_LUA} do
+ local p=Instance.new('Part') p.Name=r[1] p.Anchored=true p.CanCollide=false p.Size=r[3] p.CFrame=CFrame.new(AT+side+r[2])
+ p.Color=Color3.fromRGB(150,156,180) p.Material=Enum.Material.SmoothPlastic p.Transparency=r[1]=='HumanoidRootPart' and 1 or 0.55 p.Parent=rig
+end
+local cam=workspace.CurrentCamera
+local bl=cam:FindFirstChild('AssetAgentLabBloom') or Instance.new('BloomEffect') bl.Name='AssetAgentLabBloom'
+bl.Intensity=1.2 bl.Size=28 bl.Threshold=0.85
+bl.Parent=not game.Lighting:FindFirstChildOfClass('BloomEffect') and cam or nil
+st.Parent=workspace
+local n=0 if h then for tag,fx in FX do play(build(h,tag,fx.nodes)) n+=1 end end
+animate(st,nil,function() return st.Parent~=nil end)
+local look=bc.Position local eye=look+Vector3.new(0.55,0.4,-1).Unit*math.max(e*2.4,12)  -- from the front: assets face -Z
+cam.CFrame=CFrame.lookAt(eye,look) cam.Focus=CFrame.new(look)
+return 'showing '..LABEL..' on the review stage in Studio: '..#m:GetChildren()..' part(s), '..n..' effect(s)'"""
+
+
 def replay_script(slow: float = 1.0) -> str:
     """Luau that replays the lab's current effect: bursts and tweens fire again, at 1/slow speed."""
     return luau.BUILD + f"""SLOW={slow:g}

@@ -97,10 +97,15 @@ def _zero_runs(values, stride: int) -> bytes:
 def texture_data(name: str, size: int | None = None) -> dict:
     """A library texture for transport to Studio, base64 with transparent runs packed:
     {n, az} (white shapes: alpha only, up to 768 px) or {n, rgbaz} (coloured: alpha r g b, up to 384 px)."""
+    return image_data(library_path().parent / "textures" / f"{name}.png", size)
+
+
+def image_data(path, size: int | None = None) -> dict:
+    """Any png, packed the same way as texture_data (an asset's texture on the review stage)."""
     import base64
     import numpy as np
     from PIL import Image
-    im = Image.open(library_path().parent / "textures" / f"{name}.png").convert("RGBA")
+    im = Image.open(path).convert("RGBA")
     px = np.asarray(im)
     seen = px[..., 3] > 8
     white = not seen.any() or px[seen][:, :3].min() >= 235  # colour comes from the emitter

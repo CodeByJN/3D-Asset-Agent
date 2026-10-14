@@ -13,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).parents[1] / "src"))
 from asset_agent import server  # noqa: E402
 
 TOOLS = ["build", "make_asset", "import_mesh", "revise", "rollback", "history", "validate", "preview", "library",
-         "plan", "rate", "studio", "vfx_lab", "vfx_import"]
+         "plan", "rate", "studio", "vfx_lab", "review"]
 if len(sys.argv) < 2 or sys.argv[1] == "list":
     for t in TOOLS:
         fn = getattr(server, t)
