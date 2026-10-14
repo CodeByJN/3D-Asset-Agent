@@ -2,6 +2,7 @@
 import asyncio
 import json
 import subprocess
+from pathlib import Path
 
 import pytest
 
@@ -117,7 +118,7 @@ def test_review_window_gets_every_new_version(home, monkeypatch):
     assert "| review: http://127.0.0.1:" in line and "\n" not in line, line
     item = review.board(home).latest("crate")
     v = Asset(home / "crate").m["version"]
-    assert item["v"] == v and item["glb"].endswith(f"v{v}/crate.glb") and item["line"].startswith("ok tris=")
+    assert item["v"] == v and Path(item["glb"]).parts[-2:] == (f"v{v}", "crate.glb") and item["line"].startswith("ok tris=")
     threading.Timer(0.3, review.decide, (home, item["id"], "next", 6, "solid planks", "lid too thin")).start()
     out = text(call("review", name="crate"))
     assert out.startswith(f"next: crate v{v} rated 6/10 (pros: solid planks; cons: lid too thin)"), out
@@ -125,46 +126,17 @@ def test_review_window_gets_every_new_version(home, monkeypatch):
     assert text(call("review", name="nope")).startswith("error: KeyError")
 
 
-def test_review_stage_in_studio(home, monkeypatch, tmp_path):
+def test_review_asks_again_for_a_reviewed_version(home, monkeypatch):
     import threading
-    from asset_agent import review, studio_client
-    sent = []
-
-    def fake_run(fn):  # a Studio that records the scripts it is sent
-        class S:
-            async def luau(self, code):
-                sent.append(code)
-                return "showing crate on the review stage in Studio: 2 part(s), 0 effect(s)"
-        import asyncio
-        return asyncio.run(fn(S()))
-    monkeypatch.setattr(studio_client, "run", fake_run)
-    monkeypatch.setenv("ASSET_AGENT_STUDIO_PLUGINS", str(tmp_path / "Plugins"))
-    monkeypatch.setattr(review.webbrowser, "open", lambda *a, **k: pytest.fail("Studio is up: no browser"))
-    a = Asset(home / "crate")
-    v = a.m["version"]
-    mesh = a.studio_mesh()
-    assert sorted(mesh["parts"]) == ["body", "lid"]
-    assert sum(len(d["f"]) // 3 for d in mesh["parts"].values()) == a.cur("export")["stats"]["tris"]
-    assert all(d["tex_data"]["n"] <= 256 for d in mesh["parts"].values())
-    assert (home / "crate" / "export" / "versions" / f"v{v}" / "studio" / "mesh.json").exists()  # made once
+    from asset_agent import review
+    monkeypatch.setattr(review.webbrowser, "open", lambda *a, **k: None)
+    v = Asset(home / "crate").m["version"]
     server._queue("crate", "")  # a version already reviewed is queued again: the user is asked again
     item = review.board(home).latest("crate")
     assert item["v"] == v and item["decision"] is None
     threading.Timer(0.5, review.decide, (home, item["id"], "next", 7, "", "lid too thin")).start()
     out = text(call("review", name="crate"))
     assert out.startswith(f"next: crate v{v} rated 7/10 (cons: lid too thin)"), out
-    assert "on the review stage in Studio" in out and "installed the Asset Review plugin" in out, out
-    script = sent[-1]
-    assert "AssetAgentReview" in script and review.url() in script and f"crate/v{v}/body" in script
-    assert (tmp_path / "Plugins" / "AssetAgentReview.lua").read_bytes() == studio_client.PLUGIN.read_bytes()
-    assert "up to date" in studio_client.install_plugin()
-    assert review.show(home, item["id"])["ok"]  # the plugin's Back/Next rebuild the stage
-    for _ in range(100):
-        if len(sent) > 1:
-            break
-        import time
-        time.sleep(0.05)
-    assert len(sent) == 2 and f"crate/v{v}/lid" in sent[1]
 
 
 def test_lighting_presets():

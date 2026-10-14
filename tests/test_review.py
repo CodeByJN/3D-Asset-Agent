@@ -121,16 +121,14 @@ def test_wait_times_out_and_follows_new_versions(board):
     assert out["line"].startswith("next: crate v2 rated 4/10")
 
 
-def test_background_place_failure_and_stage_show(board, monkeypatch):
+def test_background_place_failure(board, monkeypatch):
     home, glb, calls = board
     gate = threading.Event()
 
     def slow_down(name):
         gate.wait(5)
         raise RuntimeError("Studio not reachable")
-    shown = []
     monkeypatch.setitem(review.hooks, "place", slow_down)
-    monkeypatch.setitem(review.hooks, "show", lambda name, v: shown.append((name, v)))
     url = review.add(home, "crate", 1, glb, "ok")
     assert http(url, "/decide", {"id": 1, "action": "place", "stars": 7})[0] == 200
     item = json.loads(http(url, "/state")[1])["items"][0]
@@ -143,9 +141,3 @@ def test_background_place_failure_and_stage_show(board, monkeypatch):
             break
         time.sleep(0.05)
     assert item["error"] == "rated crate 7/10 | RuntimeError: Studio not reachable" and item["decision"] is None
-    assert http(url, "/show", {"id": 1})[0] == 200  # Back/Next in the Studio plugin swap the stage
-    for _ in range(50):
-        if shown:
-            break
-        time.sleep(0.05)
-    assert shown == [("crate", 1)] and json.loads(http(url, "/state")[1])["shown"] == 1

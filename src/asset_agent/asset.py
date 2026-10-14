@@ -506,22 +506,6 @@ class Asset:
         """Emissive parts (named glow*) and their colours: Neon in Roblox."""
         return {p: self.finish["parts"].get(p, {}).get("tint", [1, 1, 1]) for p in self.m["parts"] if p.startswith("glow")}
 
-    def studio_mesh(self, v: int | None = None, tex_size: int = 256) -> dict:
-        """Version v's export as data Studio builds without an upload (the review stage), with each
-        part's texture packed for transport. Made once per version (export/versions/v<N>/studio/)."""
-        v = v or self.m["version"]
-        glb = self.path(f"export/versions/v{v}/{self.m['name']}.glb")
-        if not glb.exists():
-            raise FileNotFoundError(f"no GLB for {self.m['name']} v{v} (export target {self.m['params']['export'].get('target')})")
-        out = glb.parent / "studio" / "mesh.json"
-        if not out.exists():
-            run_steps([{"op": "studio_mesh", "glb": str(glb), "out": str(out), "tex_size": tex_size}])
-        mesh = json.loads(out.read_text())
-        for d in mesh["parts"].values():
-            if d.get("tex"):
-                d["tex_data"] = vfx.image_data(out.parent / d["tex"], tex_size)
-        return mesh
-
     def params_snapshot(self) -> dict:
         """The settings ratings learn from (first part for per-part ones)."""
         p = next(iter(self.m["parts"]))

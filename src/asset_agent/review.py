@@ -36,8 +36,7 @@ class Board:
         self.home = Path(home)
         self.file = self.home / "_review" / "queue.json"
         self.items = json.loads(self.file.read_text())["items"] if self.file.exists() else []
-        self.polled = 0.0  # last time an open page or the Studio plugin asked for the state
-        self.shown = None  # the item on the Studio review stage
+        self.polled = 0.0  # last time an open page asked for the state
 
     def save(self):
         self.file.parent.mkdir(parents=True, exist_ok=True)
@@ -97,7 +96,7 @@ def decide(home, item_id: int, action: str, stars: int | None = None, pros: str 
            background: bool = False) -> dict:
     """What the Place and Next buttons do. Returns {ok, line} or {ok: False, error}. background: Place
     (an upload, then Studio) runs on its own thread; the item shows `placing`, then its decision or
-    `error`, so the page and the Studio plugin never wait on a long request."""
+    `error`, so the page never waits on a long request."""
     b = board(home)
     with _cv:
         item = b.get(item_id)
@@ -147,27 +146,6 @@ def _apply(b: Board, item: dict, action: str, stars: int | None, text: str) -> d
     return {"ok": True, "line": " | ".join(lines)}
 
 
-def show(home, item_id: int) -> dict:
-    """Put that item's version on the Studio review stage (Back/Next in the Studio plugin). Runs on
-    its own thread: building the stage goes through Studio, which is busy answering this request."""
-    b = board(home)
-    with _cv:
-        item = b.get(item_id)
-    if item is None or "show" not in hooks:
-        return {"ok": False, "error": "no such item" if item is None else "no Studio stage in this harness"}
-
-    def go():
-        try:
-            hooks["show"](item["name"], item["v"])
-            with _cv:
-                b.shown = item_id
-        except Exception as e:
-            with _cv:
-                item["error"] = f"stage: {type(e).__name__}: {' '.join(str(e).split())}"[:300]
-    threading.Thread(target=go, daemon=True).start()
-    return {"ok": True, "line": f"showing {item['name']} v{item['v']} on the stage"}
-
-
 def _answer(item: dict) -> str:
     d = item["decision"]
     d["delivered"] = True
@@ -208,8 +186,7 @@ def state(b: Board) -> dict:
     latest = {}
     for i in b.items:
         latest[i["name"]] = i["id"]
-    return {"shown": b.shown,
-            "items": [{k: v for k, v in i.items() if k not in ("glb", "rated")} |
+    return {"items": [{k: v for k, v in i.items() if k not in ("glb", "rated")} |
                       {"has_glb": bool(i["glb"]), "current": latest[i["name"]] == i["id"]} for i in b.items]}
 
 
@@ -261,15 +238,12 @@ class Handler(BaseHTTPRequestHandler):
         u = urlparse(self.path)
         if not self._authed(parse_qs(u.query)):
             return
-        if u.path not in ("/decide", "/show") or _board is None:
+        if u.path != "/decide" or _board is None:
             return self._send(404, b"not found", "text/plain")
         try:
             body = json.loads(self.rfile.read(int(self.headers.get("Content-Length") or 0)) or b"{}")
-            if u.path == "/show":
-                res = show(_board.home, int(body["id"]))
-            else:
-                res = decide(_board.home, int(body["id"]), body.get("action", ""), body.get("stars") or None,
-                             body.get("pros", ""), body.get("cons", ""), background=True)
+            res = decide(_board.home, int(body["id"]), body.get("action", ""), body.get("stars") or None,
+                         body.get("pros", ""), body.get("cons", ""), background=True)
         except (ValueError, KeyError) as e:
             res = {"ok": False, "error": f"bad request: {e}"}
         self._json(200 if res["ok"] else 409, res)

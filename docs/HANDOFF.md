@@ -6,21 +6,11 @@ Where the last session stopped, for the next one. Delete or update this when it'
 - **Review window** (`src/asset_agent/review.py`, `review.html`): every new version from `make_asset`, `build`,
   `import_mesh`, `revise` is queued; `review(name)` waits for the user's 1-10 stars + pros/cons and
   **Back / Place / Next**. Next records the rating with `rate` and returns the note so Claude revises.
-- **Review in Studio** (`roblox.review_script`, `studio_plugin.lua`, worker op `studio_mesh`, `Asset.studio_mesh`):
-  with Studio open, `review` builds the version on a dark stage above the map (EditableMesh/EditableImage, no
-  upload), effects playing, R15 stand-in for scale, camera framed. The **Asset Review** dock panel (local plugin,
-  auto-installed on first review or `python -m asset_agent studio-plugin`) grades it. Browser window is the fallback.
+- **Review in Studio was removed** (2026-10-14, after its first real-Studio test): Jordan prefers the browser
+  window. The stage script, `studio_plugin.lua`, worker op `studio_mesh`, `Asset.studio_mesh` and the
+  `studio-plugin` command are gone; `review` always uses the browser window.
 - `vfx_import` folded into `vfx_lab(name, import_from=...)` to stay at 15 tools / under 2000 tokens (now ~1995: step 6 is due).
 - 101 tests pass (with main merged) (`tests/test_review.py`, new cases in `tests/test_server.py`).
-
-## Not verified yet: needs Jordan's PC with Studio
-Built in a Linux cloud container (no Studio, no GPU). The plugin and stage script compile and type-check against
-Roblox's API, but have never run in real Studio. First test:
-1. Pull `main`, restart the asset-agent MCP server, make or revise any asset, call `review`.
-2. Restart Studio once to load the plugin; allow its HTTP requests to 127.0.0.1.
-3. Check: model appears on the stage with the right texture orientation (UV v is flipped in `op_studio_mesh`;
-   if textures look upside down, that's the place), faces not inside-out, particles playing, panel buttons work.
-4. Report anything that looks wrong; fixes go on a new branch.
 
 ## Next: rest of the approved plan (`docs/PLAN-harness-review.md`)
 1. VFX as code: `vfx_kit.py`, `build` compiles presets, sources kept in `library/vfx/src/<name>/v<N>.py`;

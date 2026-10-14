@@ -92,9 +92,6 @@ def checks(live: bool = True):
             ("studio mcp", *_studio_mcp())]
     if live and rows[-1][1]:
         rows.append(("studio", *_studio_live()))
-    from .studio_client import plugin_state
-    ok, detail = plugin_state()  # installs itself on the first review in Studio
-    rows.append(("review panel", True if ok else None, detail))
     try:
         from .generators import local_status
         s = local_status()

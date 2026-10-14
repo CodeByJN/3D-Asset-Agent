@@ -95,17 +95,13 @@ avoided, and writes `HANDOFF.md` so a new chat carries on where the last one sto
   - motion: orbits (tilted, around any centre), bob, spin, tumble, pulse, shimmer and looping shockwave `wave`s;
   - a `Highlight` node that outlines the whole character.
 - `review`: every new version from `make_asset`, `build`, `import_mesh` or `revise` is reviewed before it goes into
-  your game. With Studio open, `review(name)` builds it on a dark **review stage** above the map (no upload: the
-  mesh and textures are sent as EditableMeshes and EditableImages), with its particles playing, a grey R15 stand-in
-  beside it for scale, and the camera on it. The **Asset Review** panel (a local Studio plugin, installed on the
-  first review or with `python -m asset_agent studio-plugin`; restart Studio once, and allow its HTTP requests to
-  127.0.0.1) holds the grade: 1-10 stars, pros and cons, and
-  - **Back** / **Next ›**: step through what you reviewed before; the stage shows that version;
-  - **Place**: records the rating, uploads the model if it changed and puts it in the place;
+  your game. `review(name)` opens a browser window with a 3D viewer (orbit, zoom) and the grade: 1-10 stars,
+  pros and cons, and
+  - **Back** / **Next ›**: step through what you reviewed before;
+  - **Place**: records the rating, uploads the model if it changed and puts it in the open Studio place;
   - **Next**: records the rating and sends it back, so Claude makes the next version from your note.
-  `review` waits for that choice, so you never type the grade in chat. With Studio closed (or for R15 characters)
-  the same review opens in a browser window with a 3D viewer instead. `ASSET_AGENT_REVIEW_PORT` changes the
-  port (8765). The stage is for looking: its meshes aren't saved with the place, so test gameplay after Place.
+  `review` waits for that choice, so you never type the grade in chat. `ASSET_AGENT_REVIEW_PORT` changes the
+  port (8765).
 - `studio`: puts an asset, character, animation or lighting preset (`lighting:shader_night`) into the open place.
 - `preview`: geometry, topology, colour and texture breakdowns, or the model in Studio from four angles next to
   your references.

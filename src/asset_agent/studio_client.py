@@ -50,47 +50,6 @@ def launcher() -> StdioServerParameters:
                       "... > Manage MCP Servers > Enable Studio as MCP server (or set ASSET_AGENT_STUDIO_MCP)")
 
 
-PLUGIN = Path(__file__).with_name("studio_plugin.lua")
-PLUGIN_FILE = "AssetAgentReview.lua"
-
-
-def plugins_dir() -> Path | None:
-    """Studio's local Plugins folder (ASSET_AGENT_STUDIO_PLUGINS overrides it)."""
-    if os.environ.get("ASSET_AGENT_STUDIO_PLUGINS"):
-        return Path(os.environ["ASSET_AGENT_STUDIO_PLUGINS"])
-    if sys.platform == "win32" and os.environ.get("LOCALAPPDATA"):
-        return Path(os.environ["LOCALAPPDATA"]) / "Roblox" / "Plugins"
-    if sys.platform == "darwin":
-        return Path.home() / "Documents" / "Roblox" / "Plugins"
-    return None
-
-
-def plugin_state() -> tuple[bool | None, str]:
-    """(installed and current, detail) for the Asset Review plugin; None when there's no Studio here."""
-    d = plugins_dir()
-    if d is None:
-        return None, "no Roblox Studio on this OS"
-    f = d / PLUGIN_FILE
-    if not f.exists():
-        return False, f"not installed: python -m asset_agent studio-plugin (-> {f})"
-    if f.read_bytes() != PLUGIN.read_bytes():
-        return False, f"out of date: python -m asset_agent studio-plugin (-> {f})"
-    return True, str(f)
-
-
-def install_plugin() -> str:
-    """Copy the Asset Review panel into Studio's Plugins folder (only when it changed)."""
-    ok, detail = plugin_state()
-    if ok is None:
-        raise StudioError(f"can't install the Studio plugin: {detail}")
-    if ok:
-        return f"Asset Review plugin up to date ({detail})"
-    f = plugins_dir() / PLUGIN_FILE
-    f.parent.mkdir(parents=True, exist_ok=True)
-    f.write_bytes(PLUGIN.read_bytes())
-    return f"installed the Asset Review plugin to {f}: restart Studio once to load it"
-
-
 def _text(res) -> str:
     return "\n".join(b.text for b in getattr(res, "content", []) if getattr(b, "type", "") == "text")
 
