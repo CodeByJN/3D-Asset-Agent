@@ -20,6 +20,7 @@ from pathlib import Path
 from . import vfx
 from .blender import BlenderError, run_steps
 
+EXPORT_FORMAT = "fbx-in-studs"  # bump when export files change shape, so every asset re-exports
 BUDGETS = json.loads(Path(__file__).with_name("budgets.json").read_text())
 PART_LAYERS = ["geometry", "topology", "collision", "uv", "surface"]
 DEPS = {"geometry": [], "topology": ["geometry"], "collision": ["geometry"],
@@ -224,7 +225,7 @@ class Asset:
         fin = self.finish
         self._plan("finish", "finish", fin, [], {}, None)
         parts = self.m["parts"]
-        inputs = [self.cur("finish")["key"], self.m["budget"]] + \
+        inputs = [self.cur("finish")["key"], self.m["budget"], EXPORT_FORMAT] + \
                  [self.cur(lk(k, p))["key"] for p in parts for k in ("surface", "collision")]
         name = self.m["name"]
         files = {"dir": "export", "main": f"export/{name}.{'glb' if self.m['params']['export']['target'] != 'unity' else 'fbx'}"}

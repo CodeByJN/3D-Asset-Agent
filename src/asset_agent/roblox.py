@@ -77,7 +77,8 @@ def upload(fbx: Path, name: str, asset_id: str | None = None, timeout: float = 1
         raise RobloxError(f"upload failed: {json.dumps(op.get('error') or op.get('status') or op)[:200]}")
     res = op["response"]
     state = res.get("moderationResult", {}).get("moderationState", "")
-    if state and state not in ("MODERATION_STATE_APPROVED", "MODERATION_STATE_REVIEWING"):
+    # "MODERATION_STATE_APPROVED" in older responses, "Approved" now
+    if state and state.upper().removeprefix("MODERATION_STATE_") not in ("APPROVED", "REVIEWING"):
         raise RobloxError(f"asset {res.get('assetId')} {state}")
     return str(res.get("assetId") or asset_id)
 
@@ -109,7 +110,9 @@ if not(m and m:GetAttribute('AssetAgentRev')==REV) then
 for _,d in m:GetDescendants() do if d:GetAttribute('AssetAgentVFX') then d:Destroy() end
  local g=d:IsA('BasePart') and GLOW[d.Name] if g then d.Material=Enum.Material.Neon d.Color=Color3.new(g[1],g[2],g[3])
   if d:IsA('MeshPart') then d.TextureID='' end end end
-local h=m.PrimaryPart or m:FindFirstChildWhichIsA('BasePart',true)
+local h,big=m.PrimaryPart,0  -- effects go on the biggest part (the body), like the live build
+if not h then for _,d in m:GetDescendants() do if d:IsA('BasePart') and not d:GetAttribute('AssetAgentVFX') then
+ local v=d.Size.X*d.Size.Y*d.Size.Z if v>big then big,h=v,d end end end end
 local n=0 for tag,e in FX do play(build(h,tag,e.nodes)) n+=1 end
 return (loaded and 'loaded ' or 'kept model, ')..NAME..' with '..n..' effect(s)'"""
 

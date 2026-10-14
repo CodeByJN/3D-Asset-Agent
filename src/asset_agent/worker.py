@@ -618,8 +618,13 @@ def op_export(s):
             bpy.ops.object.select_all(action="DESELECT")
             for o in objs:
                 o.select_set(True)
+            # Blender writes FBX in centimetres; Roblox reads one FBX unit as one stud, so for Roblox the file
+            # is written in studs (metres / kit.STUD). Unity keeps real-world units.
+            sys.path.insert(0, str(Path(__file__).parent))
+            import kit
+            scale = 1 / (100 * kit.STUD) if p.get("target", "roblox") == "roblox" else 1.0
             bpy.ops.export_scene.fbx(filepath=str(path), use_selection=True, object_types={"MESH"},
-                                     axis_forward="-Z", axis_up="Y", path_mode="COPY",
+                                     axis_forward="-Z", axis_up="Y", path_mode="COPY", global_scale=scale,
                                      embed_textures=True, mesh_smooth_type="FACE")
         files.append(path.name)
     if s.get("collisions"):

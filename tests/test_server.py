@@ -158,6 +158,32 @@ def test_place_without_upload_builds_it_live(home, monkeypatch, tmp_path):
     assert abs(tallest - (hi[2] - lo[2]) / 0.28) < 0.05, "the live mesh is in studs (0.28 m), the GLB in metres"
 
 
+def test_upload_accepts_both_moderation_spellings(monkeypatch, tmp_path):
+    from asset_agent import roblox
+    monkeypatch.setenv("ROBLOX_API_KEY", "k" * 60)
+    monkeypatch.setenv("ROBLOX_USER_ID", "1")
+    fbx = tmp_path / "a.fbx"
+    fbx.write_bytes(b"fbx")
+    for state, ok in (("Approved", True), ("MODERATION_STATE_APPROVED", True), ("Reviewing", True), ("Rejected", False)):
+        res = {"done": True, "response": {"assetId": "42", "moderationResult": {"moderationState": state}}}
+        monkeypatch.setattr(roblox, "_request", lambda *a, **k: res)
+        if ok:
+            assert roblox.upload(fbx, "a") == "42"
+        else:
+            with pytest.raises(roblox.RobloxError):
+                roblox.upload(fbx, "a")
+
+
+def test_roblox_fbx_is_in_studs(home):
+    """Roblox reads one FBX unit as one stud: the export writes metres / 0.28, not Blender's centimetres."""
+    a = Asset(home / "crate")
+    fbx = a.root / "export" / "crate.fbx"
+    lo, hi = run_steps([{"op": "measure", "src": str(fbx)}])[0]["stats"]["bbox"]  # Blender reads it back in metres
+    glo, ghi = run_steps([{"op": "measure", "src": str(a.path(a.cur("export")["files"]["main"]))}])[0]["stats"]["bbox"]
+    ratio = (hi[2] - lo[2]) / (ghi[2] - glo[2])
+    assert abs(ratio - 1 / (100 * 0.28)) < 0.002, ratio  # on import Blender undoes its cm, leaving 1/(100 x STUD)
+
+
 def test_lighting_presets():
     from asset_agent import lighting
     assert "lighting:shader_night" in lighting.catalog()
