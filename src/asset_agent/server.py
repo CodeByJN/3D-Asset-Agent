@@ -12,11 +12,13 @@ from mcp.server.mcpserver import Image, MCPServer
 from . import generators, lighting
 from .asset import Asset
 from .make import build_model, kit_help, make_asset as _make_asset
-from . import anim, characters, roblox, studio_client, vfx
+from . import anim, brief, characters, roblox, studio_client, vfx
 from .project import Project
 
 server = MCPServer("asset-agent", instructions=(
-    "Game-ready 3D assets (Roblox first). For a game, call plan(project) first: its style guide, roster "
+    "Game-ready 3D assets (Roblox first). Aim to nail each asset first shot: before building or generating "
+    "something new, get the user's brief in one message (reference image, style, colours, use and size, key "
+    "shape details); make_asset lists what's missing. For a game, call plan(project) first: its style guide, roster "
     "and what past ratings liked/avoided; pass project=. Best quality: build (you model it in code, ~5s); "
     "make_asset generates organic shapes (slow) and returns one line. Fix things with revise (only that layer and what depends on it "
     "rebuilds), not by regenerating. preview only when you must see it (layer='breakdown' shows geometry, "
@@ -57,12 +59,16 @@ def tool(fn):
 @tool
 def make_asset(name: str, prompt: str | None = None, image: str | None = None, style: str | None = None,
                color: list[float] | None = None, budget: str | None = None, textured: bool = False,
-               backend: str = "auto", project: str | None = None) -> str:
-    """Generate an asset from a text prompt or image path (~1-2 min). style: project | flat (color
+               backend: str = "auto", project: str | None = None, ready: bool = False) -> str:
+    """Generate an asset from a text prompt or image path (~2 min). style: project | flat (color
     [r,g,b]). budget: roblox_prop | roblox_hero | mobile_prop | godot_lod. backend: auto | hf | local.
-    project: fills unset args from that game's style guide."""
+    project: fills unset args from that game's style guide. Asks for missing context first; ready=True skips."""
+    proj = Project.open(home(), project) if project else None
+    questions = [] if ready else brief.gaps(prompt, image, color, budget, proj)
+    if questions:
+        return brief.ask(questions)
     return _make_asset(home() / name, prompt=prompt, image=image, budget=budget, style=style, color=color,
-                       backend=backend, textured=textured, project=Project.open(home(), project) if project else None)
+                       backend=backend, textured=textured, project=proj)
 
 
 @server.tool(structured_output=False)

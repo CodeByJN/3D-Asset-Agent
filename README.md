@@ -99,8 +99,12 @@ avoided, and writes `HANDOFF.md` so a new chat carries on where the last one sto
   your references.
 - `plan`, `rate`, `library`: projects, grades and search. `plan(project, references=["https://game.fandom.com/wiki/Auras"])`
   imports a wiki page's images (GIFs also get a frame sheet) into the project's references.
-- `make_asset`, `import_mesh`, `revise`, `rollback`, `validate`: AI text/image-to-3D for organic shapes, and
-  per-layer revisions (geometry, topology, UVs, surface, finish) that rebuild only what changed.
+- `make_asset`: Hunyuan3D-2 sculpts a 3D model from your reference image (about 2 minutes on your own GPU), or
+  from a text prompt (a picture is generated first). To get it right first shot, it first asks for what's missing:
+  a reference image (one object, plain background, no glow), style, colours, what it's for and how big, and the
+  key shape details. Generated models can go straight into VFX presets as `mesh://asset/<name>`.
+- `import_mesh`, `revise`, `rollback`, `validate`: bring in any mesh, and per-layer revisions (geometry,
+  topology, UVs, surface, finish) that rebuild only what changed.
 
 ## Python API (no Claude needed)
 
