@@ -6,9 +6,11 @@ a unit box (-0.5..0.5) so Size is its size in studs. Faceted kinds (crystal, bla
 unshared vertices so every facet catches the light; round kinds (sphere, torus) share vertices.
 globe has UVs, so a texture (TextureID texture://map_...) wraps around it. frame and blade_edge are the
 glowing edges of a box and of a blade: give them the same Size and CFrame as the body they outline.
+"mesh://asset/<name>" is the exported model of an asset (make_asset, import_mesh, build), e.g. a generated hero model.
 """
 import math
 import random
+from pathlib import Path
 from urllib.parse import parse_qsl
 
 ROUND = 4  # decimals sent to Studio
@@ -280,9 +282,69 @@ KINDS = {"sphere": sphere, "globe": globe, "torus": torus, "crystal": crystal, "
          "cube": cube, "frame": frame, "shard": shard}
 
 
+def glb_mesh(path) -> tuple[list, list]:
+    """Every triangle in a .glb (node transforms applied), Y up as in Roblox."""
+    import json
+    import struct
+    import numpy as np
+    data = Path(path).read_bytes()
+    n = struct.unpack_from("<I", data, 12)[0]
+    g = json.loads(data[20:20 + n])
+    bin_ = data[20 + n + 8:]
+    size = {"SCALAR": 1, "VEC2": 2, "VEC3": 3, "VEC4": 4}
+    dt = {5126: np.float32, 5125: np.uint32, 5123: np.uint16, 5121: np.uint8}
+
+    def acc(i):
+        a = g["accessors"][i]
+        bv = g["bufferViews"][a["bufferView"]]
+        k = size[a["type"]]
+        arr = np.frombuffer(bin_, dt[a["componentType"]], a["count"] * k, bv.get("byteOffset", 0) + a.get("byteOffset", 0))
+        return arr.reshape(-1, k) if k > 1 else arr
+
+    def local(node):
+        if "matrix" in node:
+            return np.array(node["matrix"], float).reshape(4, 4).T
+        m = np.eye(4)
+        x, y, z, w = node.get("rotation", [0, 0, 0, 1])
+        m[:3, :3] = [[1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w)],
+                     [2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w)],
+                     [2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)]]
+        m[:3, :3] *= node.get("scale", [1, 1, 1])
+        m[:3, 3] = node.get("translation", [0, 0, 0])
+        return m
+    verts, tris = [], []
+
+    def walk(i, parent):
+        node = g["nodes"][i]
+        m = parent @ local(node)
+        for prim in g["meshes"][node["mesh"]]["primitives"] if "mesh" in node else []:
+            pos = acc(prim["attributes"]["POSITION"]).astype(float)
+            pos = (np.c_[pos, np.ones(len(pos))] @ m.T)[:, :3]
+            idx = acc(prim["indices"]).reshape(-1, 3) if "indices" in prim else np.arange(len(pos)).reshape(-1, 3)
+            tris.extend(map(tuple, (idx + len(verts)).tolist()))
+            verts.extend(map(tuple, pos.tolist()))
+        for c in node.get("children", []):
+            walk(c, m)
+    for i in g["scenes"][g.get("scene", 0)]["nodes"]:
+        walk(i, np.eye(4))
+    return verts, tris
+
+
+def asset_mesh(name: str):
+    """An asset's exported model (assets/<name>/export/<name>.glb), fitted to the unit box."""
+    import os
+    f = Path(os.environ.get("ASSET_AGENT_HOME", "assets")) / name / "export" / f"{name}.glb"
+    if not f.exists():
+        raise ValueError(f"no exported model for asset {name!r} at {f}")
+    v, t = glb_mesh(f)
+    return _fit(v), t
+
+
 def build(spec: str):
     """'mesh://crystal?sides=7&seed=2' (or 'crystal?...') -> (vertices, triangles)."""
     spec = spec.removeprefix("mesh://")
+    if spec.startswith("asset/"):
+        return asset_mesh(spec[6:])
     kind, _, query = spec.partition("?")
     if kind not in KINDS:
         raise ValueError(f"unknown mesh kind {kind!r}: one of {', '.join(KINDS)}")
