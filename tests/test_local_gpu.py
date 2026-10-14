@@ -30,8 +30,11 @@ def test_parse_gpu_and_choices():
 
 
 def test_serve_cmd_flags(tmp_path):
-    cmd = [str(x) for x in gpu.serve_cmd(tmp_path, "mini", "127.0.0.1", 8080, 11.0)]
+    cmd = [str(x) for x in gpu.serve_cmd(tmp_path, "mini", "127.0.0.1", 8080, 6.0)]
     assert cmd[1].endswith("hy_serve.py") and "--disable_tex" in cmd and "--low_vram_mode" in cmd
+    assert "--low_vram_mode" not in [str(x) for x in gpu.serve_cmd(tmp_path, "mini", "127.0.0.1", 8080, 11.0)]
+    from asset_agent.generators.hf import HFSpaces, LocalHunyuan
+    assert LocalHunyuan.steps == 5 and HFSpaces.steps == 30  # turbo models on our server, full model on the Space
     assert cmd[cmd.index("--subfolder") + 1] == "hunyuan3d-dit-v2-mini-turbo"
     assert cmd[cmd.index("--host") + 1] == "127.0.0.1" and "--enable_flashvdm" in cmd
     big = [str(x) for x in gpu.serve_cmd(tmp_path, "full", "0.0.0.0", 9000, 24.0, flashvdm=False)]
