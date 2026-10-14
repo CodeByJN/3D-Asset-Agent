@@ -337,7 +337,16 @@ def asset_mesh(name: str):
     if not f.exists():
         raise ValueError(f"no exported model for asset {name!r} at {f}")
     v, t = glb_mesh(f)
-    return _fit(v), t
+    ids, uniq = {}, []  # exports repeat a vertex per triangle: merge them (smaller to send, smooth shading)
+    remap = []
+    for p in v:
+        k = tuple(round(c, 5) for c in p)
+        if k not in ids:
+            ids[k] = len(uniq)
+            uniq.append(p)
+        remap.append(ids[k])
+    tris = [(remap[a], remap[b], remap[c]) for a, b, c in t]
+    return _fit(uniq), [tr for tr in tris if len(set(tr)) == 3]
 
 
 def build(spec: str):

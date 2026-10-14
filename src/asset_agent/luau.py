@@ -184,7 +184,7 @@ local function build(H,tag,nodes)
   if nd.tween then i:SetAttribute('AssetAgentTween',HS:JSONEncode(nd.tween)) end
   if nd.anim then i:SetAttribute('AssetAgentAnim',HS:JSONEncode(nd.anim)) anims=true end
   if i:IsA('BasePart') then i.Anchored=true i.CanCollide=false i.CanQuery=false i.CanTouch=false end
-  if i:IsA('Highlight') then i.Adornee=model end  -- an outline glow wraps the whole character
+  if i:IsA('Highlight') and parent==H then i.Adornee=model end  -- on the host: wraps the whole character; inside a part: outlines that part
   i:SetAttribute('AssetAgentVFX',tag)
   made[path]=i table.insert(all,i)
   for _,c in (nd.children or {}) do mk(c,i,path..'/'..(c.name or c.class)) end
