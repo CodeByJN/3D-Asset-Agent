@@ -167,9 +167,9 @@ function makeViewer(el) {
   const eachMat = fn => model && model.traverse(o => { if (o.isMesh) (Array.isArray(o.material) ? o.material : [o.material]).forEach(fn); });
 
   function frame() {
-    const h = Math.max(size.y, 0.3);
+    const h = Math.max(size.y, 0.3), r = Math.max(h, size.x, size.z);  // wide models (tails, wings) fit too
     controls.target.set(0, h * 0.5, 0);
-    camera.position.set(h * 0.9, h * 0.75, -h * 1.6);  // in front: models face -Z after the glTF axis swap
+    camera.position.set(r * 0.9, h * 0.75, -r * 1.6);  // in front: models face -Z after the glTF axis swap
     controls.update();
   }
   function stage() {  // the shaft, orb, shadows and figure follow the model's size
@@ -183,6 +183,12 @@ function makeViewer(el) {
     beamGroup.add(beamMesh);
     const s = Math.max(size.x, size.y, size.z) * 1.2;
     Object.assign(key.shadow.camera, { left: -s, right: s, top: s, bottom: -s }); key.shadow.camera.updateProjectionMatrix();
+    // zoom, fog, floor and lights grow with big assets (bosses), never below the prop-sized defaults
+    const R = Math.max(size.x, size.y, size.z);
+    controls.maxDistance = Math.max(15, R * 6); camera.far = Math.max(100, R * 20); camera.updateProjectionMatrix();
+    scene.fog.near = Math.max(8, R * 2); scene.fog.far = Math.max(20, R * 8);
+    floor.scale.setScalar(Math.max(1, R / 3)); spot.distance = Math.max(14, R * 6);
+    key.position.set(2, 4, -3).multiplyScalar(Math.max(1, R / 3)); key.shadow.camera.far = Math.max(50, R * 10);
     figure.position.set(-(size.x / 2 + 0.6), 0, 0);  // the far side from the camera, so it never blocks the view
   }
 
