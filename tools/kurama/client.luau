@@ -7,6 +7,13 @@ local bosses = {}
 local function get(model)
 	if not bosses[model] then
 		local Boss = require(model:WaitForChild("KuramaBoss"))
+		local function count()
+			local n = 0
+			for _, p in model:GetDescendants() do if p:IsA("BasePart") and p:GetAttribute("Rest") then n += 1 end end
+			return n
+		end
+		local t0 = os.clock()
+		while count() < (model:GetAttribute("PartCount") or 0) and os.clock() - t0 < 20 do task.wait(0.2) end
 		local b = Boss.new(model):start()
 		if model:GetAttribute("Mode") == "chakra" then b:setMode("chakra") end
 		bosses[model] = b
@@ -14,7 +21,9 @@ local function get(model)
 	return bosses[model]
 end
 
-ev.OnClientEvent:Connect(function(model, name) get(model):play(name) end)
+ev.OnClientEvent:Connect(function(model, name)
+	get(model):play(name)
+end)
 for _, m in workspace:GetDescendants() do
 	if m:IsA("Model") and m:FindFirstChild("KuramaBoss") then get(m) end
 end

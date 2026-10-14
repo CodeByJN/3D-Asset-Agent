@@ -103,6 +103,8 @@ local rd=Instance.new('StringValue') rd.Name='RigData' rd.Value=HS:JSONEncode(D)
 local mod=Instance.new('ModuleScript') mod.Name='KuramaBoss' mod.Source=%(boss)s mod.Parent=m
 local br=Instance.new('Script') br.Name='KuramaBrain' br.Source=%(brain)s br.Parent=m
 if m:GetAttribute('Demo')==nil then m:SetAttribute('Demo',true) end
+m.ModelStreamingMode=Enum.ModelStreamingMode.Persistent  -- a boss: every client has all of it, always
+m:SetAttribute('PartCount',n) m:SetAttribute('Mode',nil)
 local RS=game:GetService('ReplicatedStorage')
 if not RS:FindFirstChild('KuramaMove') then local e=Instance.new('RemoteEvent') e.Name='KuramaMove' e.Parent=RS end
 local sps=game:GetService('StarterPlayer'):FindFirstChildOfClass('StarterPlayerScripts')

@@ -354,11 +354,11 @@ function Boss:bomb()
 	local core = self:part({ Shape = Enum.PartType.Ball, Size = Vector3.one * 2, Color = VOID, Material = Enum.Material.SmoothPlastic, CFrame = CFrame.new(at()) })
 	local rim = self:part({ Shape = Enum.PartType.Ball, Size = Vector3.one * 2.4, Color = VIOLET, Material = Enum.Material.ForceField, CFrame = core.CFrame })
 	local haze = self:part({ Shape = Enum.PartType.Ball, Size = Vector3.one * 3, Color = Color3.new(0.35, 0.1, 0.7), Material = Enum.Material.Neon, Transparency = 0.82, CFrame = core.CFrame })
-	local pull = self:part({ Size = Vector3.one * 90, Transparency = 1, CFrame = core.CFrame })
-	local light = Instance.new("PointLight") light.Color, light.Range, light.Brightness = VIOLET, 40, 4 light.Parent = core
+	local pull = self:part({ Size = Vector3.one * 140, Transparency = 1, CFrame = core.CFrame })
+	local light = Instance.new("PointLight") light.Color, light.Range, light.Brightness = VIOLET, 60, 6 light.Parent = haze
 	local inward = self:emitter(pull, { Texture = TEX.glow, Shape = Enum.ParticleEmitterShape.Sphere, ShapeInOut = Enum.ParticleEmitterShapeInOut.Inward,
-		ShapeStyle = Enum.ParticleEmitterShapeStyle.Surface, Speed = NumberRange.new(70, 90), Lifetime = NumberRange.new(0.5, 0.6),
-		Color = cs(0, Color3.new(0.2, 0.05, 0.35), 1, VIOLET), Size = ns(0, 2.5, 1, 0.5), Transparency = ns(0, 1, 0.3, 0.2, 1, 0.6), Rate = 160, LightEmission = 0.6 })
+		ShapeStyle = Enum.ParticleEmitterShapeStyle.Surface, Speed = NumberRange.new(110, 140), Lifetime = NumberRange.new(0.5, 0.6),
+		Color = cs(0, Color3.new(0.2, 0.05, 0.35), 1, VIOLET), Size = ns(0, 5, 1, 1), Transparency = ns(0, 1, 0.3, 0.2, 1, 0.6), Rate = 160, LightEmission = 0.6 })
 	local bolts = self:emitter(core, { Texture = TEX.bolt, LockedToPart = true, Rate = 14, Lifetime = NumberRange.new(0.15, 0.25), Speed = NumberRange.new(0, 0),
 		Rotation = NumberRange.new(-180, 180), Color = cs(0, Color3.new(0.8, 0.55, 1), 1, VIOLET), Size = ns(0, 6, 1, 6), LightEmission = 1 })
 	local parts = { core, rim, haze, pull }
@@ -366,7 +366,7 @@ function Boss:bomb()
 	local conn
 	conn = RunService.Heartbeat:Connect(function()
 		local c = math.clamp((os.clock() - t0) / charge, 0, 1)
-		local r = 1.5 + 12.5 * c ^ 0.7 * (1 + 0.06 * math.sin(os.clock() * 30))
+		local r = 2 + 20 * c ^ 0.7 * (1 + 0.06 * math.sin(os.clock() * 30))
 		local cf = CFrame.new(at()) * CFrame.Angles(0, os.clock() * 3, 0)
 		core.Size, rim.Size, haze.Size = Vector3.one * r * 2, Vector3.one * r * 2.25, Vector3.one * r * 3.2
 		core.CFrame, rim.CFrame, haze.CFrame, pull.CFrame = cf, cf, cf, cf
@@ -375,12 +375,12 @@ function Boss:bomb()
 	-- orbs of black and violet chakra streaming in from all around
 	task.spawn(function()
 		while os.clock() - t0 < charge - 0.2 do
-			local from = at() + Random.new():NextUnitVector() * math.random(35, 80)
-			local o = self:part({ Shape = Enum.PartType.Ball, Size = Vector3.one * math.random(2, 5), CFrame = CFrame.new(from),
+			local from = at() + Random.new():NextUnitVector() * math.random(50, 120)
+			local o = self:part({ Shape = Enum.PartType.Ball, Size = Vector3.one * math.random(3, 8), CFrame = CFrame.new(from),
 				Color = math.random() < 0.5 and VOID or Color3.new(0.45, 0.15, 0.85), Material = Enum.Material.Neon })
-			tween(o, 0.45, { Position = at(), Size = Vector3.one * 0.6 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
-			Debris:AddItem(o, 0.5)
-			task.wait(0.035)
+			tween(o, 0.55, { Position = at(), Size = Vector3.one * 1 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+			Debris:AddItem(o, 0.6)
+			task.wait(0.025)
 		end
 	end)
 	Boss.Shake(0.35, charge, at())
@@ -393,8 +393,8 @@ function Boss:bomb()
 	local start = core.Position
 	local target = base:PointToWorldSpace(self.F * 430)
 	target = Vector3.new(target.X, self:ground() + 4, target.Z)
-	local trail = self:emitter(core, { Texture = TEX.smoke, FlipbookLayout = Enum.ParticleFlipbookLayout.Grid8x8, Color = cs(0, Color3.new(0.25, 0.08, 0.45), 1, VOID),
-		Size = ns(0, 14, 1, 30), Transparency = ns(0, 0.4, 1, 1), Lifetime = NumberRange.new(0.4, 0.7), Speed = NumberRange.new(0, 3), Rate = 120, LightEmission = 0.4 })
+	self:emitter(haze, { Texture = TEX.glow, Color = cs(0, VIOLET, 1, Color3.new(0.2, 0.05, 0.4)), Size = ns(0, 40, 1, 10),
+		Transparency = ns(0, 0.3, 1, 1), Lifetime = NumberRange.new(0.25, 0.4), Speed = NumberRange.new(0, 2), Rate = 90, LightEmission = 1 })
 	self:wave(start, 6, 40, 0.4, VIOLET)
 	Boss.Shake(1.4, 0.5, start)
 	local fly, t1 = 0.5, os.clock()
@@ -410,7 +410,7 @@ end
 
 function Boss:explode(pos)
 	Boss.Shake(4.5, 2.2, pos)
-	local flash = self:part({ Shape = Enum.PartType.Ball, Size = Vector3.one * 30, CFrame = CFrame.new(pos), Color = Color3.new(0.92, 0.82, 1), Material = Enum.Material.Neon })
+	local flash = self:part({ Shape = Enum.PartType.Ball, Size = Vector3.one * 30, CFrame = CFrame.new(pos), Color = Color3.new(0.8, 0.62, 1), Material = Enum.Material.Neon })
 	tween(flash, 0.22, { Size = Vector3.one * 300 })
 	task.delay(0.22, function() tween(flash, 0.7, { Transparency = 1 }) end)
 	Debris:AddItem(flash, 1)
@@ -429,10 +429,10 @@ function Boss:explode(pos)
 		{ Texture = TEX.glow, Color = cs(0, Color3.new(0.85, 0.7, 1), 1, VIOLET), Size = ns(0, 160, 1, 260), Transparency = ns(0, 0.2, 1, 1),
 			Lifetime = NumberRange.new(0.6, 0.9), Speed = NumberRange.new(0, 0), LightEmission = 1, Emit = 6 },
 		{ Texture = TEX.smoke, FlipbookLayout = Enum.ParticleFlipbookLayout.Grid8x8, FlipbookMode = Enum.ParticleFlipbookMode.Loop,
-			FlipbookFramerate = NumberRange.new(12, 18), FlipbookStartRandom = true, Color = cs(0, Color3.new(0.3, 0.22, 0.3), 1, Color3.new(0.18, 0.16, 0.16)),
-			Size = ns(0, 50, 1, 140), Transparency = ns(0, 0.25, 0.7, 0.55, 1, 1), Lifetime = NumberRange.new(3, 5), Speed = NumberRange.new(40, 140),
+			FlipbookFramerate = NumberRange.new(12, 18), FlipbookStartRandom = true, Color = cs(0, Color3.new(0.78, 0.68, 0.8), 1, Color3.new(0.55, 0.5, 0.5)),
+			Size = ns(0, 50, 1, 140), Transparency = ns(0, 0.4, 0.7, 0.7, 1, 1), Lifetime = NumberRange.new(3, 5), Speed = NumberRange.new(40, 140),
 			Drag = 1.6, SpreadAngle = Vector2.new(90, 90), EmissionDirection = Enum.NormalId.Top, Acceleration = Vector3.new(0, 14, 0),
-			Rotation = NumberRange.new(-180, 180), RotSpeed = NumberRange.new(-20, 20), LightInfluence = 1, Emit = 45 },
+			Rotation = NumberRange.new(-180, 180), RotSpeed = NumberRange.new(-20, 20), LightInfluence = 0.3, Brightness = 1.4, Emit = 45 },
 	})
 	local lightHost = self:part({ Size = Vector3.one, Transparency = 1, CFrame = CFrame.new(pos + Vector3.new(0, 30, 0)) })
 	local light = Instance.new("PointLight") light.Color, light.Range, light.Brightness = Color3.new(0.8, 0.6, 1), 60, 12 light.Parent = lightHost
