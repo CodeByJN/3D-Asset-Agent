@@ -16,6 +16,9 @@ where the part bends. Model each piece around its own joints: a LeftUpperArm sle
 pivot (shoulder) to the LeftLowerArm pivot (elbow). Feet on z=0, faces -Y, ~5.5 studs tall; the
 character's right side is -X. Parts: Head UpperTorso LowerTorso and Left/Right UpperArm LowerArm
 Hand UpperLeg LowerLeg Foot. Hair, hats and faces go on Head; packs and capes on UpperTorso.
+
+Other rigs (creatures, bosses, machines): piece(name, *objs) makes those pieces one named part; each
+part is its own MeshPart in Roblox, centred on itself, so a script can pose it about its joint.
 """
 import math
 import random
@@ -25,7 +28,7 @@ import bpy
 from mathutils import Euler, Matrix, Vector
 
 __all__ = ["mat", "box", "cone", "ball", "rock", "lathe", "tube", "blade", "extrude", "mirror", "copies",
-           "jitter", "body", "R15", "STUD", "math", "Vector"]
+           "jitter", "body", "piece", "R15", "STUD", "math", "Vector"]
 STUD = 0.28  # metres; Roblox imports metres and shows studs
 
 
@@ -282,6 +285,20 @@ def body(part, *objs):
                 tag(x)
         else:
             o["part"] = part
+    tag(objs)
+    return objs
+
+
+def piece(name, *objs):
+    """Tag pieces as one named part of a custom rig (not R15): its own MeshPart in Roblox. Returns the pieces."""
+    if name in R15:
+        raise ValueError(f"{name} is an R15 part name: use body() for R15 characters")
+    def tag(o):
+        if isinstance(o, (list, tuple)):
+            for x in o:
+                tag(x)
+        else:
+            o["part"] = name
     tag(objs)
     return objs
 

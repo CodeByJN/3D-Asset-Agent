@@ -1,6 +1,7 @@
 {
   "roblox_prop": {"max_tris": 5000, "max_part_tris": 20000, "tex_size": 1024, "max_tex": 1024, "collision_tris": 256, "target": "roblox"},
   "roblox_hero": {"max_tris": 20000, "max_part_tris": 20000, "tex_size": 1024, "max_tex": 1024, "collision_tris": 512, "target": "roblox"},
+  "roblox_boss": {"max_tris": 60000, "max_part_tris": 20000, "tex_size": 1024, "max_tex": 1024, "collision_tris": 512, "target": "roblox"},
   "mobile_prop": {"max_tris": 3000, "max_part_tris": 65535, "tex_size": 512, "max_tex": 512, "collision_tris": 128, "target": "unity"},
   "godot_lod": {"max_tris": 10000, "max_part_tris": 65535, "tex_size": 1024, "max_tex": 2048, "collision_tris": 256, "target": "godot"}
 }
