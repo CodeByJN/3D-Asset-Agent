@@ -38,18 +38,30 @@ aside { background: var(--panel); border-left: 1px solid var(--line); display: f
 .badge { align-self: flex-start; font: 600 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; border-radius: 5px; padding: 5px 7px; border: 1px solid currentColor; }
 .badge.pending { color: var(--accent); } .badge.placed { color: var(--good); } .badge.next { color: var(--info); } .badge.old { color: var(--muted); }
 h2 { font: 500 11px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin: 0 0 8px; }
-.stars { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; }
-.star { aspect-ratio: 1; border: 1px solid var(--line); background: var(--panel-2); color: var(--muted); border-radius: 6px; font: 600 13px var(--body); cursor: pointer; padding: 0; }
-.star.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
-.star:disabled { cursor: default; }
-.score { font: 400 22px/1 var(--display); color: var(--accent); margin-top: 8px; min-height: 22px; }
-textarea { width: 100%; min-height: 76px; resize: vertical; font: 400 13px/1.4 var(--body); color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+.rating { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.stars { display: flex; gap: 2px; }
+.star { --fill: 0%; position: relative; font-size: 34px; line-height: 1; user-select: none;
+        background: linear-gradient(90deg, var(--accent) var(--fill), var(--line) var(--fill));
+        -webkit-background-clip: text; background-clip: text; color: transparent; }
+.half { position: absolute; top: 0; bottom: 0; width: 50%; padding: 0; border: 0; background: none; cursor: pointer; }
+.half.l { left: 0; } .half.r { right: 0; }
+.half:disabled { cursor: default; }
+.half:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 4px; }
+.score { font: 400 24px/1 var(--display); color: var(--accent); min-width: 3.2em; }
+.word { font: 400 12px var(--mono); color: var(--muted); margin-top: 6px; min-height: 16px; }
+textarea { width: 100%; min-height: 60px; resize: vertical; font: 400 13px/1.4 var(--body); color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
 textarea:focus, .star:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 textarea:disabled { color: var(--muted); }
-.buttons { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: auto; }
+.buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: auto; }
+.buttons .regen { grid-column: 1 / -1; }
+.nav { pointer-events: auto; display: flex; gap: 4px; }
+.nav button { font: 600 14px var(--body); width: 30px; height: 26px; border-radius: 7px; border: 1px solid var(--line);
+              background: rgba(20, 26, 44, .85); color: var(--fg); cursor: pointer; padding: 0; }
+.nav button:disabled { opacity: .3; cursor: default; }
 .btn { font: 600 14px var(--body); padding: 11px 0; border-radius: 9px; border: 1px solid var(--line); background: var(--panel-2); color: var(--fg); cursor: pointer; }
 .btn.place { background: var(--good); border-color: var(--good); color: #04140c; }
-.btn.next { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.regen { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn small { display: block; font: 400 11px var(--body); opacity: .75; }
 .btn:disabled { opacity: .35; cursor: default; }
 .status { min-height: 40px; font-size: 13px; color: var(--muted); }
 .status.err { color: var(--bad); } .status.ok { color: var(--good); }
@@ -65,7 +77,8 @@ textarea:disabled { color: var(--muted); }
   <section class="stage">
     <div id="view" role="img" aria-label="3D model under review"></div>
     <div class="empty" id="empty" hidden></div>
-    <div class="hud"><h1 id="name">Asset Review</h1><span class="ver" id="ver"></span><span class="count" id="count"></span></div>
+    <div class="hud"><h1 id="name">Asset Review</h1><span class="ver" id="ver"></span><span class="count" id="count"></span>
+      <span class="nav"><button id="prev" title="Earlier review (←)" aria-label="Earlier review">‹</button><button id="fwd" title="Later review (→)" aria-label="Later review">›</button></span></div>
     <div class="tools">
       <button class="chip" id="spin" aria-pressed="true" title="Auto-rotate (R)">Rotate</button>
       <button class="chip" id="fx" aria-pressed="true" title="Play the asset's effects (E)">Effects</button>
@@ -80,18 +93,19 @@ textarea:disabled { color: var(--muted); }
     <span class="badge pending" id="badge">waiting</span>
     <div>
       <h2>Rating</h2>
-      <div class="stars" id="stars"></div>
-      <div class="score" id="score"></div>
+      <div class="rating"><div class="stars" id="stars" role="group" aria-label="Rating"></div><div class="score" id="score"></div></div>
+      <div class="word" id="word"></div>
     </div>
     <div><h2><label for="pros">Pros</label></h2><textarea id="pros" placeholder="What works: shape, colours, detail…"></textarea></div>
-    <div><h2><label for="cons">Cons</label></h2><textarea id="cons" placeholder="What to fix in the next version…"></textarea></div>
+    <div><h2><label for="cons">Cons</label></h2><textarea id="cons" placeholder="What's off…"></textarea></div>
+    <div><h2><label for="notes">Notes for the next version</label></h2><textarea id="notes" placeholder="Anything else: what to change, references, ideas…"></textarea></div>
     <div class="status" id="status" role="status"></div>
     <div class="buttons">
-      <button class="btn" id="back" title="See what you reviewed before (←)">Back</button>
-      <button class="btn place" id="place" title="Rate it and put it in Roblox Studio">Place</button>
-      <button class="btn next" id="next" title="Send the rating back for a new version (→ to step forward)">Next</button>
+      <button class="btn regen" id="regen" title="Save the rating and have Claude make a new version from your cons and notes">Regenerate<small>make a new version from my notes</small></button>
+      <button class="btn" id="keep" title="Save the rating and keep this version as it is">Looks good<small>save rating, keep it</small></button>
+      <button class="btn place" id="place" title="Save the rating and put it in the open Roblox Studio place">Place in Studio<small>save rating, add to place</small></button>
     </div>
-    <div class="hint">Drag to orbit · scroll to zoom · right-drag to pan · ← → step through reviews</div>
+    <div class="hint">Drag to orbit · scroll to zoom · right-drag to pan · 1–0 rate · ‹ › or ← → earlier reviews</div>
   </aside>
 </div>
 <script>
@@ -328,6 +342,53 @@ function makeViewer(el) {
     for (const e of Object.values(fx || {})) buildFx(e.nodes, frame);
   }
 
+
+  // ---- animations: an R15 rig (the character's own pieces, or the default rig's boxes) posed every frame
+  // from anim.playback: per part [R row-major 3x3, t] in Roblox studs; three.js gets x and z flipped.
+  let anim = null, animT = 0, rigParts = {};
+  function buildRig(a) {
+    const root = new THREE.Group(); rigParts = {};
+    for (const [part, [c, s]] of Object.entries(a.boxes)) {
+      const g = new THREE.Group(); g.matrixAutoUpdate = false; rigParts[part] = g; root.add(g);
+      const pieces = a.rig && a.rig[part];
+      if (pieces) {
+        for (const pc of pieces) {
+          const pos = new Float32Array(pc.t.length);
+          for (let i = 0; i < pc.t.length; i += 3) { pos[i] = pc.t[i] + pc.c[0]; pos[i + 1] = pc.t[i + 1] + pc.c[1]; pos[i + 2] = pc.t[i + 2] + pc.c[2]; }
+          const geo = new THREE.BufferGeometry(); geo.setAttribute("position", new THREE.BufferAttribute(pos, 3)); geo.computeVertexNormals();
+          const col = new THREE.Color(...pc.color);
+          const m = new THREE.MeshStandardMaterial({ color: col, roughness: 0.7, flatShading: true, side: THREE.DoubleSide,
+                                                     emissive: pc.glow ? col : new THREE.Color(0), emissiveIntensity: pc.glow ? 2 : 0 });
+          const mesh = new THREE.Mesh(geo, m); mesh.castShadow = true; g.add(mesh);
+        }
+      } else if (!a.rig) {
+        const geo = new THREE.BoxGeometry(s[0], s[1], s[2]); geo.translate(c[0], c[1], c[2]);
+        const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: 0x8b93ad, roughness: 0.8, side: THREE.DoubleSide }));
+        mesh.castShadow = true; g.add(mesh);
+      }
+    }
+    return root;
+  }
+  function poseRig(i) {
+    const f = anim.frames[Math.min(Math.max(i, 0), anim.frames.length - 1)];
+    for (const [part, g] of Object.entries(rigParts)) {
+      const e = f[part]; if (!e) continue;
+      const s = STUD;  // world = flip(x, z) * STUD * (R * p + t)
+      g.matrix.set(-s * e[0], -s * e[1], -s * e[2], -s * e[9],
+                    s * e[3],  s * e[4],  s * e[5],  s * e[10],
+                   -s * e[6], -s * e[7], -s * e[8], -s * e[11],
+                    0, 0, 0, 1);
+      g.matrixWorldNeedsUpdate = true;
+    }
+  }
+  function tickAnim(dt) {
+    if (!anim || !model) return;
+    animT += dt;
+    const len = anim.length, hold = 0.8;  // one-shots pause on their last frame, then play again
+    const t = anim.loop ? animT % len : Math.min(animT % (len + hold), len);
+    poseRig(Math.round(t * anim.fps));
+  }
+
   function resize() {
     const w = el.clientWidth || 1, h = el.clientHeight || 1;
     renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
@@ -340,6 +401,7 @@ function makeViewer(el) {
     const now = clock.getElapsedTime(), dt = Math.min(now - last, 0.1); last = now;
     const t = still ? 0 : now, h = Math.max(size.y, 0.3);
     if (fxGroup.visible) emitters.forEach(e => e.update(dt));
+    tickAnim(still ? 0 : dt);
     beamMat.uniforms.uTime.value = t;
     orb.position.set(-0.55 * h + Math.sin(t * 0.6) * 0.08, h * 1.05 + Math.sin(t * 1.3) * 0.05, -0.2 * h + Math.cos(t * 0.6) * 0.08);
     controls.update(); renderer.render(scene, camera);
@@ -348,7 +410,7 @@ function makeViewer(el) {
   return {
     load(url, fxUrl) {
       if (url === src) return;
-      src = url;
+      src = url; anim = null;
       clearFx();
       loader.load(url, gltf => {
         if (url !== src) return;  // a newer version was picked while this one loaded
@@ -370,7 +432,21 @@ function makeViewer(el) {
         if (fxUrl) fetch(fxUrl, { cache: "no-store" }).then(r => r.json()).then(fx => { if (url === src) playFx(fx); }).catch(() => {});
       }, undefined, () => { if (url === src) src = null; });
     },
-    clear() { if (model) scene.remove(model); model = null; src = null; clearFx(); },
+    loadAnim(url, fxUrl) {
+      if (url === src) return;
+      src = url; clearFx();
+      fetch(url, { cache: "no-store" }).then(r => r.json()).then(a => {
+        if (url !== src) return;
+        if (model) scene.remove(model);
+        anim = a; animT = 0; model = buildRig(a); scene.add(model); poseRig(0);
+        model.updateMatrixWorld(true);
+        new THREE.Box3().setFromObject(model).getSize(size);
+        eachMat(m => { m.wireframe = wireOn; });
+        stage(); frame();
+        if (fxUrl) fetch(fxUrl, { cache: "no-store" }).then(r => r.json()).then(fx => { if (url === src) playFx(fx); }).catch(() => {});
+      }).catch(() => { if (url === src) src = null; });
+    },
+    clear() { if (model) scene.remove(model); model = null; anim = null; src = null; clearFx(); },
     fx(on) { fxGroup.visible = on; },
     reset: frame,
     spin(on) { controls.autoRotate = on; },
@@ -383,26 +459,42 @@ function makeViewer(el) {
 <script>
 const T = new URLSearchParams(location.search).get("t") || "";
 const $ = id => document.getElementById(id);
+const q = path => `${path}?t=${encodeURIComponent(T)}`;
 const mv = makeViewer($("view"));
-let items = [], idx = -1, follow = true, busy = false;
-const drafts = {};  // per item id: {stars, pros, cons}, so polling never wipes what you typed
+let items = [], idx = -1, follow = true, busy = false, hover = 0;
+const drafts = {};  // per item id: {stars, pros, cons, notes}, so polling never wipes what you typed
 let shownKey = "";
 
-for (let s = 1; s <= 10; s++) {
-  const b = document.createElement("button");
-  b.className = "star"; b.textContent = s; b.dataset.s = s; b.setAttribute("aria-label", `${s} out of 10`);
-  b.onclick = () => { const d = draft(); d.stars = s; paintStars(s); };
-  $("stars").append(b);
+// five stars, each in two halves: 1-10
+for (let s = 1; s <= 5; s++) {
+  const star = document.createElement("span");
+  star.className = "star"; star.textContent = "★"; star.dataset.s = s;
+  for (const half of [1, 2]) {
+    const b = document.createElement("button");
+    const v = (s - 1) * 2 + half;
+    b.className = "half " + (half === 1 ? "l" : "r"); b.dataset.v = v;
+    b.setAttribute("aria-label", `${v / 2} stars (${v} out of 10)`);
+    b.onclick = () => { draft().stars = v; paintStars(v); };
+    b.onmouseenter = () => { if (!b.disabled) { hover = v; paintStars(v); } };
+    b.onmouseleave = () => { hover = 0; paintStars(draftStars()); };
+    star.append(b);
+  }
+  $("stars").append(star);
 }
 const item = () => items[idx];
-const draft = () => (drafts[item()?.id] ??= {stars: 0, pros: "", cons: ""});
+const draft = () => (drafts[item()?.id] ??= {stars: 0, pros: "", cons: "", notes: ""});
+const draftStars = () => { const it = item(); return it?.decision ? it.decision.stars || 0 : (drafts[it?.id]?.stars || 0); };
 const open = it => it && !it.decision && it.current && !it.placing;
-$("pros").oninput = e => { draft().pros = e.target.value; };
-$("cons").oninput = e => { draft().cons = e.target.value; };
+for (const k of ["pros", "cons", "notes"]) $(k).oninput = e => { draft()[k] = e.target.value; };
 
+const WORDS = ["", "awful", "very poor", "poor", "weak", "below average", "okay", "good", "great", "excellent", "perfect"];
 function paintStars(n) {
-  document.querySelectorAll(".star").forEach(b => b.classList.toggle("on", +b.dataset.s <= n));
-  $("score").textContent = n ? `${n}/10` : "";
+  document.querySelectorAll(".star").forEach(st => {
+    const s = +st.dataset.s, fill = n >= s * 2 ? 100 : n === s * 2 - 1 ? 50 : 0;
+    st.style.setProperty("--fill", fill + "%");
+  });
+  $("score").textContent = n ? `${(n / 2).toFixed(1).replace(".0", "")} / 5` : "";
+  $("word").textContent = n ? `${n}/10 · ${WORDS[n]}` : "Click a star; the left half gives a half star.";
 }
 function setStatus(text, cls = "") { $("status").textContent = text; $("status").className = "status " + cls; }
 
@@ -410,61 +502,59 @@ function render(force) {
   const it = item();
   const key = it ? `${it.id}:${JSON.stringify([it.decision, it.current, it.placing, it.error])}` : "none";
   $("count").textContent = items.length ? `${idx + 1} / ${items.length}` : "";
-  $("back").disabled = busy || idx <= 0;
+  $("prev").disabled = busy || idx <= 0;
+  $("fwd").disabled = busy || idx >= items.length - 1;
   if (!it) {
-    $("empty").hidden = false; $("empty").textContent = "Nothing to review yet. Make, build or revise an asset and it shows up here.";
-    mv.clear(); $("place").disabled = $("next").disabled = true; return;
+    $("empty").hidden = false; $("empty").textContent = "Nothing to review yet. Make, build, revise or animate something and it shows up here.";
+    mv.clear(); for (const b of ["regen", "keep", "place"]) $(b).disabled = true; return;
   }
   const pending = open(it);
-  $("place").disabled = busy || !pending;
-  $("next").disabled = busy || (!pending && idx >= items.length - 1);
-  $("next").textContent = pending ? "Next" : "Next ›";
+  for (const b of ["regen", "keep", "place"]) $(b).disabled = busy || !pending;
   if (key === shownKey && !force) return;
   shownKey = key;
-  $("name").textContent = it.name; $("ver").textContent = `v${it.v}`;
+  $("name").textContent = it.name; $("ver").textContent = `v${it.v}` + (it.kind === "animation" ? " · animation" : "");
   const fail = /(^|\| )FAIL/.test(it.line);
   $("stats").innerHTML = ""; const s = document.createElement("span");
   s.textContent = it.line; if (fail) s.className = "fail"; $("stats").append(s);
-  if (it.has_glb) {
-    $("empty").hidden = true;
-    const src = `/glb/${it.id}?t=${encodeURIComponent(T)}`;
-    mv.load(src, it.has_fx ? `/fx/${it.id}?t=${encodeURIComponent(T)}` : null);
-  } else {
+  const fx = it.has_fx ? q(`/fx/${it.id}`) : null;
+  if (it.has_anim) { $("empty").hidden = true; mv.loadAnim(q(`/anim/${it.id}`), fx); }
+  else if (it.has_glb) { $("empty").hidden = true; mv.load(q(`/glb/${it.id}`), fx); }
+  else {
     mv.clear(); $("empty").hidden = false;
     $("empty").textContent = "This version has no GLB to show (its export target makes FBX only).";
   }
-  const d = it.decision;
-  const badge = $("badge");
+  const d = it.decision, badge = $("badge");
   if (d) {
-    badge.className = "badge " + (d.action === "place" ? "placed" : "next");
-    badge.textContent = d.action === "place" ? "placed in studio" : "sent for a new version";
-    const [pros, cons] = splitNote(d.note);
-    $("pros").value = pros; $("cons").value = cons; paintStars(d.stars || 0);
+    const word = {place: ["placed", "placed in studio"], keep: ["placed", "kept as it is"], next: ["next", "regenerating"]}[d.action];
+    badge.className = "badge " + word[0]; badge.textContent = word[1];
+    const n = splitNote(d.note);
+    $("pros").value = n.pros; $("cons").value = n.cons; $("notes").value = n.notes; paintStars(d.stars || 0);
   } else if (it.placing) {
     badge.className = "badge placed"; badge.textContent = "placing in studio…";
   } else if (!it.current) {
     badge.className = "badge old"; badge.textContent = "older version, not reviewed";
-    $("pros").value = $("cons").value = ""; paintStars(0);
+    $("pros").value = $("cons").value = $("notes").value = ""; paintStars(0);
   } else {
     badge.className = "badge pending"; badge.textContent = "waiting for your review";
-    const dr = draft(); $("pros").value = dr.pros; $("cons").value = dr.cons; paintStars(dr.stars);
+    const dr = draft(); $("pros").value = dr.pros; $("cons").value = dr.cons; $("notes").value = dr.notes; paintStars(dr.stars);
   }
-  $("pros").disabled = $("cons").disabled = !pending;
-  document.querySelectorAll(".star").forEach(b => b.disabled = !pending);
+  for (const k of ["pros", "cons", "notes"]) $(k).disabled = !pending;
+  document.querySelectorAll(".half").forEach(b => b.disabled = !pending);
   if (it.error) setStatus(it.error, "err");
   else if (it.placing) setStatus("Placing in Studio…");
-  else if (d && d.action === "next" && it.current) setStatus("Rating sent. Claude is making the next version; it opens here when it's ready.");
+  else if (d && d.action === "next" && it.current) setStatus("Sent. Claude is making the next version from your notes; it opens here when it's ready.");
+  else if (d && d.action === "keep") setStatus("Rating saved. Nothing will change.", "ok");
   else if (d && d.result) setStatus(d.result, "ok");
   else if (!d) setStatus("");
 }
 function splitNote(n) {
-  const pros = (n || "").match(/pros: (.*?)(?:; cons: |$)/), cons = (n || "").match(/cons: (.*)$/);
-  return [pros ? pros[1] : "", cons ? cons[1] : ""];
+  const get = k => ((n || "").match(new RegExp(`(?:^|; )${k}: (.*?)(?=; (?:pros|cons|notes): |$)`)) || [, ""])[1];
+  return {pros: get("pros"), cons: get("cons"), notes: get("notes")};
 }
 
 async function poll() {
   try {
-    const r = await fetch(`/state?t=${encodeURIComponent(T)}`, {cache: "no-store"});
+    const r = await fetch(q("/state"), {cache: "no-store"});
     if (r.status === 401) { setStatus("The harness restarted: open the newest review link.", "err"); return; }
     const data = await r.json();
     const before = items.length, wasId = item()?.id;
@@ -481,11 +571,14 @@ async function poll() {
 
 async function send(action) {
   const it = item(), d = draft();
-  if (action === "next" && !d.stars) { setStatus("Pick 1-10 stars first so the next version knows what to fix.", "err"); return; }
-  busy = true; render(true); setStatus(action === "place" ? "Placing in Studio…" : "Sending…");
+  if (!d.stars) { setStatus("Give it a star rating first.", "err"); return; }
+  if (action === "next" && !(d.cons.trim() || d.notes.trim())) {
+    setStatus("Add a con or a note so the next version knows what to change.", "err"); return;
+  }
+  busy = true; render(true); setStatus({place: "Placing in Studio…", keep: "Saving…", next: "Sending…"}[action]);
   try {
-    const r = await fetch(`/decide?t=${encodeURIComponent(T)}`, {method: "POST", headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({id: it.id, action, stars: d.stars || null, pros: d.pros, cons: d.cons})});
+    const r = await fetch(q("/decide"), {method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({id: it.id, action, stars: d.stars, pros: d.pros, cons: d.cons, notes: d.notes})});
     const res = await r.json();
     if (!res.ok) setStatus((res.lines?.length ? res.lines.join(" | ") + " | " : "") + res.error, "err");
     follow = true;
@@ -494,11 +587,11 @@ async function send(action) {
   } finally { busy = false; render(); }
 }
 
-$("back").onclick = () => { if (idx > 0) { idx--; follow = false; render(true); } };
-$("next").onclick = () => {
-  if (open(item())) return send("next");
-  if (idx < items.length - 1) { idx++; follow = idx === items.length - 1; render(true); }
-};
+const step = k => { const n = idx + k; if (n >= 0 && n < items.length) { idx = n; follow = n === items.length - 1; render(true); } };
+$("prev").onclick = () => step(-1);
+$("fwd").onclick = () => step(1);
+$("regen").onclick = () => send("next");
+$("keep").onclick = () => send("keep");
 $("place").onclick = () => send("place");
 for (const [id, fn] of [["spin", mv.spin], ["fx", mv.fx], ["beam", mv.beam], ["wire", mv.wire], ["player", mv.player]]) {
   $(id).onclick = () => { const on = $(id).getAttribute("aria-pressed") !== "true"; $(id).setAttribute("aria-pressed", on); fn(on); };
@@ -506,14 +599,16 @@ for (const [id, fn] of [["spin", mv.spin], ["fx", mv.fx], ["beam", mv.beam], ["w
 $("reset").onclick = () => mv.reset();
 document.addEventListener("keydown", e => {
   if (e.target.tagName === "TEXTAREA") return;
-  if (e.key === "ArrowLeft") $("back").click();
-  else if (e.key === "ArrowRight" && !open(item())) $("next").click();
-  else if (e.key === "r" || e.key === "R") $("spin").click();
-  else if (e.key === "f" || e.key === "F") $("reset").click();
-  else if (e.key === "e" || e.key === "E") $("fx").click();
-  else if (e.key === "l" || e.key === "L") $("beam").click();
-  else if (e.key === "w" || e.key === "W") $("wire").click();
-  else if (e.key === "p" || e.key === "P") $("player").click();
+  const k = e.key.toLowerCase();
+  if (e.key === "ArrowLeft") step(-1);
+  else if (e.key === "ArrowRight") step(1);
+  else if (/^[0-9]$/.test(e.key) && open(item())) { const v = +e.key || 10; draft().stars = v; paintStars(v); }
+  else if (k === "r") $("spin").click();
+  else if (k === "f") $("reset").click();
+  else if (k === "e") $("fx").click();
+  else if (k === "l") $("beam").click();
+  else if (k === "w") $("wire").click();
+  else if (k === "p") $("player").click();
 });
 poll(); setInterval(poll, 1500);
 </script>

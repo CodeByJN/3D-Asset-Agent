@@ -94,15 +94,17 @@ avoided, and writes `HANDOFF.md` so a new chat carries on where the last one sto
   - textures sent as pixels and built as EditableImages, so nothing needs uploading;
   - motion: orbits (tilted, around any centre), bob, spin, tumble, pulse, shimmer and looping shockwave `wave`s;
   - a `Highlight` node that outlines the whole character.
-- `review`: every new version from `make_asset`, `build`, `import_mesh` or `revise` is reviewed before it goes into
-  your game. `review(name)` opens a browser window with a 3D viewer (orbit, zoom, a light-shaft stage, wireframe, an R15
-  figure for scale, and its effects playing: particles and lights, approximated in the browser) and the grade: 1-10 stars,
-  pros and cons, and
-  - **Back** / **Next ›**: step through what you reviewed before;
-  - **Place**: records the rating and builds the model, with its effects, in the open Studio place;
-  - **Next**: records the rating and sends it back, so Claude makes the next version from your note.
-  `review` waits for that choice, so you never type the grade in chat. `ASSET_AGENT_REVIEW_PORT` changes the
-  port (8765).
+- `review`: every new version from `make_asset`, `build`, `import_mesh`, `revise` or `animate` is reviewed before it
+  goes into your game. `review(name)` opens a browser window with a 3D viewer: orbit and zoom, a light-shaft stage,
+  wireframe, an R15 figure for scale, the asset's effects playing (particles and lights, approximated in the
+  browser), and animations playing on their character (`params={"on": "my_npc"}`) or the default R15 rig, with their
+  own effect (`params={"fx": "sparkles"}`). You rate it with stars (half stars count: 1-10), write pros, cons and
+  notes, and press
+  - **Regenerate**: saves the rating and sends it back, so Claude makes the next version from your cons and notes;
+  - **Looks good**: saves the rating and keeps it as it is;
+  - **Place in Studio**: saves the rating and puts it in the open Studio place.
+  The ‹ › arrows step through earlier reviews. `review` waits for your choice, so you never type the grade in chat.
+  `ASSET_AGENT_REVIEW_PORT` changes the port (8765).
 - `studio`: puts an asset, character, animation or lighting preset (`lighting:shader_night`) into the open place.
 
 ### Getting assets into your game

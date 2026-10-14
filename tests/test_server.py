@@ -184,6 +184,20 @@ def test_roblox_fbx_is_in_studs(home):
     assert abs(ratio - 1 / (100 * 0.28)) < 0.002, ratio  # on import Blender undoes its cm, leaving 1/(100 x STUD)
 
 
+def test_animate_queues_a_playable_review(home, monkeypatch):
+    from asset_agent import review
+    monkeypatch.setattr(review.webbrowser, "open", lambda *a, **k: None)
+    line = text(call("animate", name="npc_wave", preset="wave", params={"fx": "sparkles"}))
+    assert "| review: http://127.0.0.1:" in line, line
+    item = review.board(home).latest("npc_wave")
+    assert item["kind"] == "animation" and item["anim"]["frames"] and item["anim"]["rig"] is None
+    head = item["anim"]["frames"][0]["Head"]
+    assert len(head) == 12 and len(item["anim"]["frames"]) >= 4
+    assert "fx" in item["fx"] and item["fx"]["fx"]["type"] == "sparkles"
+    err = text(call("animate", name="npc_wave", params={"on": "crate"}))
+    assert "isn't an R15 character" in err, err  # a model can't wear an animation
+
+
 def test_lighting_presets():
     from asset_agent import lighting
     assert "lighting:shader_night" in lighting.catalog()

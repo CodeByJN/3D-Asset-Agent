@@ -59,6 +59,9 @@ for _n, (_par, _pv, _c, _s) in _RIGHT.items():
 JOINTS = list(RIG)
 GROUPS = {"arms": ("UpperArm", "LowerArm", "Hand"), "legs": ("UpperLeg", "LowerLeg", "Foot"),
           "torso": ("LowerTorso", "UpperTorso"), "head": ("Head",)}
+# not motion: on = the character (an R15 asset) it's previewed and played on, fx = an effect that plays with it
+# (a VFX preset name, or {type, color, size, rate} like revise vfx)
+PREVIEW_KEYS = ("on", "fx")
 KNOBS = {"overlap": 1.0, "speed": 1.0, "amount": 1.0, "arms": 1.0, "legs": 1.0, "torso": 1.0, "head": 1.0, "bounce": 1.0, "lean": 0.0}
 
 
@@ -162,7 +165,7 @@ def resolve(spec: dict) -> dict:
              "params": {**d.get("params", {}), **p.get("params", {})}}
     d.setdefault("tracks", {})
     params = {**KNOBS, **d.get("params", {}), **(spec.get("params") or {})}
-    for k in ("length", "loop", "priority"):
+    for k in ("length", "loop", "priority", *PREVIEW_KEYS):
         if k in params:
             d[k] = params.pop(k)
     d["tracks"] = _merge_tracks(d["tracks"], spec.get("tracks") or {})
@@ -494,6 +497,16 @@ def lowest(pose: dict) -> float:
         n, world[n], _shin_box(n[:-8]) if n.endswith("LowerLeg") else None))
 
 
+def playback(d: dict, fps: int = FPS) -> dict:
+    """The animation for the browser review window: every part's world transform per frame, as
+    [9 rotation (row-major), 3 translation] in Roblox space and studs (world = R * rest point + t), plus
+    the rest boxes of the default rig for characters without a mesh."""
+    frames = [{j: [round(x, 4) for row in r for x in row] + [round(x, 4) for x in t]
+               for j, (r, t) in solve(pose).items() if j != "HumanoidRootPart"} for _, pose in samples(d, fps)]
+    return {"fps": fps, "length": d["length"], "loop": d["loop"], "frames": frames,
+            "boxes": {j: [list(c), list(s)] for j, (_, _, c, s) in RIG.items()}}
+
+
 def samples(d: dict, fps: int = FPS) -> list[tuple[float, dict]]:
     n = max(4, round(d["length"] * fps))
     return [(d["length"] * i / n, pose_at(d, i / n)) for i in range(n + 1)]
@@ -816,9 +829,10 @@ class Animation:
             spec["preset"] = preset
         if params:
             spec["params"] = {k: v for k, v in {**spec.get("params", {}), **params}.items() if v is not None}
-            bad = [k for k in params if k not in KNOBS and k not in ("length", "loop", "priority")]
+            extra = ("length", "loop", "priority", *PREVIEW_KEYS)
+            bad = [k for k in params if k not in KNOBS and k not in extra]
             if bad:
-                raise KeyError(f"unknown param(s) {', '.join(bad)}; params: {', '.join([*KNOBS, 'length', 'loop', 'priority'])}")
+                raise KeyError(f"unknown param(s) {', '.join(bad)}; params: {', '.join([*KNOBS, *extra])}")
         if tracks:
             spec["tracks"] = _merge_tracks(spec.get("tracks", {}), tracks)
         what = "new" if new else ", ".join(

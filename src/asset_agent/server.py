@@ -24,7 +24,7 @@ server = MCPServer("asset-agent", instructions=(
     "make_asset generates organic shapes (slow) and returns one line. Fix things with revise (only that layer and what depends on it "
     "rebuilds), not by regenerating. preview only when you must see it (layer='breakdown' shows geometry, "
     "topology, colour, texture). After each make_asset, build or revise, call review(name): the user "
-    "sees it in a browser review window, rates it and presses Place or Next (revise from their note). studio(name) puts an asset in the user's open Roblox Studio place. VFX: "
+    "sees it in a browser review window, rates it and presses Regenerate (revise from their notes), Looks good or Place. studio(name) puts an asset in the user's open Roblox Studio place. VFX: "
     "vfx_lab shows a preset playing in Studio; rate(preset, stars) scores it; vfx_lab(import_from=) saves effects "
     "already in the place (e.g. Creator Store packs inserted with Studio's insert_asset) as presets. "
     "Animation: animate (R15 presets or your own tracks; revise by calling it again with what changes)."))
@@ -42,9 +42,33 @@ def _asset(name: str) -> Asset:
     return Asset(root)
 
 
+def _fx_spec(fx) -> dict:
+    """An animation's fx param (a preset name or {type, color, size, rate}) as an effects dict."""
+    if not fx:
+        return {}
+    return vfx.merge({}, {"fx": {"type": fx} if isinstance(fx, str) else fx})
+
+
+def _rig_mesh(name: str | None) -> dict | None:
+    """The body-part pieces of R15 character `name` (worker.rig_mesh), if it's a kit-built one."""
+    if not name or not (home() / name / "manifest.json").exists():
+        return None
+    a = _asset(name)
+    if a.m.get("rig") != "r15":
+        raise ValueError(f"{name} isn't an R15 character")
+    return json.loads((a.root / Path(a.m["build"]["code"]).parent / "rig_mesh.json").read_text())
+
+
 def _queue(name: str, line: str) -> str:
-    """Put the asset's current version in the review window; the line gets the window's address."""
+    """Put the asset's (or animation's) current version in the review window; the line gets its address."""
     try:
+        if anim.Animation.exists(home() / name):
+            a = anim.Animation(home() / name)
+            d = a.resolved()
+            payload = {**anim.playback(d), "rig": _rig_mesh(d.get("on")), "on": d.get("on")}
+            url = review_board.add(home(), name, a.m["version"], None, line.split(" | ")[0], kind="animation",
+                                   fx=vfx.resolve(_fx_spec(d.get("fx"))), anim=payload)
+            return f"{line} | review: {url}"
         a = _asset(name)
         v = a.m["version"]
         glb = a.root / "export" / "versions" / f"v{v}" / f"{name}.glb"
@@ -168,7 +192,8 @@ def character(name: str, query: str | None = None, pick: dict | None = None, ref
 def animate(name: str, preset: str | None = None, params: dict | None = None, tracks: dict | None = None,
             project: str | None = None):
     """R15 animation -> filmstrip + .rbxmx. preset='help' lists presets. Again with only what changes =
-    next version. params: speed amount arms legs torso head bounce (x1), lean (deg), length loop.
+    next version. params: speed amount arms legs torso head bounce (x1), lean (deg), length loop, on
+    (character), fx (vfx preset).
     tracks {Joint: {rx|ry|rz deg, x|y|z studs: n | {o,a,p,h} wave | {keys:[[u,v,ease]]}}} override joints."""
     try:
         if preset == "help":
@@ -177,7 +202,7 @@ def animate(name: str, preset: str | None = None, params: dict | None = None, tr
         a = anim.Animation(home() / name)
         if a.m is None and (home() / name / "manifest.json").exists():
             raise ValueError(f"{name} is a model; pick a new name for the animation")
-        line = a.update(preset=preset, params=params, tracks=tracks, project=project)
+        line = _queue(name, a.update(preset=preset, params=params, tracks=tracks, project=project))
         return [line, Image(path=str(a.root / "preview.png"))]
     except Exception as e:
         return f"error: {type(e).__name__}: {' '.join(str(e).split())}"[:300]
@@ -282,7 +307,7 @@ def _place(name: str, on: str | None = None) -> str:
         return studio_client.run(lambda s: s.luau(lighting.script(preset))) if preset else lighting.catalog()
     if anim.Animation.exists(home() / name):
         d = anim.Animation(home() / name).resolved()
-        return studio_client.run(lambda s: s.luau(anim.studio_script(name, d, rig=on)))
+        return studio_client.run(lambda s: s.luau(anim.studio_script(name, d, rig=on or d.get("on"))))
     rec = home() / name / "character.json"
     if rec.exists() and json.loads(rec.read_text()).get("pick"):
         return characters.find(home() / name, None, json.loads(rec.read_text())["pick"], None)[0]
@@ -300,6 +325,8 @@ def _place(name: str, on: str | None = None) -> str:
 
 def _place_from_review(name: str) -> str:
     """The review window's Place button: like studio(name), but Studio must take it."""
+    if anim.Animation.exists(home() / name):
+        return _place(name)
     a = _asset(name)
     if a.m.get("rig") == "r15":
         return _place(name)
@@ -312,10 +339,11 @@ review_board.hooks.update(rate=_rate, place=_place_from_review)
 
 @server.tool(structured_output=False)
 async def review(name: str) -> str:
-    """Show the newest version in the browser review window; waits for the user's stars, pros/cons
-    and choice: placed, or next (revise)."""
+    """Newest version (model or animation) in the browser review window; waits for the user's
+    rating, notes and choice."""
     try:
-        _asset(name)  # only models have a review window
+        if not anim.Animation.exists(home() / name):
+            _asset(name)
         _queue(name, "")  # its current version, if not queued yet
         return await asyncio.to_thread(review_board.wait, home(), name)
     except Exception as e:

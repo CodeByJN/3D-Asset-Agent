@@ -1,9 +1,11 @@
-"""Review window: every new asset version opens in a local 3D viewer before it goes to Studio.
+"""Review window: every new asset or animation version opens in a local 3D viewer before it goes to Studio.
 
-The user orbits the model, gives it 1-10 stars with pros and cons, and presses
-  Back  - look at what they reviewed before (Next steps forward again),
-  Place - record the rating and put the asset in the open Studio place,
-  Next  - record the rating and send it back, so Claude revises from the note.
+The user orbits it (animations play on their character, effects play around it), rates it with stars,
+writes pros, cons and notes, and presses
+  Regenerate  - record the rating and send it back, so Claude makes a new version from the notes,
+  Looks good  - record the rating and keep it as it is,
+  Place       - record the rating and put it in the open Studio place.
+The arrows step through earlier reviews.
 review.wait() blocks the review tool until one of those, so the decision comes back as one line
 and Claude never needs a preview image to judge the model.
 
@@ -72,30 +74,34 @@ def url() -> str:
         return f"http://127.0.0.1:{_httpd.server_address[1]}/?t={TOKEN}"
 
 
-def add(home, name: str, v: int, glb: Path | None, line: str, kind: str = "model", fx: dict | None = None) -> str:
+def add(home, name: str, v: int, glb: Path | None, line: str, kind: str = "model", fx: dict | None = None,
+        anim: dict | None = None) -> str:
     """Queue version v of an asset for review (once; again after its review went back to Claude, so
     reviewing an unchanged version asks the user again). fx: its effects (vfx.resolve), which the
-    page plays around the model. Returns the page's address."""
+    page plays around the model. anim: an animation's playback (anim.playback + rig), kind "animation".
+    Returns the page's address."""
     b = board(home)
     with _cv:
         last = b.latest(name)
         if not (last and last["v"] == v and not (last["decision"] or {}).get("delivered")):
             b.items.append({"id": max((i["id"] for i in b.items), default=0) + 1, "name": name, "v": v,
                             "kind": kind, "glb": str(glb) if glb and Path(glb).exists() else None,
-                            "line": line, "added": time.time(), "decision": None, "fx": fx or {}})
+                            "line": line, "added": time.time(), "decision": None, "fx": fx or {},
+                            "anim": anim})
             b.save()
             _cv.notify_all()
     return url()
 
 
-def note(pros: str = "", cons: str = "") -> str:
-    parts = [f"pros: {pros.strip()}" if pros.strip() else "", f"cons: {cons.strip()}" if cons.strip() else ""]
+def note(pros: str = "", cons: str = "", notes: str = "") -> str:
+    parts = [f"{k}: {' '.join(v.split())}" for k, v in (("pros", pros), ("cons", cons), ("notes", notes)) if v.strip()]
     return "; ".join(p for p in parts if p)
 
 
 def decide(home, item_id: int, action: str, stars: int | None = None, pros: str = "", cons: str = "",
-           background: bool = False) -> dict:
-    """What the Place and Next buttons do. Returns {ok, line} or {ok: False, error}. background: Place
+           background: bool = False, notes: str = "") -> dict:
+    """What the buttons do: regenerate (action "next": rate, then Claude makes a new version from the
+    notes), keep (rate it, no changes) or place (rate it and put it in Studio). Returns {ok, line} or {ok: False, error}. background: Place
     (building it in Studio, or an upload) runs on its own thread; the item shows `placing`, then its decision or
     `error`, so the page never waits on a long request."""
     b = board(home)
@@ -109,19 +115,19 @@ def decide(home, item_id: int, action: str, stars: int | None = None, pros: str 
             return {"ok": False, "error": "already placing it in Studio"}
         if b.latest(item["name"]) is not item:
             return {"ok": False, "error": f"this is an older version: roll {item['name']} back to v{item['v']} first"}
-    if action not in ("next", "place"):
+    if action not in ("next", "keep", "place"):
         return {"ok": False, "error": f"unknown action {action!r}"}
-    if action == "next" and not stars:
-        return {"ok": False, "error": "give it 1-10 stars so the next version knows what to fix"}
+    if action in ("next", "keep") and not stars:
+        return {"ok": False, "error": "rate it with the stars first"}
     if stars is not None and not 1 <= int(stars) <= 10:
         return {"ok": False, "error": "stars must be 1-10"}
     stars = int(stars) if stars else None
     if action == "place" and background:
         with _cv:
             item["placing"], item["error"] = True, None
-        threading.Thread(target=_apply, args=(b, item, action, stars, note(pros, cons)), daemon=True).start()
+        threading.Thread(target=_apply, args=(b, item, action, stars, note(pros, cons, notes)), daemon=True).start()
         return {"ok": True, "line": "placing in Studio", "pending": True}
-    return _apply(b, item, action, stars, note(pros, cons))
+    return _apply(b, item, action, stars, note(pros, cons, notes))
 
 
 def _apply(b: Board, item: dict, action: str, stars: int | None, text: str) -> dict:
@@ -155,12 +161,14 @@ def _answer(item: dict) -> str:
     said = f" ({d['note']})" if d["note"] else ""
     if d["action"] == "place":
         return f"placed {who} in Studio, {rated}{said} | {d['result']}"
+    if d["action"] == "keep":
+        return f"kept {who} as it is, {rated}{said}: no new version wanted (the rating is recorded)."
     return (f"next: {who} rated {rated}{said}. Revise it from the note (the rating is recorded), "
             f"then call review({item['name']!r}) again.")
 
 
 def wait(home, name: str, timeout: float | None = None, open_page: bool = True) -> str:
-    """Block until the user presses Place or Next on the newest version of `name`."""
+    """Block until the user presses Regenerate, Looks good or Place on the newest version of `name`."""
     b = board(home)
     timeout = float(os.environ.get("ASSET_AGENT_REVIEW_WAIT", 600)) if timeout is None else timeout
     page = url()
@@ -187,8 +195,8 @@ def state(b: Board) -> dict:
     latest = {}
     for i in b.items:
         latest[i["name"]] = i["id"]
-    return {"items": [{k: v for k, v in i.items() if k not in ("glb", "rated", "fx")} |
-                      {"has_glb": bool(i["glb"]), "has_fx": bool(i.get("fx")), "current": latest[i["name"]] == i["id"]}
+    return {"items": [{k: v for k, v in i.items() if k not in ("glb", "rated", "fx", "anim")} |
+                      {"has_glb": bool(i["glb"]), "has_fx": bool(i.get("fx")), "has_anim": bool(i.get("anim")), "current": latest[i["name"]] == i["id"]}
                       for i in b.items]}
 
 
@@ -234,6 +242,10 @@ class Handler(BaseHTTPRequestHandler):
             if item and item["glb"] and Path(item["glb"]).exists():
                 return self._send(200, Path(item["glb"]).read_bytes(), "model/gltf-binary")
             return self._send(404, b"no model", "text/plain")
+        if u.path.startswith("/anim/"):
+            with _cv:
+                item = _board.get(int(u.path[6:])) if u.path[6:].isdigit() else None
+            return self._json(200, (item or {}).get("anim") or {})
         if u.path.startswith("/fx/"):
             with _cv:
                 item = _board.get(int(u.path[4:])) if u.path[4:].isdigit() else None
@@ -249,7 +261,7 @@ class Handler(BaseHTTPRequestHandler):
         try:
             body = json.loads(self.rfile.read(int(self.headers.get("Content-Length") or 0)) or b"{}")
             res = decide(_board.home, int(body["id"]), body.get("action", ""), body.get("stars") or None,
-                         body.get("pros", ""), body.get("cons", ""), background=True)
+                         body.get("pros", ""), body.get("cons", ""), background=True, notes=body.get("notes", ""))
         except (ValueError, KeyError) as e:
             res = {"ok": False, "error": f"bad request: {e}"}
         self._json(200 if res["ok"] else 409, res)

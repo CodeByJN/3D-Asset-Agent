@@ -85,6 +85,26 @@ def test_next_records_the_rating_then_returns_it_to_the_waiting_tool(board):
     assert [i["v"] for i in review.board(home).items] == [1, 1] and review.board(home).latest("crate")["id"] == 2
 
 
+def test_looks_good_keeps_it_and_notes_reach_the_rating(board):
+    home, glb, calls = board
+    url = review.add(home, "crate", 1, glb, "ok")
+    assert http(url, "/decide", {"id": 1, "action": "keep"})[0] == 409  # a rating first
+    code, body = http(url, "/decide", {"id": 1, "action": "keep", "stars": 9, "pros": "great shape",
+                                       "notes": "keep the  colours"})
+    assert code == 200, body
+    assert calls == [("rate", "crate", 9, "pros: great shape; notes: keep the colours")]
+    assert review.wait(home, "crate", 1, open_page=False).startswith("kept crate v1 as it is, 9/10")
+
+
+def test_animations_are_served_with_their_playback(board):
+    home, _, _ = board
+    payload = {"fps": 30, "length": 1.0, "loop": True, "frames": [{"Head": [1] * 12}], "boxes": {}, "rig": None}
+    url = review.add(home, "wave", 2, None, "anim wave v2", kind="animation", anim=payload)
+    item = json.loads(http(url, "/state")[1])["items"][0]
+    assert item["kind"] == "animation" and item["has_anim"] and not item["has_glb"] and "anim" not in item
+    assert json.loads(http(url, f"/anim/{item['id']}")[1]) == payload
+
+
 def test_place_and_back_history(board):
     home, glb, calls = board
     url = review.add(home, "crate", 1, glb, "ok")
