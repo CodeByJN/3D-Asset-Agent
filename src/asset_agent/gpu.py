@@ -113,7 +113,8 @@ def serve_cmd(d: Path, model: str, host: str, port: int, vram_gb: float | None, 
     path, sub = MODELS[model]
     cmd = [venv_python(d), LAUNCHER, "--model_path", path, "--subfolder", sub, "--disable_tex",
            "--host", host, "--port", str(port), "--cache-path", d / "gradio_cache"]
-    if vram_gb is None or vram_gb < 12:
+    # low-VRAM mode shuttles the model between CPU and GPU on every job: only when the card really needs it
+    if vram_gb is None or vram_gb < {"mini": 8, "full": 10}.get(model, 12):
         cmd.append("--low_vram_mode")
     if flashvdm:
         cmd.append("--enable_flashvdm")

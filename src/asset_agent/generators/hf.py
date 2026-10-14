@@ -41,6 +41,7 @@ def _one_line(e: Exception) -> str:
 class HFSpaces(Generator):
     name = "hf"
     shape_space = SHAPE_SPACE
+    steps, num_chunks = 30, 8000  # the Space runs the full (non-turbo) model
 
     def __init__(self, token: str | None = None):
         self.token = token or os.environ.get("HF_TOKEN")
@@ -51,7 +52,7 @@ class HFSpaces(Generator):
         from gradio_client import Client
         return Client(space, token=self.token, verbose=False)
 
-    def _run(self, prompt, image, textured=False, seed=1234, steps=30, octree_resolution=256):
+    def _run(self, prompt, image, textured=False, seed=1234, steps=None, octree_resolution=256):
         from gradio_client import handle_file
         if not image:
             out = self._client(IMAGE_SPACE).predict(
@@ -60,8 +61,8 @@ class HFSpaces(Generator):
             image = _path(out)
         res = self._client(self.shape_space).predict(
             caption=None, image=handle_file(image), mv_image_front=None, mv_image_back=None,
-            mv_image_left=None, mv_image_right=None, steps=steps, guidance_scale=5.0, seed=seed,
-            octree_resolution=octree_resolution, check_box_rembg=True, num_chunks=8000, randomize_seed=False,
+            mv_image_left=None, mv_image_right=None, steps=steps or self.steps, guidance_scale=5.0, seed=seed,
+            octree_resolution=octree_resolution, check_box_rembg=True, num_chunks=self.num_chunks, randomize_seed=False,
             api_name="/generation_all" if textured else "/shape_generation")
         mesh = _path(res[1] if textured else res[0])
         stats = res[3] if textured else res[2]
@@ -95,6 +96,9 @@ class LocalHunyuan(HFSpaces):
     pass image= to stay fully offline.
     """
     name = "local"
+    # `asset-agent serve` runs the turbo models, distilled for ~5 steps (30 made each generation ~6x slower);
+    # bigger decode chunks let FlashVDM extract the surface faster
+    steps, num_chunks = 5, 20000
 
     def __init__(self, token: str | None = None):
         super().__init__(token)

@@ -201,3 +201,15 @@ def test_portable_setup(monkeypatch, tmp_path):
     monkeypatch.delenv("ASSET_AGENT_STUDIO_MCP")
     rows = {name: ok for name, ok, _ in doctor.checks(live=False)}
     assert rows["python"] and rows["packages"] and rows[".mcp.json"] and rows["mcp tools"]
+
+
+def test_make_asset_asks_for_a_brief_first(tmp_path, monkeypatch):
+    from asset_agent import brief
+    monkeypatch.setenv("ASSET_AGENT_HOME", str(tmp_path))
+    out = text(call("make_asset", name="chest", prompt="a chest"))
+    assert "Not generated yet" in out and "Reference image" in out and "Style" in out and "Colours" in out
+    assert not (tmp_path / "chest").exists()  # nothing generated
+    full = ("a low poly wooden treasure chest with gold trim, iron lock and a curved lid, slightly open, "
+            "game asset for a pirate game")
+    assert brief.gaps(full, "ref.png", budget="roblox_prop") == []
+    assert len(brief.gaps(full, None, budget="roblox_prop")) == 1  # only the reference image

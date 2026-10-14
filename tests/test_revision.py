@@ -220,3 +220,33 @@ def test_recolor_revision(tmp_path, monkeypatch):
     assert title[0][1:] == [1, 1, 1]  # white highlight stays white
     vfx.revise_preset("aura_black_card", "back to gold", recolor=None)
     assert vfx.presets()["aura_black_card"]["nodes"] == before["nodes"]  # rolled back exactly
+
+
+def test_asset_mesh_from_glb(tmp_path, monkeypatch):
+    import json
+    import struct
+    import numpy as np
+    from asset_agent import vfx_meshes
+    pos = np.array([[0, 0, 0], [2, 0, 0], [0, 1, 0], [0, 0, 4]], np.float32)
+    idx = np.array([0, 1, 2, 0, 2, 3], np.uint16)
+    binary = pos.tobytes() + idx.tobytes()
+    g = {"asset": {"version": "2.0"}, "scene": 0, "scenes": [{"nodes": [0]}],
+         "nodes": [{"mesh": 0, "translation": [5, 0, 0]}], "meshes": [{"primitives": [{"attributes": {"POSITION": 0}, "indices": 1}]}],
+         "buffers": [{"byteLength": len(binary)}],
+         "bufferViews": [{"buffer": 0, "byteOffset": 0, "byteLength": 48}, {"buffer": 0, "byteOffset": 48, "byteLength": 12}],
+         "accessors": [{"bufferView": 0, "componentType": 5126, "count": 4, "type": "VEC3"},
+                       {"bufferView": 1, "componentType": 5123, "count": 6, "type": "SCALAR"}]}
+    js = json.dumps(g).encode()
+    js += b" " * (-len(js) % 4)
+    binary += b"\0" * (-len(binary) % 4)
+    data = (struct.pack("<III", 0x46546C67, 2, 12 + 8 + len(js) + 8 + len(binary)) + struct.pack("<II", len(js), 0x4E4F534A)
+            + js + struct.pack("<II", len(binary), 0x004E4942) + binary)
+    (tmp_path / "hero" / "export").mkdir(parents=True)
+    (tmp_path / "hero" / "export" / "hero.glb").write_bytes(data)
+    v, f = vfx_meshes.glb_mesh(tmp_path / "hero" / "export" / "hero.glb")
+    assert len(v) == 4 and f == [(0, 1, 2), (0, 2, 3)] and v[1] == (7, 0, 0)  # node translation applied
+    monkeypatch.setenv("ASSET_AGENT_HOME", str(tmp_path))
+    d = vfx_meshes.mesh_data("mesh://asset/hero")
+    assert len(d["f"]) == 6 and max(d["v"]) == 0.5
+    with pytest.raises(ValueError):
+        vfx_meshes.build("mesh://asset/nothing")
