@@ -18,6 +18,7 @@
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }  /* .empty sets display: grid, which would keep it over the 3D view */
 html, body { height: 100%; margin: 0; }
 body { background: var(--bg); color: var(--fg); font: 400 14px/1.45 var(--body); }
 .app { height: 100%; display: grid; grid-template-columns: minmax(0, 1fr) 340px; }
@@ -28,7 +29,7 @@ body { background: var(--bg); color: var(--fg); font: 400 14px/1.45 var(--body);
 .hud h1 { font: 400 30px/1 var(--display); margin: 0; letter-spacing: .01em; }
 .ver { font: 500 13px var(--mono); color: var(--accent); }
 .count { margin-left: auto; font: 500 12px var(--mono); color: var(--muted); }
-.stats { position: absolute; left: 16px; bottom: 14px; right: 16px; font: 400 12px/1.5 var(--mono); color: var(--muted); }
+.stats { position: absolute; left: 16px; bottom: 14px; right: 16px; pointer-events: none; font: 400 12px/1.5 var(--mono); color: var(--muted); }
 .stats .fail { color: var(--bad); }
 .tools { position: absolute; right: 14px; top: 52px; display: flex; flex-direction: column; gap: 6px; }
 .chip { font: 500 12px var(--body); color: var(--fg); background: rgba(20, 26, 44, .85); border: 1px solid var(--line); border-radius: 7px; padding: 6px 9px; cursor: pointer; }
