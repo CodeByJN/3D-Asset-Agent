@@ -139,7 +139,7 @@ def _move_image(src_note: Path, dst_note: Path, meta: dict):
 
 
 def _standard(category: str) -> str:
-    return {"prop": "Props", "character": "Characters", "creature": "Creatures and bosses", "vfx": "VFX",
+    return {"building": "Buildings", "prop": "Props", "character": "Characters", "creature": "Creatures and bosses", "vfx": "VFX",
             "animation": "Animation"}.get(category, "Props")
 
 
