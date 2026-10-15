@@ -127,6 +127,30 @@ def record(kind: str, name: str, version, stars: float, note: str = "", category
     return path
 
 
+def _failure_titles() -> dict:
+    return {read(p)[0].get("tag", p.stem): p.stem for p in (VAULT / "failures").glob("*.md")}
+
+
+def _links(meta: dict, titles: dict | None = None) -> str:
+    """The note's last line: its standard, and its failure patterns as links (edges in Obsidian's graph)."""
+    titles = _failure_titles() if titles is None else titles
+    out = f"Standards: [[{_standard(meta.get('category', ''))}]] · [[Rating scale]]\n"
+    fails = [f"[[{titles[f]}]]" for f in meta.get("failures") or [] if f in titles]
+    return out + (f"Failures: {' · '.join(fails)}\n" if fails else "")
+
+
+def relink() -> int:
+    """Rewrite every example's link lines from its frontmatter (after failures were tagged by hand or by a grade)."""
+    titles, n = _failure_titles(), 0
+    for meta, body, path in notes():
+        kept = "\n".join(ln for ln in body.rstrip().splitlines() if not ln.startswith(("Standards:", "Failures:")))
+        new = kept.rstrip() + "\n\n" + _links(meta, titles)
+        if new.strip() != body.strip():
+            write(path, meta, new)
+            n += 1
+    return n
+
+
 def _move_image(src_note: Path, dst_note: Path, meta: dict):
     if meta.get("kind") == "store":  # other creators' thumbnails never leave the private folder
         return
@@ -201,6 +225,7 @@ def relocate() -> int:
 def sync(home: Path) -> str:
     """Notes for every rating already in the repo and assets folder (safe to re-run)."""
     moved = relocate()
+    relink()
     n = {"asset": 0, "vfx": 0, "animation": 0}
     for man in sorted(Path(home).glob("*/manifest.json")):
         m = json.loads(man.read_text())

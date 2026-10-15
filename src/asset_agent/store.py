@@ -136,6 +136,7 @@ def grade(asset_id: int, stars: float, note: str, failures: list[str] | None = N
         meta["failures"] = sorted(set(meta.get("failures") or []) | set(failures or []))
         meta["tags"] = sorted(set(meta.get("tags") or []) | set(tags or []))
         quality.write(p, meta, body)
+        quality.relink()
     return p
 
 
