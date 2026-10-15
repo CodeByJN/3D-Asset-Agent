@@ -56,6 +56,10 @@ def main(argv=None):
     s.add_argument("action", choices=["sync", "export", "summary", "brief"])
     s.add_argument("category", nargs="?", default="prop", help="brief: prop, character, creature, vfx or animation")
     s.add_argument("--all", action="store_true", help="export: include notes not marked share: true")
+    s = sub.add_parser("store", help="grade Creator Store models into the quality vault")
+    s.add_argument("action", choices=["search", "grade"])
+    s.add_argument("arg", help="search: a query; grade: a JSON file of grades")
+    s.add_argument("-n", type=int, default=20, help="search: how many models")
     s = sub.add_parser("setup", help="install Hunyuan3D-2 for this machine's NVIDIA GPU")
     s.add_argument("--dir", help="install folder (default ~/.asset-agent/Hunyuan3D-2)")
     s.add_argument("--model", choices=gpu.MODELS, help="default: full with 10GB+ VRAM, else mini")
@@ -92,6 +96,10 @@ def main(argv=None):
                 print(f"error: {e}", file=sys.stderr)
                 return 1
             return subprocess.call([p.command, *p.args])
+        if a.cmd == "store":
+            from . import store
+            print(store.search(a.arg, a.n) if a.action == "search" else store.grade_file(a.arg))
+            return 0
         if a.cmd == "quality":
             import os
             from pathlib import Path

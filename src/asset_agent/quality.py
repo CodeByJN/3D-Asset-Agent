@@ -109,7 +109,7 @@ def record(kind: str, name: str, version, stars: float, note: str = "", category
     if not (thumb and Path(thumb).exists()) and old.get("image"):
         meta["image"] = old["image"]
         img = f"![[{Path(old['image']).name}]]\n\n"
-    if thumb and Path(thumb).exists():
+    if thumb and Path(thumb).exists() and not (kind == "store" and meta.get("share")):
         from PIL import Image
         dest = path.parent.parent / "img" / f"{_slug(name)}-v{version}.png"
         dest.parent.mkdir(parents=True, exist_ok=True)
@@ -128,6 +128,8 @@ def record(kind: str, name: str, version, stars: float, note: str = "", category
 
 
 def _move_image(src_note: Path, dst_note: Path, meta: dict):
+    if meta.get("kind") == "store":  # other creators' thumbnails never leave the private folder
+        return
     if meta.get("image"):
         a = src_note.parent.parent / meta["image"]
         b = dst_note.parent.parent / meta["image"]
@@ -282,7 +284,8 @@ def brief(category: str, top: int = 5, examples: int = 3) -> str:
     def line(m, b, key):
         s = _sections(b)
         why = s.get(key) or s.get("notes") or ""
-        return f"- {m.get('name')} v{m.get('version')} {m['stars']}/10: {_clip(why, 110)}"
+        by = " (claude)" if m.get("grader") == "claude" else ""
+        return f"- {m.get('name')} v{m.get('version')} {m['stars']}/10{by}: {_clip(why, 110)}"
     ranked = sorted(mine, key=lambda mb: -mb[0]["stars"])
     best = [mb for mb in ranked if mb[0]["stars"] >= 8][:examples]
     bad = [mb for mb in reversed(ranked) if mb[0]["stars"] <= 5][:examples]
