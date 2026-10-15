@@ -271,7 +271,8 @@ def brief(category: str, top: int = 5, examples: int = 3) -> str:
     fixes = {}
     for p in sorted((VAULT / "failures").glob("*.md")):
         meta, body = read(p)
-        fix = next((ln[len("**Fix.**"):] for ln in body.splitlines() if ln.startswith("**Fix.**")), "")
+        para = next((p for p in body.split("\n\n") if p.strip().startswith("**Fix.**")), "")
+        fix = " ".join(para.strip()[len("**Fix.**"):].split())
         fixes[meta.get("tag", p.stem)] = (p.stem, fix.strip())
     lines = [f"# {category}: {len(mine)} rated examples (standard: {_standard(category)})"]
     worst = sorted(counts.items(), key=lambda kv: -kv[1])[:top]
