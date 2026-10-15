@@ -148,11 +148,20 @@ Budget presets live in `budgets.yaml`:
 Decided 2026-10-15. In chat, Claude can skip steps (no cleanup, no brief, straight to placing). The pipeline moves
 into an app that **owns each job's stage**; Claude does the work inside a stage but never chooses the order.
 
-**Stages** (a job only advances when its gate passes; a failed gate sends it back with the reason):
+**Rule: linear, one stage at a time, your thumbs up after every stage.** A stage first runs its automatic checks;
+only then is its result shown to you, and the job moves on when you give it a thumbs up. Thumbs down (with a note)
+redoes that stage. Nothing runs ahead, so a wrong turn costs one stage, not the whole asset.
+
+**Required inputs before anything is generated** (the Brief stage won't start without them):
+- reference images (at least one; a clean view of the subject, ideally front and side or a model sheet);
+- a description: what it is, style, colours, size in studs, genre, and how it's used in the game;
+- the details that make it *this* asset (3-5), which every later stage is checked against.
+
+**Stages** (automatic gate, then your thumbs up; a failed gate sends it back with the reason):
 
 | # | Stage | Workers | Gate |
 |---|---|---|---|
-| 1 | Brief | Claude, `quality brief` | You approve: reference, style, size, genre, use |
+| 1 | Brief | Claude, `quality brief` | Images and description complete; Claude restates the brief and the standard it'll be held to |
 | 2 | Shape | Hunyuan3D (organic) or kit code (hard surface) | A mesh exists |
 | 3 | Cleanup | Blender session | `inspect` clean, within the tri budget |
 | 4 | Texture | Hunyuan paint and/or Blender bake | Every surface textured (no "Flat untextured") |
