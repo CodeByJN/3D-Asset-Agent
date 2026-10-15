@@ -52,6 +52,9 @@ def main(argv=None):
     s.add_argument("--backend", default="auto", choices=["auto", "hf", "local"])
     s.add_argument("--textured", action="store_true", help="ask Hunyuan for its own texture too")
     sub.add_parser("jobs", help="the generate queue")
+    s = sub.add_parser("quality", help="the quality vault (quality/): sync ratings into notes, export the dataset")
+    s.add_argument("action", choices=["sync", "export", "summary"])
+    s.add_argument("--all", action="store_true", help="export: include notes not marked share: true")
     s = sub.add_parser("setup", help="install Hunyuan3D-2 for this machine's NVIDIA GPU")
     s.add_argument("--dir", help="install folder (default ~/.asset-agent/Hunyuan3D-2)")
     s.add_argument("--model", choices=gpu.MODELS, help="default: full with 10GB+ VRAM, else mini")
@@ -88,6 +91,17 @@ def main(argv=None):
                 print(f"error: {e}", file=sys.stderr)
                 return 1
             return subprocess.call([p.command, *p.args])
+        if a.cmd == "quality":
+            import os
+            from pathlib import Path
+            from . import quality
+            if a.action == "sync":
+                print(quality.sync(Path(os.environ.get("ASSET_AGENT_HOME", "assets"))))
+            elif a.action == "export":
+                print(quality.export(include_private=a.all))
+            else:
+                print(quality.summary())
+            return 0
         if a.cmd in ("generate", "jobs"):
             import os
             from pathlib import Path

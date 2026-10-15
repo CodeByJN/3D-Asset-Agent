@@ -7,7 +7,10 @@ A low-token 3D asset harness for Roblox and game-ready assets: an MCP server (`a
 
 ## Workflow rules
 - **Commit whenever a feature is added or completed**, in small, focused commits with descriptive messages.
-- After a user grades something, record it with `rate` before changing it; ratings are kept per version.
+- After a user grades something, record it with `rate` before changing it; ratings are kept per version. Each
+  rating also becomes a note in the quality vault (`quality/`, an Obsidian vault): check the standard for the
+  asset's kind (`quality/standards/`) and the failure patterns (`quality/failures/`) before building, and tag a
+  rated note's `failures` when one applies.
 
 ## Concept art pipeline
 - Concept images -> `generate` (Hunyuan3D queue; `generate()` with no arguments shows progress) -> raw mesh in `assets/_raw/<name>/raw.glb`.

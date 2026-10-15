@@ -280,6 +280,30 @@ def rate(name: str, stars: int, note: str = "") -> str:
 
 
 def _rate(name: str, stars: int, note: str = "") -> str:
+    line = _rate_core(name, stars, note)
+    try:  # every rating also becomes a note in the quality vault (quality/); never fails the rating
+        _vault_note(name, stars, note)
+    except Exception as e:  # noqa: BLE001
+        line += f" (vault note failed: {type(e).__name__}: {e})"[:160]
+    return line
+
+
+def _vault_note(name: str, stars: float, note: str):
+    from . import quality
+    if not (home() / name / "manifest.json").exists() and name in vfx.presets():
+        quality.record_vfx(name, vfx.raw_presets()[name])
+    elif anim.Animation.exists(home() / name):
+        a = anim.Animation(home() / name)
+        quality.record("animation", name, a.m["version"], stars, note, "animation", "procedural",
+                       {"preset": a.m["spec"].get("preset")})
+    elif not (home() / name).exists() and name in anim.presets():
+        p = anim._library()[name]
+        quality.record_animation(name, p["ratings"][-1], p)
+    else:
+        quality.record_asset(home(), name, _asset(name).m["version"], stars, note)
+
+
+def _rate_core(name: str, stars: int, note: str = "") -> str:
     if not 1 <= stars <= 10:
         raise ValueError("stars must be 1-10")
     if not (home() / name / "manifest.json").exists() and name in vfx.presets():

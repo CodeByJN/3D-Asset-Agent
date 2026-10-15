@@ -10,3 +10,8 @@ assets/
 bench/frames/
 CLAUDE.local.md
 .claude/settings.local.json
+
+# quality vault: unshared notes, private exports, Obsidian workspace state
+quality/examples/private/
+quality/dataset/*.private.jsonl
+quality/.obsidian/workspace*.json

@@ -15,6 +15,9 @@ Claude on its own can write Blender and Luau code, but starts from scratch every
   Every improvement lands here, so every project starts with it.
 - **Taste that learns**: `rate` stores your 1-10 grades and notes per version; `plan()` and `animate('help')` hand
   them back to Claude as what to do and what to avoid.
+- **A quality standard**: [`quality/`](quality/README.md) is an Obsidian vault of rubrics, failure patterns and one
+  note per graded result; `python -m asset_agent quality export` compiles shared notes into a dataset
+  (`quality/dataset/ratings.jsonl`) for evaluating and training the harness.
 
 ## Setup (about 10 minutes)
 
