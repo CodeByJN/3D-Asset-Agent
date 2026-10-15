@@ -142,3 +142,34 @@ Budget presets live in `budgets.yaml`:
 - Repo name and whether it's public or private.
 - Which generator API keys Jordan has or wants to buy. Tripo and Meshy are recommended first.
 - Whether to self-host Hunyuan3D or TRELLIS. That depends on having a GPU.
+
+## Next: the asset studio (a strict pipeline with its own interface)
+
+Decided 2026-10-15. In chat, Claude can skip steps (no cleanup, no brief, straight to placing). The pipeline moves
+into an app that **owns each job's stage**; Claude does the work inside a stage but never chooses the order.
+
+**Stages** (a job only advances when its gate passes; a failed gate sends it back with the reason):
+
+| # | Stage | Workers | Gate |
+|---|---|---|---|
+| 1 | Brief | Claude, `quality brief` | You approve: reference, style, size, genre, use |
+| 2 | Shape | Hunyuan3D (organic) or kit code (hard surface) | A mesh exists |
+| 3 | Cleanup | Blender session | `inspect` clean, within the tri budget |
+| 4 | Texture | Hunyuan paint and/or Blender bake | Every surface textured (no "Flat untextured") |
+| 5 | Rig + scripts | Blender rig, game-script library | Skinned if it moves; scripts pass a Studio play test |
+| 6 | Auto critic | Claude vs the category standard, failures and references | Critic score at or above the target, else back to the weakest stage |
+| 7 | Your review | Review window with sub-score sliders | Approve, regenerate (back to a chosen stage) or place |
+| 8 | Place + record | Studio client, vault | Placed; the grade and every stage's record saved |
+
+**Shape of the build**
+- **Orchestrator:** a job state machine (`pipeline.py` grows into it), jobs in SQLite with every stage's inputs,
+  outputs, metrics and scores; the full trace per job is also post-training data.
+- **Claude through MCP, on the user's plan:** asset-agent exposes stage tools only (`job_next`: what the current
+  stage needs; `job_submit`: the stage's output, which the gate checks). No tool reaches past the current stage.
+  The same stage tools can later be driven through the Claude API for unattended runs or open-source users.
+- **Interface:** a local web app grown from the review window: a job board (one card per job and its stage),
+  a stage view (inputs, outputs, gate result, 3D viewer), grading with sub-scores, and the vault's brief beside it.
+- **Reused as is:** the Blender session, the Hunyuan queue, the vault (`quality.py`, `store.py`), the Studio client.
+
+**Build order:** state machine and stage tools → job board UI → texture stage → auto critic → rig + scripts →
+sub-score review → scenes (whole environments: terrain, lighting, layout, play test) as a later job type.
