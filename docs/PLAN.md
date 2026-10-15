@@ -182,3 +182,17 @@ redoes that stage. Nothing runs ahead, so a wrong turn costs one stage, not the 
 
 **Build order:** state machine and stage tools → job board UI → texture stage → auto critic → rig + scripts →
 sub-score review → scenes (whole environments: terrain, lighting, layout, play test) as a later job type.
+
+**Merged from the Gemini plan review (2026-10-15)**
+- **Core vault + project vaults:** the harness ships a core vault (standards, failure patterns, rules, our own
+  references and graded store asset ids; never other creators' files or thumbnails). Each new game gets a project
+  vault for its art style that inherits the core one as the fallback; `plan(project)` style guides move into it.
+- **JSON report per stage:** named checks with pass/fail and values (tris, scale, manifold, UV overlap, texture
+  size, bone count, weights normalised, play-test errors), stored on the job; the gate reads it.
+- **Targeted loop-back with a retry cap:** a failed check returns the job to the stage that owns it with that
+  check attached; after 3 failed attempts the stage stops and asks the user.
+- **Three grading layers:** Blender for hard numbers; Claude critic for the look (colour, likeness, standards);
+  the user's thumbs up. VFX and Roblox animation are checked in Studio (play test), not Blender.
+- **Not adopted:** an LLM supervisor and separate agents. The orchestrator is a deterministic state machine; one
+  Claude session works each stage with that stage's instructions and tools (same specialisation, no drift, no
+  context re-derived per agent).
