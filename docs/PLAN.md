@@ -196,3 +196,8 @@ sub-score review → scenes (whole environments: terrain, lighting, layout, play
 - **Not adopted:** an LLM supervisor and separate agents. The orchestrator is a deterministic state machine; one
   Claude session works each stage with that stage's instructions and tools (same specialisation, no drift, no
   context re-derived per agent).
+- **What the vault holds for the AI:** text first (standards, failures, grades in the grader's words), measured
+  facts as JSON extracted from rbxm/GLB (proportions, tris, parts, hex palettes, emitter parameters), a few
+  reference renders per standard (front/side/3/4) for the critic, and frame strips (6-8 frames in one image) for
+  VFX and animation instead of GIF/MP4. Original rbxm/GLB/FBX stay in the asset library or the place, linked by
+  path or asset id.
