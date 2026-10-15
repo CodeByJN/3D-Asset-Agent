@@ -8,6 +8,10 @@ What the reviewer's grades say beyond the rubrics, drawn from Creator Store grad
   assets [`style-stud`]. Don't build in that style unless a project asks for it.
 - **Clean over busy.** Detail helps until it stops reading; "a bit too much detail" costs a point.
 - **Scripts add value.** A model that comes working (AI, attacks) grades above its looks [`scripted`].
+- **Weapons should be usable.** A sword that comes with its animations and system is a 10; the bare classic
+  Roblox sword (and copies of it) is a 3: classic but not special [`usable`, `classic-basic`].
+- **VFX make or break it.** Effects that fit the mesh lift it to 9-10; effects that drown it cost 2-4 points
+  however good the mesh is ([[VFX overpower the mesh]]). Without VFX, a great mesh still gets an 8.
 - **"Not bad but nothing crazy" is a 7.** Competent and clean isn't enough for 8+; it needs something that stands out.
 
 See [[Rating scale]].
