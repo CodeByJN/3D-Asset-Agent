@@ -38,3 +38,16 @@ def test_export_only_shares_shared_notes(vault):
     assert rows[0]["name"] == "wave" and rows[0]["works"] == "big and bouncy"
     assert quality.export(include_private=True).startswith("2 of 2")
     assert (vault / "dataset" / "ratings.private.jsonl").exists()
+
+
+def test_brief_is_bounded_and_ranks(vault):
+    (vault / "failures").mkdir(parents=True)
+    quality.write(vault / "failures" / "Clipping.md", {"type": "failure", "tag": "clipping"},
+                  "\n# Clipping\n\n**Fix.** Check every view.\n")
+    for i in range(40):  # however many notes, the brief stays the same size
+        p = quality.record("asset", f"crate{i}", 1, (i % 10) + 1, f"cons: lid {i}", "prop", "build")
+        meta, body = quality.read(p)
+        quality.write(p, {**meta, "failures": ["clipping"]}, body)
+    b = quality.brief("prop")
+    assert "Clipping (x40): Check every view." in b and len(b.splitlines()) == 1 + 2 + 1 + 3 + 1 + 3
+    assert "Best:\n- crate9 v1 10/10" in b and "Worst:\n- crate0 v1 1/10: lid 0" in b

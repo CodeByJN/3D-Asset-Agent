@@ -253,6 +253,46 @@ def export(include_private: bool = False) -> str:
     return f"{len(rows)} of {len(notes())} notes -> {out}" + ("" if include_private else " (share: true only)")
 
 
+def _clip(s: str, n: int) -> str:
+    s = " ".join(s.split())
+    return s if len(s) <= n else s[:n - 1].rstrip() + "…"
+
+
+def brief(category: str, top: int = 5, examples: int = 3) -> str:
+    """A fixed-size digest of the vault for one category (about 300 tokens however many notes there are):
+    its most common failures with their fixes, and the best and worst examples in a line each."""
+    mine = [(m, b) for m, b, _ in notes() if m.get("category") == category and isinstance(m.get("stars"), (int, float))]
+    counts = {}
+    for m, _ in mine:
+        for f in m.get("failures") or []:
+            counts[f] = counts.get(f, 0) + 1
+    fixes = {}
+    for p in sorted((VAULT / "failures").glob("*.md")):
+        meta, body = read(p)
+        fix = next((ln[len("**Fix.**"):] for ln in body.splitlines() if ln.startswith("**Fix.**")), "")
+        fixes[meta.get("tag", p.stem)] = (p.stem, fix.strip())
+    lines = [f"# {category}: {len(mine)} rated examples (standard: {_standard(category)})"]
+    worst = sorted(counts.items(), key=lambda kv: -kv[1])[:top]
+    if worst:
+        lines.append("Common failures:")
+        for tag, c in worst:
+            title, fix = fixes.get(tag, (tag, ""))
+            lines.append(f"- {title} (x{c}): {_clip(fix, 140)}")
+
+    def line(m, b, key):
+        s = _sections(b)
+        why = s.get(key) or s.get("notes") or ""
+        return f"- {m.get('name')} v{m.get('version')} {m['stars']}/10: {_clip(why, 110)}"
+    ranked = sorted(mine, key=lambda mb: -mb[0]["stars"])
+    best = [mb for mb in ranked if mb[0]["stars"] >= 8][:examples]
+    bad = [mb for mb in reversed(ranked) if mb[0]["stars"] <= 5][:examples]
+    if best:
+        lines += ["Best:"] + [line(m, b, "works") for m, b in best]
+    if bad:
+        lines += ["Worst:"] + [line(m, b, "wrong") for m, b in bad]
+    return "\n".join(lines)
+
+
 def summary() -> str:
     """Counts by kind and verdict, and the most common failure tags."""
     by, fails = {}, {}

@@ -53,7 +53,8 @@ def main(argv=None):
     s.add_argument("--textured", action="store_true", help="ask Hunyuan for its own texture too")
     sub.add_parser("jobs", help="the generate queue")
     s = sub.add_parser("quality", help="the quality vault (quality/): sync ratings into notes, export the dataset")
-    s.add_argument("action", choices=["sync", "export", "summary"])
+    s.add_argument("action", choices=["sync", "export", "summary", "brief"])
+    s.add_argument("category", nargs="?", default="prop", help="brief: prop, character, creature, vfx or animation")
     s.add_argument("--all", action="store_true", help="export: include notes not marked share: true")
     s = sub.add_parser("setup", help="install Hunyuan3D-2 for this machine's NVIDIA GPU")
     s.add_argument("--dir", help="install folder (default ~/.asset-agent/Hunyuan3D-2)")
@@ -99,6 +100,8 @@ def main(argv=None):
                 print(quality.sync(Path(os.environ.get("ASSET_AGENT_HOME", "assets"))))
             elif a.action == "export":
                 print(quality.export(include_private=a.all))
+            elif a.action == "brief":
+                print(quality.brief(a.category))
             else:
                 print(quality.summary())
             return 0
