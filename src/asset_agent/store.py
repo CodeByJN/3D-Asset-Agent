@@ -122,7 +122,7 @@ def search(query: str, n: int = 20) -> str:
 
 
 def grade(asset_id: int, stars: float, note: str, failures: list[str] | None = None, category: str | None = None,
-          grader: str = "human") -> Path:
+          grader: str = "human", tags: list[str] | None = None) -> Path:
     """A vault note for one store model (it must have come through search)."""
     pending = json.loads((_dir() / "_pending.json").read_text())
     f = pending[str(asset_id)]
@@ -131,18 +131,19 @@ def grade(asset_id: int, stars: float, note: str, failures: list[str] | None = N
     extra["grader"] = grader
     p = quality.record("store", f"{f['title'][:40]} {asset_id}", 1, stars, note, category or f["category"],
                        "store", extra, Path(f["thumb"]))
-    if failures:
+    if failures or tags:
         meta, body = quality.read(p)
-        meta["failures"] = sorted(set(meta.get("failures") or []) | set(failures))
+        meta["failures"] = sorted(set(meta.get("failures") or []) | set(failures or []))
+        meta["tags"] = sorted(set(meta.get("tags") or []) | set(tags or []))
         quality.write(p, meta, body)
     return p
 
 
 def grade_file(path: Path) -> str:
-    """Grades from a JSON list: [{"id", "stars", "note", "failures"?, "category"?, "grader"?}]."""
+    """Grades from a JSON list: [{"id", "stars", "note", "failures"?, "category"?, "grader"?, "tags"?}]."""
     rows = json.loads(Path(path).read_text())
     for r in rows:
-        grade(r["id"], r["stars"], r["note"], r.get("failures"), r.get("category"), r.get("grader", "human"))
+        grade(r["id"], r["stars"], r["note"], r.get("failures"), r.get("category"), r.get("grader", "human"), r.get("tags"))
     return f"graded {len(rows)} store models"
 
 
