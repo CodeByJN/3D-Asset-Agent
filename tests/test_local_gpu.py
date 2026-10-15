@@ -41,6 +41,15 @@ def test_serve_cmd_flags(tmp_path):
     assert "--low_vram_mode" not in big and "--enable_flashvdm" not in big and "9000" in big
 
 
+def test_serve_cmd_texture(tmp_path):
+    # an 11 GB 1080 Ti: shape + texture don't both fit, so idle models wait in system RAM
+    tex = [str(x) for x in gpu.serve_cmd(tmp_path, "full", "0.0.0.0", 8080, 11.0, texture=True)]
+    assert "--disable_tex" not in tex and tex[tex.index("--texgen_model_path") + 1] == "tencent/Hunyuan3D-2"
+    assert "--low_vram_mode" in tex
+    big = [str(x) for x in gpu.serve_cmd(tmp_path, "full", "0.0.0.0", 8080, 24.0, texture=True)]
+    assert "--low_vram_mode" not in big
+
+
 def test_serve_needs_setup_first():
     with pytest.raises(gpu.SetupError, match="asset-agent setup"):
         gpu.serve()

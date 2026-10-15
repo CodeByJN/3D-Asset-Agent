@@ -1,6 +1,8 @@
-"""Hunyuan3D-2 (shape only) on your own NVIDIA GPU: detect, install, serve to this machine or to others.
+"""Hunyuan3D-2 on your own NVIDIA GPU: detect, install, serve to this machine or to others.
 
-Texturing is ours (project/flat/bake), so Hunyuan's texture model and its CUDA build are skipped.
+Shapes by default. --texture adds Hunyuan3D-Paint (it paints the model from the image): it needs the CUDA
+Toolkit to build two small extensions, and ~16 GB VRAM, or less with low-VRAM mode, which parks idle models
+in system RAM (11 GB cards work with ~24 GB+ RAM, just slower).
 """
 import os
 import secrets
@@ -18,6 +20,8 @@ MODELS = {  # name -> (model_path, subfolder); shape VRAM ~5 GB (mini) / ~6 GB (
     "full": ("tencent/Hunyuan3D-2", "hunyuan3d-dit-v2-0-turbo"),
 }
 MIN_VRAM_GB = 6
+TEX_MIN_VRAM_GB = 8  # with low-VRAM mode; 16+ keeps shape and texture models both on the card
+TEX_EXTENSIONS = ["hy3dgen/texgen/custom_rasterizer", "hy3dgen/texgen/differentiable_renderer"]
 # transformers 5.18 renamed DINOv2's layers (q_proj, gate_proj...), so Hunyuan's checkpoints no longer load.
 PINS = ["transformers<5.18"]
 LAUNCHER = Path(__file__).with_name("hy_serve.py")
@@ -81,8 +85,9 @@ def _run(cmd, **kw):
         raise SetupError(f"failed: {' '.join(map(str, cmd))}")
 
 
-def setup(d: Path | None = None, model: str | None = None) -> str:
-    """Install Hunyuan3D-2 with PyTorch wheels that match this GPU. Safe to re-run."""
+def setup(d: Path | None = None, model: str | None = None, texture: bool = False) -> str:
+    """Install Hunyuan3D-2 with PyTorch wheels that match this GPU. Safe to re-run; texture=True also
+    builds the texture model's CUDA extensions (needs the CUDA Toolkit and, on Windows, MSVC)."""
     gpu = detect()
     if not gpu:
         raise SetupError("no NVIDIA GPU found (nvidia-smi failed); use backend='hf' (free) instead")
@@ -105,16 +110,80 @@ def setup(d: Path | None = None, model: str | None = None) -> str:
     _run([*pip, "-e", d])
     _run([py, "-c", "import torch; assert torch.cuda.is_available(), 'CUDA not available'; "
                     "print('torch sees', torch.cuda.get_device_name(0))"])
-    config.save(hunyuan_dir=str(d), model=model)
-    return f"ok: Hunyuan3D-2 ({model}) installed in {d}. Start it with: asset-agent serve"
+    if texture:
+        _build_texture(d, py, gpu, pip)
+    config.save(hunyuan_dir=str(d), model=model, **({"texture": True} if texture else {}))
+    tex = " with texturing" if texture else ""
+    return (f"ok: Hunyuan3D-2 ({model}){tex} installed in {d}. Start it with: asset-agent serve"
+            + (" --texture" if texture else ""))
 
 
-def serve_cmd(d: Path, model: str, host: str, port: int, vram_gb: float | None, flashvdm: bool = True) -> list:
+def _nvcc() -> str | None:
+    if p := shutil.which("nvcc"):
+        return p
+    for root in filter(None, [os.environ.get("CUDA_PATH"), "/usr/local/cuda"]):
+        p = Path(root) / "bin" / ("nvcc.exe" if os.name == "nt" else "nvcc")
+        if p.exists():
+            return str(p)
+    if os.name == "nt":
+        found = sorted(Path(os.environ.get("ProgramFiles", "C:/Program Files")).glob(
+            "NVIDIA GPU Computing Toolkit/CUDA/v12.*/bin/nvcc.exe"), reverse=True)
+        return str(found[0]) if found else None
+    return None
+
+
+def _msvc_env() -> dict | None:
+    """Windows: the Visual Studio C++ build environment (vcvars64), or None if Build Tools are missing."""
+    vswhere = (Path(os.environ.get("ProgramFiles(x86)", "C:/Program Files (x86)"))
+               / "Microsoft Visual Studio/Installer/vswhere.exe")
+    if not vswhere.exists():
+        return None
+    p = subprocess.run([str(vswhere), "-latest", "-products", "*", "-requires",
+                        "Microsoft.VisualStudio.Component.VC.Tools.x86.x64", "-property", "installationPath"],
+                       capture_output=True, text=True)
+    vcvars = Path(p.stdout.strip()) / "VC/Auxiliary/Build/vcvars64.bat" if p.stdout.strip() else None
+    if not vcvars or not vcvars.exists():
+        return None
+    out = subprocess.run(f'"{vcvars}" >nul && set', shell=True, capture_output=True, text=True).stdout
+    return dict(line.split("=", 1) for line in out.splitlines() if "=" in line)
+
+
+def _build_texture(d: Path, py: Path, gpu: GPU, pip: list):
+    """Hunyuan3D-Paint's two CUDA/C++ extensions, built for this GPU's architecture."""
+    if gpu.vram_gb < TEX_MIN_VRAM_GB:
+        raise SetupError(f"{gpu}: texturing needs {TEX_MIN_VRAM_GB}GB+ VRAM; keep shapes here and texture with "
+                         "backend='hf'")
+    nvcc = _nvcc()
+    if not nvcc:
+        raise SetupError("texturing builds CUDA code: install the CUDA Toolkit 12.6 (developer.nvidia.com/"
+                         "cuda-12-6-0-download-archive), open a new terminal and run setup --texture again")
+    env = dict(os.environ)
+    if os.name == "nt":
+        vs = _msvc_env()
+        if not vs:
+            raise SetupError("texturing builds C++ on Windows: install Visual Studio 2022 Build Tools with the "
+                             "Desktop development with C++ workload (visualstudio.microsoft.com/downloads), "
+                             "then run setup --texture again")
+        env.update(vs)
+    env["CUDA_HOME"] = env["CUDA_PATH"] = str(Path(nvcc).parent.parent)
+    if gpu.cap:
+        env["TORCH_CUDA_ARCH_LIST"] = f"{gpu.cap[0]}.{gpu.cap[1]}"  # just this card: faster, and Pascal-safe
+    _run([*pip, "ninja", "setuptools", "wheel", "pybind11"])
+    for ext in TEX_EXTENSIONS:
+        _run([*pip, "--no-build-isolation", d / ext], env=env)
+    _run([py, "-c", "import custom_rasterizer, mesh_processor; print('texture extensions ok')"],
+         cwd=d / "hy3dgen/texgen/differentiable_renderer")
+
+
+def serve_cmd(d: Path, model: str, host: str, port: int, vram_gb: float | None, flashvdm: bool = True,
+              texture: bool = False) -> list:
     path, sub = MODELS[model]
-    cmd = [venv_python(d), LAUNCHER, "--model_path", path, "--subfolder", sub, "--disable_tex",
+    cmd = [venv_python(d), LAUNCHER, "--model_path", path, "--subfolder", sub,
            "--host", host, "--port", str(port), "--cache-path", d / "gradio_cache"]
-    # low-VRAM mode shuttles the model between CPU and GPU on every job: only when the card really needs it
-    if vram_gb is None or vram_gb < {"mini": 8, "full": 10}.get(model, 12):
+    cmd += ["--texgen_model_path", "tencent/Hunyuan3D-2"] if texture else ["--disable_tex"]
+    # low-VRAM mode shuttles models between CPU and GPU on every job: only when the card really needs it
+    need = 16 if texture else {"mini": 8, "full": 10}.get(model, 12)
+    if vram_gb is None or vram_gb < need:
         cmd.append("--low_vram_mode")
     if flashvdm:
         cmd.append("--enable_flashvdm")
@@ -139,7 +208,8 @@ def lan_addresses() -> list[str]:
     return out
 
 
-def serve(remote: bool = False, port: int = 8080, model: str | None = None, flashvdm: bool = True) -> int:
+def serve(remote: bool = False, port: int = 8080, model: str | None = None, flashvdm: bool = True,
+          texture: bool | None = None) -> int:
     """Run the shape server in the foreground (Ctrl+C stops it).
 
     remote=False: this machine only, no key. remote=True: listens on the network and requires the key.
@@ -149,6 +219,9 @@ def serve(remote: bool = False, port: int = 8080, model: str | None = None, flas
     if not venv_python(d).exists():
         raise SetupError(f"Hunyuan3D-2 not installed in {d}; run: asset-agent setup")
     model = model or c.get("model", "mini")
+    texture = c.get("texture", False) if texture is None else texture
+    if texture and not c.get("texture"):
+        raise SetupError("texturing isn't built here yet: run asset-agent setup --texture first")
     gpu = detect()
     env = dict(os.environ)
     if remote:
@@ -160,9 +233,11 @@ def serve(remote: bool = False, port: int = 8080, model: str | None = None, flas
         print(f"  browser: http://<address>:{port}/?key={key}")
     else:
         env.pop("HUNYUAN_KEY", None)
-    cmd = serve_cmd(d, model, "0.0.0.0" if remote else "127.0.0.1", port, gpu.vram_gb if gpu else None, flashvdm)
-    print(f"Starting Hunyuan3D-2 ({model}) on port {port}; the first start downloads the model. Ctrl+C stops it.",
-          flush=True)
+    cmd = serve_cmd(d, model, "0.0.0.0" if remote else "127.0.0.1", port, gpu.vram_gb if gpu else None, flashvdm,
+                    texture)
+    print(f"Starting Hunyuan3D-2 ({model}{' + texture' if texture else ''}) on port {port}"
+          f"{' in low-VRAM mode' if '--low_vram_mode' in cmd else ''}; the first start downloads the models. "
+          "Ctrl+C stops it.", flush=True)
     try:
         return subprocess.run([str(x) for x in cmd], cwd=d, env=env).returncode
     except KeyboardInterrupt:

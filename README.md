@@ -190,6 +190,13 @@ uv run --python 3.12 python -m asset_agent connect http://<gpu-machine>:8080 --k
 `serve` without `--remote` serves this machine only; `status` shows what is installed and which backend is in use.
 See [docs/GPU_SERVER.md](docs/GPU_SERVER.md).
 
+**Textures from Hunyuan too** (Hunyuan3D-Paint paints the model from the concept image): install the
+[CUDA Toolkit 12.6](https://developer.nvidia.com/cuda-12-6-0-download-archive) and, on Windows,
+[Visual Studio 2022 Build Tools](https://visualstudio.microsoft.com/downloads/) with *Desktop development with C++*,
+then `setup --texture` (builds two small CUDA extensions) and `serve --remote` (texturing stays on). It wants ~16 GB
+of VRAM; below that the server runs in low-VRAM mode, keeping the idle model in system RAM, so an 11 GB card with
+24 GB+ of RAM works, just slower. `generate` and `make_asset(textured=True)` then get painted models.
+
 ## Development
 
 ```bash

@@ -59,11 +59,18 @@ class HFSpaces(Generator):
                 prompt=prompt + PROMPT_SUFFIX, seed=seed, randomize_seed=False, width=1024, height=1024,
                 num_inference_steps=4, api_name="/infer")
             image = _path(out)
-        res = self._client(self.shape_space).predict(
-            caption=None, image=handle_file(image), mv_image_front=None, mv_image_back=None,
-            mv_image_left=None, mv_image_right=None, steps=steps or self.steps, guidance_scale=5.0, seed=seed,
-            octree_resolution=octree_resolution, check_box_rembg=True, num_chunks=self.num_chunks, randomize_seed=False,
-            api_name="/generation_all" if textured else "/shape_generation")
+        try:
+            res = self._client(self.shape_space).predict(
+                caption=None, image=handle_file(image), mv_image_front=None, mv_image_back=None,
+                mv_image_left=None, mv_image_right=None, steps=steps or self.steps, guidance_scale=5.0, seed=seed,
+                octree_resolution=octree_resolution, check_box_rembg=True, num_chunks=self.num_chunks,
+                randomize_seed=False, api_name="/generation_all" if textured else "/shape_generation")
+        except Exception as e:
+            if textured and "texgen_worker" in str(e):  # the server was started shape-only
+                raise RuntimeError("this Hunyuan server has no texture model: on the GPU machine run "
+                                   "`python -m asset_agent setup --texture`, then `python -m asset_agent serve --remote "
+                                   "--texture`") from None
+            raise
         mesh = _path(res[1] if textured else res[0])
         stats = res[3] if textured else res[2]
         return mesh, image, stats, textured

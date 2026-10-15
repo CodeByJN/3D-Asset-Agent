@@ -55,11 +55,15 @@ def main(argv=None):
     s = sub.add_parser("setup", help="install Hunyuan3D-2 for this machine's NVIDIA GPU")
     s.add_argument("--dir", help="install folder (default ~/.asset-agent/Hunyuan3D-2)")
     s.add_argument("--model", choices=gpu.MODELS, help="default: full with 10GB+ VRAM, else mini")
+    s.add_argument("--texture", action="store_true",
+                   help="also install Hunyuan3D-Paint (needs CUDA Toolkit 12.6, and MSVC on Windows)")
     s = sub.add_parser("serve", help="run the shape server (Ctrl+C stops it)")
     s.add_argument("--remote", action="store_true", help="let other machines connect (requires a key)")
     s.add_argument("--port", type=int, default=8080)
     s.add_argument("--model", choices=gpu.MODELS)
     s.add_argument("--no-flashvdm", action="store_true", help="if the fast decoder errors on your GPU")
+    s.add_argument("--texture", action=argparse.BooleanOptionalAction, default=None,
+                   help="serve Hunyuan3D-Paint too (default: on if setup --texture ran)")
     s = sub.add_parser("connect", help="use a shape server on another machine")
     s.add_argument("url", help="e.g. http://192.168.1.50:8080")
     s.add_argument("--key", help="printed by `asset-agent serve --remote`")
@@ -100,9 +104,9 @@ def main(argv=None):
         if a.cmd == "status":
             print(status())
         elif a.cmd == "setup":
-            print(gpu.setup(a.dir, a.model))
+            print(gpu.setup(a.dir, a.model, a.texture))
         elif a.cmd == "serve":
-            return gpu.serve(a.remote, a.port, a.model, not a.no_flashvdm)
+            return gpu.serve(a.remote, a.port, a.model, not a.no_flashvdm, a.texture)
         elif a.cmd == "connect":
             print(connect(a.url, a.key))
         elif a.cmd == "roblox":
