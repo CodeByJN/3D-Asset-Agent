@@ -57,9 +57,10 @@ def main(argv=None):
     s.add_argument("category", nargs="?", default="prop", help="brief: prop, character, creature, vfx or animation")
     s.add_argument("--all", action="store_true", help="export: include notes not marked share: true")
     s = sub.add_parser("store", help="grade Creator Store models into the quality vault")
-    s.add_argument("action", choices=["search", "grade"])
-    s.add_argument("arg", help="search: a query; grade: a JSON file of grades")
-    s.add_argument("-n", type=int, default=20, help="search: how many models")
+    s.add_argument("action", choices=["search", "gallery", "collect", "grade"])
+    s.add_argument("arg", nargs="?", help="search: a query; gallery: a query (default: every ungraded one); "
+                   "grade: a JSON file of grades")
+    s.add_argument("-n", type=int, default=20, help="search, gallery: how many models")
     s = sub.add_parser("setup", help="install Hunyuan3D-2 for this machine's NVIDIA GPU")
     s.add_argument("--dir", help="install folder (default ~/.asset-agent/Hunyuan3D-2)")
     s.add_argument("--model", choices=gpu.MODELS, help="default: full with 10GB+ VRAM, else mini")
@@ -98,7 +99,8 @@ def main(argv=None):
             return subprocess.call([p.command, *p.args])
         if a.cmd == "store":
             from . import store
-            print(store.search(a.arg, a.n) if a.action == "search" else store.grade_file(a.arg))
+            print({"search": lambda: store.search(a.arg, a.n), "gallery": lambda: store.gallery(a.arg, a.n),
+                   "collect": store.collect, "grade": lambda: store.grade_file(a.arg)}[a.action]())
             return 0
         if a.cmd == "quality":
             import os

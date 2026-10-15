@@ -81,7 +81,7 @@ class Studio:
         if self.studio_id is None and "list_roblox_studios" in self.tools:
             for _ in range(20):  # Studio registers with a fresh proxy a second or two after it starts
                 text = _text(await self.s.call_tool("list_roblox_studios", {}))
-                if '"studios":[]' not in text.replace(" ", ""):
+                if '"name":"' in text.replace(" ", ""):  # wait for a window with a place open, not a start page
                     break
                 await asyncio.sleep(0.5)
             self.studio_id = self._pick_studio(text)

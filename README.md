@@ -19,7 +19,7 @@ Claude on its own can write Blender and Luau code, but starts from scratch every
   note per graded result; `python -m asset_agent quality brief creature` prints a fixed-size digest for one category (top failures with fixes, best and worst examples), and `python -m asset_agent quality export` compiles shared notes into a dataset
   (`quality/dataset/ratings.jsonl`) for evaluating and training the harness.
 
-Creator Store examples: `python -m asset_agent store search "dragon" -n 20` fetches models from Roblox's public Creator Store API (triangles, mesh parts, scripts, votes, a thumbnail) and writes a contact sheet; `python -m asset_agent store grade grades.json` turns grades into vault notes (`kind: store`, `grader: claude` unless a person graded it). Thumbnails stay private; a shared store note publishes only the asset id, facts and grade.
+Creator Store examples, graded by you in Studio: `python -m asset_agent store search "dragon" -n 20` fetches models from Roblox's public Creator Store API (triangles, mesh parts, scripts, votes, a thumbnail and a contact sheet); `python -m asset_agent store gallery dragon` inserts them into the open Studio place (Workspace.StoreGallery, on its own floor, scripts disabled), each with a sign and Stars/Pros/Cons/Failures attributes to fill in the Properties panel; `python -m asset_agent store collect` reads your grades into the vault (`kind: store`, `grader: human`). Newer store models only load after you press Get on their store page. Thumbnails stay private; a shared store note publishes only the asset id, facts and grade.
 
 ## Setup (about 10 minutes)
 

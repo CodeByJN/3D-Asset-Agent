@@ -1,4 +1,4 @@
-"""Creator Store grading: the API's item details flattened, and a grade written as a private vault note."""
+"""Creator Store grading: the API's item details flattened, and a grade written as a private vault note (the user grades)."""
 import json
 
 from asset_agent import quality, store
@@ -17,7 +17,7 @@ def test_grade_writes_a_private_note_and_keeps_the_thumbnail_private(tmp_path, m
     (store._dir() / "_pending.json").write_text(json.dumps({"47433": {**f, "thumb": "missing.png"}}))
     p = store.grade(47433, 5, "pros: readable; cons: flat blade", ["missing-detail"])
     meta, body = quality.read(p)
-    assert "private" in p.parts and meta["grader"] == "claude" and meta["failures"] == ["missing-detail"]
+    assert "private" in p.parts and meta["grader"] == "human" and meta["failures"] == ["missing-detail"]
     assert meta["url"].endswith("/47433") and "## What's wrong\nflat blade" in body
     quality.write(p, {**meta, "share": True, "image": "img/x.png"}, body)
     (p.parent.parent / "img").mkdir(exist_ok=True)
