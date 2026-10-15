@@ -201,3 +201,7 @@ sub-score review → scenes (whole environments: terrain, lighting, layout, play
   reference renders per standard (front/side/3/4) for the critic, and frame strips (6-8 frames in one image) for
   VFX and animation instead of GIF/MP4. Original rbxm/GLB/FBX stay in the asset library or the place, linked by
   path or asset id.
+- **Shape router (stage 2):** the brief picks a route from `quality/standards/Shape routing.md`: **claude** (built
+  things, from measured facts; procedural texture + bake), **hunyuan** (organic forms; Hunyuan paint), **hybrid**
+  (split into organic and built parts, joined in Blender) or **import** (VFX/animation from the library). The route
+  is shown in the Brief stage for the thumbs up; the recreation benchmark tests each route against the originals.
