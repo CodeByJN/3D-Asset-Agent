@@ -10,6 +10,11 @@ Roblox. Shading is flat (low-poly look) unless smooth=True.
   blade(path, width, m, fold, two_sided) extrude(shape, depth, at, rot, m)   mirror(obj), copies(obj, count)
   jitter(obj, amount, seed)             STUD (metres per stud)
 
+Organic shapes: blob([(at, radii), ...], m, res) sculpts with metaballs that melt into one smooth
+surface (negative elements carve). Markings: paint(obj, m, region) colours the faces in a region and
+decal(obj, region, m) lifts a copy of them into its own layer; regions are near(path, width),
+within(at, radii), ring_at(at, radius, width) and any_of(...), or any function of a point.
+
 R15 characters (Roblox's standard rig, so every R15 animation plays on them): tag every piece with
 body(part, *objs). R15[part] = {pivot, centre, size} of the default rig in these coordinates; pivot is
 where the part bends. Model each piece around its own joints: a LeftUpperArm sleeve runs from its
@@ -28,7 +33,7 @@ import bpy
 from mathutils import Euler, Matrix, Vector
 
 __all__ = ["mat", "box", "cone", "ball", "rock", "lathe", "tube", "blade", "extrude", "mirror", "copies",
-           "jitter", "body", "piece", "R15", "STUD", "math", "Vector"]
+           "jitter", "body", "piece", "blob", "near", "within", "ring_at", "any_of", "paint", "decal", "R15", "STUD", "math", "Vector"]
 STUD = 0.28  # metres; Roblox imports metres and shows studs
 
 
@@ -287,6 +292,116 @@ def body(part, *objs):
             o["part"] = part
     tag(objs)
     return objs
+
+
+_BLOBS = [0, None]  # count (metaball families merge by name), calibration
+
+
+def _blob_scale():
+    """Surface radius of a lone unit metaball element (the field threshold pulls it inside its radius)."""
+    if _BLOBS[1] is None:
+        o = _metaball([((0, 0, 0), (1, 1, 1), (0, 0, 0), 2.0, False)], None, 0.05, "calib")
+        _BLOBS[1] = max(v.co.x for v in o.data.vertices)
+        bpy.data.objects.remove(o)
+    return _BLOBS[1]
+
+
+def _metaball(elements, m, res, name):
+    _BLOBS[0] += 1
+    mb = bpy.data.metaballs.new(f"mb{_BLOBS[0]}")
+    mb.resolution = mb.render_resolution = res
+    mb.threshold = 0.6
+    ob = bpy.data.objects.new(f"mb{_BLOBS[0]}", mb)
+    bpy.context.scene.collection.objects.link(ob)
+    for at, size, rot, stiff, neg in elements:
+        el = mb.elements.new()
+        el.type, el.co, el.radius, el.stiffness, el.use_negative = "ELLIPSOID", Vector(at), 1.0, stiff, neg
+        el.size_x, el.size_y, el.size_z = size
+        el.rotation = Euler([math.radians(a) for a in rot]).to_quaternion()
+    bpy.context.view_layer.update()
+    me = bpy.data.meshes.new_from_object(ob.evaluated_get(bpy.context.evaluated_depsgraph_get()))
+    bpy.data.objects.remove(ob)
+    bpy.data.metaballs.remove(mb)
+    me.name = name
+    o = bpy.data.objects.new(name, me)
+    bpy.context.scene.collection.objects.link(o)
+    if m is not None:
+        me.materials.append(m)
+    for p in me.polygons:
+        p.use_smooth = True
+    return o
+
+
+def blob(elements, m=None, res=0.4, name="blob"):
+    """Sculpt with metaballs: soft ellipsoids that melt into one smooth surface (heads, muzzles, muscles,
+    fur ruffs). elements: [(at, (rx, ry, rz)), ...] or (at, radii, rot, stiffness, negative); radii are
+    the size a lone element shows; stiffness (default 2) sets how far it pulls on its neighbours;
+    negative=True carves (eye sockets, mouth grooves). res: polygon size in studs."""
+    k = 1 / _blob_scale()
+    els = []
+    for e in elements:
+        at, size, rot, stiff, neg = (tuple(e) + ((0, 0, 0), 2.0, False)[len(e) - 2:])[:5]
+        els.append((at, tuple(s * k for s in size), rot, stiff, neg))
+    return _metaball(els, m, res, name)
+
+
+def near(path, width):
+    """Region: points within `width` (one value or one per path point) of a polyline. For paint/decal."""
+    pts = [Vector(p) for p in path]
+    ws = width if isinstance(width, (list, tuple)) else [width] * len(pts)
+    def inside(p):
+        for (a, wa), (b, wb) in zip(zip(pts, ws), zip(pts[1:], ws[1:])):
+            ab = b - a
+            t = max(0.0, min(1.0, (p - a).dot(ab) / max(ab.length_squared, 1e-9)))
+            if (p - (a + ab * t)).length <= wa + (wb - wa) * t:
+                return True
+        return False
+    return inside
+
+
+def within(at, radii):
+    """Region: inside an ellipsoid."""
+    c, r = Vector(at), Vector(radii)
+    return lambda p: sum(((p[i] - c[i]) / r[i]) ** 2 for i in range(3)) <= 1
+
+
+def ring_at(at, radius, width):
+    """Region: a band `width` wide where a sphere of `radius` around `at` cuts the surface (a circle drawn
+    on it: seals, rings, spirals' outer edge)."""
+    c = Vector(at)
+    return lambda p: abs((p - c).length - radius) <= width / 2
+
+
+def any_of(*regions):
+    return lambda p: any(r(p) for r in regions)
+
+
+def paint(obj, m, region):
+    """Colour the faces of obj whose centre lies in `region` with material m (markings, noses, lips): the
+    bake turns them into clean texture detail that follows the surface."""
+    mats = obj.data.materials
+    if m.name not in [x.name for x in mats if x]:
+        mats.append(m)
+    idx = [x.name if x else None for x in mats].index(m.name)
+    for f in obj.data.polygons:
+        if region(f.center):
+            f.material_index = idx
+    return obj
+
+
+def decal(obj, region, m, lift=0.15, name="decal"):
+    """A copy of obj's faces in `region`, lifted `lift` studs off the surface: markings that can be shown
+    and hidden on their own (a transformation's patterns) while hugging the body."""
+    bm = bmesh.new()
+    bm.from_mesh(obj.data)
+    bm.normal_update()
+    bmesh.ops.delete(bm, geom=[f for f in bm.faces if not region(f.calc_center_median())], context="FACES")
+    for v in bm.verts:
+        v.co += v.normal * lift
+    o = _obj_raw(bm, name, m)
+    for p in o.data.polygons:
+        p.use_smooth = True
+    return o
 
 
 def piece(name, *objs):
