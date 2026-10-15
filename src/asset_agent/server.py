@@ -27,7 +27,9 @@ server = MCPServer("asset-agent", instructions=(
     "sees it in a browser review window, rates it and presses Regenerate (revise from their notes), Looks good or Place. studio(name) puts an asset in the user's open Roblox Studio place. VFX: "
     "vfx_lab shows a preset playing in Studio; rate(preset, stars) scores it; vfx_lab(import_from=) saves effects "
     "already in the place (e.g. Creator Store packs inserted with Studio's insert_asset) as presets. "
-    "Animation: animate (R15 presets or your own tracks; revise by calling it again with what changes)."))
+    "Animation: animate (R15 presets or your own tracks; revise by calling it again with what changes). "
+    "Concept art: generate(images) queues them for Hunyuan3D (generate() shows progress); clean each raw mesh in the "
+    "blender server (open, inspect, cleanup, export), then review and studio."))
 
 
 def home() -> Path:
@@ -105,6 +107,29 @@ def make_asset(name: str, prompt: str | None = None, image: str | None = None, s
         return brief.ask(questions)
     return _queue(name, _make_asset(home() / name, prompt=prompt, image=image, budget=budget, style=style, color=color,
                                     backend=backend, textured=textured, project=proj))
+
+
+_queue_obj = None
+
+
+def _jobs():
+    global _queue_obj
+    from .pipeline import Queue
+    if _queue_obj is None:
+        _queue_obj = Queue(home())
+    return _queue_obj
+
+
+@tool
+def generate(images: list[str] | None = None, prompt: str | None = None) -> str:
+    """Concept images (or a prompt) -> Hunyuan3D raw meshes in assets/_raw, queued in the background, to
+    clean in the blender server. No arguments: the queue."""
+    from .pipeline import describe
+    q = _jobs()
+    if not images and not prompt:
+        return "\n".join(describe(j) for j in q.jobs()[-20:]) or "no jobs"
+    out = [q.submit(image=img) for img in images or []] or [q.submit(prompt=prompt)]
+    return "queued " + "; ".join(describe(j) for j in out) + " | generate() for progress"
 
 
 @server.tool(structured_output=False)

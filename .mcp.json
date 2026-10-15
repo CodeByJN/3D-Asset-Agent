@@ -2,11 +2,37 @@
   "mcpServers": {
     "asset-agent": {
       "command": "uv",
-      "args": ["run", "--python", "3.12", "python", "-m", "asset_agent.server"]
+      "args": [
+        "run",
+        "--python",
+        "3.12",
+        "python",
+        "-m",
+        "asset_agent.server"
+      ]
+    },
+    "blender": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--python",
+        "3.12",
+        "python",
+        "-m",
+        "asset_agent.blender_mcp"
+      ]
     },
     "Roblox_Studio": {
       "command": "uv",
-      "args": ["run", "--python", "3.12", "python", "-m", "asset_agent", "studio-mcp"]
+      "args": [
+        "run",
+        "--python",
+        "3.12",
+        "python",
+        "-m",
+        "asset_agent",
+        "studio-mcp"
+      ]
     }
   }
 }

@@ -9,6 +9,12 @@ A low-token 3D asset harness for Roblox and game-ready assets: an MCP server (`a
 - **Commit whenever a feature is added or completed**, in small, focused commits with descriptive messages.
 - After a user grades something, record it with `rate` before changing it; ratings are kept per version.
 
+## Concept art pipeline
+- Concept images -> `generate` (Hunyuan3D queue; `generate()` with no arguments shows progress) -> raw mesh in `assets/_raw/<name>/raw.glb`.
+- Clean every raw mesh in the `blender` MCP server before it goes in a game: `open` -> `inspect` -> `cleanup` (the
+  ops the issues call for) -> `inspect` -> `render` -> `export`, then `review(name)` / `studio(name)`.
+- For a known character, show each stage (head shape, eyes, mouth, markings) for a yes/no before the next.
+
 ## Getting assets into Roblox
 - Assets go into Studio **live** through Studio's MCP server: `studio(name)` or Place in the review window builds the model there as EditableMeshes, with its effects. No API key, account setup or upload, so never ask the user for one to place something.
 - Live meshes aren't saved with the place; uploading (`python -m asset_agent roblox --upload on` + an Open Cloud key) is opt-in, only for keeping assets in a published game.

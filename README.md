@@ -5,8 +5,10 @@ in Blender and placed straight into your open Roblox Studio place. Works on **Wi
 
 Claude on its own can write Blender and Luau code, but starts from scratch every time. This repo gives it:
 
-- **Tools** (an MCP server, 15 tools, ~1.9k tokens): high-level actions like `build`, `animate`, `character`,
+- **Tools** (an MCP server, 16 tools, ~2k tokens): high-level actions like `build`, `animate`, `character`,
   `vfx_lab` and `studio` that return one-line results, so long scripts and screenshots never fill the chat.
+- **A concept-art pipeline**: concept images go to Hunyuan3D in a background queue (`generate`), and a second MCP
+  server, `blender`, lets Claude inspect each raw mesh and clean it up for Roblox itself (see below).
 - **Hands**: it drives headless Blender, and talks to Roblox Studio's own MCP server directly, so meshes, textures
   and effects appear in Studio with **no uploads and no API keys**.
 - **A library that grows**: VFX presets, procedural textures and 3D meshes, R15 animation presets, shader lighting.
@@ -70,6 +72,27 @@ Ask Claude in this folder:
 - "Make a Gon Freecss NPC from Creator Store assets, with an idle animation."
 - "Show me `aura_luminosity` in the VFX lab." Then grade it: "7, the blades need more glow."
 - "Set the place to shader night lighting." (`studio("lighting:shader_night")`; also `shader_dusk`, `shader_day`)
+
+## Concept art to Roblox asset
+
+Three pieces, each usable alone:
+
+1. **Orchestrator** (`generate` on the asset-agent server, no arguments for the queue's status; or
+   `python -m asset_agent generate img1.png img2.png` and `python -m asset_agent jobs`): queues concept images (or a prompt) for Hunyuan3D, one at a time in the background, and leaves each raw
+   mesh at `assets/_raw/<name>/raw.glb` with its reference image. Repeat images come from the cache.
+2. **Blender MCP server** (`blender`, in `.mcp.json`): one headless Blender that stays running with the meshes loaded.
+   - `open(job or path)`: load a raw mesh (glb, gltf, fbx, obj) and report on it.
+   - `inspect(name)`: tris, non-manifold and open edges, duplicate and loose vertices, inward faces, separate pieces,
+     UV coverage and overlap, materials, textures, size, and what stops it being Roblox-ready (20,000 tris per mesh,
+     one 1024 px texture, sized in studs).
+   - `cleanup(name, ops)`: ordered ops: `merge_by_distance`, `delete_loose`, `recalc_normals`, `dissolve_degenerate`,
+     `fill_holes`, `keep_largest`, `decimate`, `remesh`, `smooth`, `triangulate`, `shade_smooth`, `rotate`,
+     `scale_to` (studs, on the ground), `uv_unwrap`, `bake_texture` (one texture, optional AO).
+   - `run(code)`: any `bpy` for what the ops don't cover. `render(name)`: look at it. `meshes()`: what's open.
+   - `export(name)`: GLB + FBX for Roblox, and the result becomes asset `name`, so `review` and `studio` take over.
+3. **Claude's cleanup role**: `open` -> `inspect` -> `cleanup` with the ops the issues call for -> `inspect` again ->
+   `render` -> `export` -> `review(name)` -> `studio(name)`. A raw Hunyuan mesh (300k+ tris, unwelded seams) comes
+   out watertight, decimated, sized and baked to one texture in about a minute.
 
 For a whole game, start with `plan(project)`: it keeps a style guide, a roster, what past ratings liked and
 avoided, and writes `HANDOFF.md` so a new chat carries on where the last one stopped. Projects live in

@@ -64,7 +64,7 @@ def _mcp_config():
     if not f.exists():
         return False, f"{f} missing: re-clone the repo"
     servers = json.loads(f.read_text()).get("mcpServers", {})
-    want = {"asset-agent", "Roblox_Studio"}
+    want = {"asset-agent", "blender", "Roblox_Studio"}
     if not want <= set(servers):
         return False, f".mcp.json lacks {', '.join(want - set(servers))}"
     return True, f"{', '.join(servers)} (approve them when Claude Code asks)"

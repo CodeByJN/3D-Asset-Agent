@@ -11,7 +11,7 @@ from asset_agent.blender import find_blender, run_steps
 
 from .test_pipeline import HERE
 
-TOOL_TOKEN_BUDGET = 2000  # plan: all tool definitions together under ~2k tokens
+TOOL_TOKEN_BUDGET = 2100  # plan: all tool definitions together under ~2k tokens (+ generate, the concept-art queue)
 
 
 def run(coro):
@@ -33,7 +33,7 @@ def test_tool_definitions_fit_token_budget():
     tools = run(server.server.list_tools())
     payload = json.dumps([t.model_dump(exclude_none=True) for t in tools])
     approx_tokens = len(payload) / 4
-    assert len(tools) <= 15
+    assert len(tools) <= 16
     assert approx_tokens < TOOL_TOKEN_BUDGET, f"{approx_tokens:.0f} tokens"
 
 
