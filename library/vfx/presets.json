@@ -58244,6 +58244,8357 @@
   "score": 7,
   "note": "v5 good enough; still short of the wiki's next-level quality"
  },
+ "aura_luminosity_hy": {
+  "tags": [
+   "aura",
+   "character",
+   "sols-rng",
+   "transcendent",
+   "luminosity",
+   "white",
+   "blue",
+   "ice",
+   "emblem",
+   "meshes",
+   "hunyuan-test"
+  ],
+  "use": "LUMINOSITY v5 (Sol's RNG Transcendent): a huge crystal-blade star behind the avatar (tall top blade, long hooked wings, diagonals) over a blinding core, slow rays and a deep glow, a crystal spear across its base, ripples on the ground, HD 3D glass crystal blades with white-hot neon cores forming the star, ice shards with trails and two comets circling the avatar, ground ripple rings, a halo ring, ice glints, snow, core ray bursts and updraft; ornate serif title. Nothing in front of the body. v5: an icy sparkly aura hugs the avatar (outline glow, sparkles and wisps off every limb), sparkle helixes, shockwaves, twinkling stars and a wheel of stars turning behind the blades. v5: the star is dark steel-blue blades with glowing white edges and engraved grooves (as on the wiki). HUNYUAN TEST: the star is Hunyuan3D-2's sculpted blade star (from a text prompt) with a glowing white outline.",
+  "rig": "character",
+  "mode": "loop",
+  "sketch": "glow",
+  "host": {
+   "size": {
+    "v3": [
+     2,
+     2,
+     1
+    ]
+   }
+  },
+  "source": {
+   "kind": "recreation",
+   "by": "claude",
+   "set": "sols-rng-transcendent",
+   "ref": "assets/_projects/sols_rng/refs/sol_rng_fandom_com_wiki_Auras"
+  },
+  "nodes": [
+   {
+    "class": "BillboardGui",
+    "name": "TitlePlate",
+    "attach": "Head",
+    "props": {
+     "Size": {
+      "u2": [
+       10,
+       0,
+       3.2,
+       0
+      ]
+     },
+     "StudsOffset": {
+      "v3": [
+       0,
+       4.6,
+       0
+      ]
+     },
+     "LightInfluence": 0,
+     "MaxDistance": 200
+    },
+    "children": [
+     {
+      "class": "TextLabel",
+      "name": "1 in 1,2",
+      "props": {
+       "Text": "1 in 1,200,000,000",
+       "FontFace": {
+        "font": "Merriweather"
+       },
+       "TextScaled": true,
+       "TextColor3": {
+        "c3": [
+         0.82,
+         0.92,
+         1
+        ]
+       },
+       "BackgroundTransparency": 1,
+       "Size": {
+        "u2": [
+         1,
+         0,
+         0.16,
+         0
+        ]
+       },
+       "Position": {
+        "u2": [
+         0,
+         0,
+         0.0,
+         0
+        ]
+       },
+       "ZIndex": 2
+      },
+      "children": [
+       {
+        "class": "UIStroke",
+        "name": "S",
+        "props": {
+         "Color": {
+          "c3": [
+           0.12,
+           0.25,
+           0.6
+          ]
+         },
+         "Thickness": 1
+        }
+       }
+      ]
+     },
+     {
+      "class": "TextLabel",
+      "name": "[ LUMINO",
+      "props": {
+       "Text": "[ LUMINOSITY ]",
+       "FontFace": {
+        "font": "Merriweather"
+       },
+       "TextScaled": true,
+       "TextColor3": {
+        "c3": [
+         1,
+         1,
+         1
+        ]
+       },
+       "BackgroundTransparency": 1,
+       "Size": {
+        "u2": [
+         1,
+         0,
+         0.56,
+         0
+        ]
+       },
+       "Position": {
+        "u2": [
+         0,
+         0,
+         0.16,
+         0
+        ]
+       },
+       "ZIndex": 3
+      },
+      "children": [
+       {
+        "class": "UIStroke",
+        "name": "S",
+        "props": {
+         "Color": {
+          "c3": [
+           0.12,
+           0.25,
+           0.6
+          ]
+         },
+         "Thickness": 2.4
+        }
+       }
+      ]
+     },
+     {
+      "class": "TextLabel",
+      "name": "The Abso",
+      "props": {
+       "Text": "The Absolute Radiance",
+       "FontFace": {
+        "font": "Merriweather"
+       },
+       "TextScaled": true,
+       "TextColor3": {
+        "c3": [
+         0.82,
+         0.92,
+         1
+        ]
+       },
+       "BackgroundTransparency": 1,
+       "Size": {
+        "u2": [
+         1,
+         0,
+         0.18,
+         0
+        ]
+       },
+       "Position": {
+        "u2": [
+         0,
+         0,
+         0.74,
+         0
+        ]
+       },
+       "ZIndex": 2
+      },
+      "children": [
+       {
+        "class": "UIStroke",
+        "name": "S",
+        "props": {
+         "Color": {
+          "c3": [
+           0.12,
+           0.25,
+           0.6
+          ]
+         },
+         "Thickness": 1
+        }
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "class": "Plane",
+    "name": "BackGlow",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "Image": "texture://glow",
+     "Size": {
+      "v2": [
+       30,
+       30
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       0,
+       2.0,
+       3.6,
+       0,
+       0,
+       0
+      ]
+     },
+     "Color": {
+      "c3": [
+       0.32,
+       0.5,
+       1
+      ]
+     },
+     "Brightness": 1.5,
+     "Transparency": 0.45
+    },
+    "anim": {
+     "pulse": {
+      "amp": 0.06,
+      "period": 3
+     }
+    }
+   },
+   {
+    "class": "Plane",
+    "name": "Rays",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "Image": "texture://rays",
+     "Size": {
+      "v2": [
+       32,
+       32
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       0,
+       2.0,
+       3.5,
+       0,
+       0,
+       0
+      ]
+     },
+     "Color": {
+      "c3": [
+       0.82,
+       0.92,
+       1
+      ]
+     },
+     "Brightness": 2,
+     "Transparency": 0.55
+    },
+    "anim": {
+     "spin": 4
+    }
+   },
+   {
+    "class": "Plane",
+    "name": "EmblemDeep",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "Image": "texture://lum_emblem",
+     "Size": {
+      "v2": [
+       25,
+       25
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       0,
+       2.0,
+       3.3,
+       0,
+       0,
+       0
+      ]
+     },
+     "Color": {
+      "c3": [
+       0.32,
+       0.5,
+       1
+      ]
+     },
+     "Brightness": 1.5,
+     "Transparency": 0.5
+    },
+    "anim": {
+     "pulse": {
+      "amp": 0.03,
+      "period": 2.6
+     }
+    }
+   },
+   {
+    "class": "Plane",
+    "name": "Emblem",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "Image": "texture://lum_emblem",
+     "Size": {
+      "v2": [
+       23,
+       23
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       0,
+       2.0,
+       3.15,
+       0,
+       0,
+       0
+      ]
+     },
+     "Color": {
+      "c3": [
+       0.82,
+       0.92,
+       1
+      ]
+     },
+     "Brightness": 2.2,
+     "Transparency": 0.85
+    },
+    "anim": {
+     "pulse": {
+      "amp": 0.02,
+      "period": 2.6
+     }
+    }
+   },
+   {
+    "class": "Plane",
+    "name": "CoreGlow",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "Image": "texture://glow_hot",
+     "Size": {
+      "v2": [
+       8,
+       8
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       0,
+       2.0,
+       3.0,
+       0,
+       0,
+       0
+      ]
+     },
+     "Color": {
+      "c3": [
+       1,
+       1,
+       1
+      ]
+     },
+     "Brightness": 4,
+     "Transparency": 0.0
+    },
+    "anim": {
+     "pulse": {
+      "amp": 0.08,
+      "period": 1.3
+     }
+    }
+   },
+   {
+    "class": "Plane",
+    "name": "CoreFlare",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "Image": "texture://star4",
+     "Size": {
+      "v2": [
+       13,
+       13
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       0,
+       2.0,
+       2.95,
+       0,
+       0,
+       0
+      ]
+     },
+     "Color": {
+      "c3": [
+       1,
+       1,
+       1
+      ]
+     },
+     "Brightness": 4,
+     "Transparency": 0.05
+    },
+    "anim": {
+     "pulse": {
+      "amp": 0.1,
+      "period": 1.3
+     }
+    }
+   },
+   {
+    "class": "Plane",
+    "name": "Spear",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "Image": "texture://spear",
+     "Size": {
+      "v2": [
+       14,
+       14
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       0,
+       -1.6,
+       2.2,
+       0,
+       0,
+       -12
+      ]
+     },
+     "Color": {
+      "c3": [
+       0.82,
+       0.92,
+       1
+      ]
+     },
+     "Brightness": 3,
+     "Transparency": 0.05
+    }
+   },
+   {
+    "class": "Plane",
+    "name": "GroundGlow",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "Image": "texture://glow",
+     "Size": {
+      "v2": [
+       20,
+       20
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       0,
+       -2.95,
+       1.5,
+       -90,
+       0,
+       0
+      ]
+     },
+     "Color": {
+      "c3": [
+       0.32,
+       0.5,
+       1
+      ]
+     },
+     "Brightness": 2,
+     "Transparency": 0.35
+    }
+   },
+   {
+    "class": "Plane",
+    "name": "Ripple1",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "Image": "texture://ring",
+     "Size": {
+      "v2": [
+       12,
+       12
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       0,
+       -2.94,
+       1.5,
+       -90,
+       0,
+       0
+      ]
+     },
+     "Color": {
+      "c3": [
+       0.82,
+       0.92,
+       1
+      ]
+     },
+     "Brightness": 1.5,
+     "Transparency": 0.65
+    },
+    "anim": {
+     "pulse": {
+      "amp": 0.12,
+      "period": 2.2
+     }
+    }
+   },
+   {
+    "class": "Plane",
+    "name": "Ripple2",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "Image": "texture://ring",
+     "Size": {
+      "v2": [
+       18,
+       18
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       0,
+       -2.93,
+       1.5,
+       -90,
+       0,
+       0
+      ]
+     },
+     "Color": {
+      "c3": [
+       0.82,
+       0.92,
+       1
+      ]
+     },
+     "Brightness": 1.2,
+     "Transparency": 0.75
+    },
+    "anim": {
+     "pulse": {
+      "amp": 0.08,
+      "period": 3.1
+     }
+    }
+   },
+   {
+    "class": "Part",
+    "name": "DustBox",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "Size": {
+      "v3": [
+       18,
+       13,
+       2
+      ]
+     },
+     "Transparency": 1,
+     "CFrame": {
+      "cf": [
+       0,
+       2.5,
+       3.6,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "children": [
+     {
+      "class": "ParticleEmitter",
+      "name": "Glints",
+      "props": {
+       "Texture": "texture://sparkle",
+       "Color": {
+        "cs": [
+         [
+          0,
+          1,
+          1,
+          1
+         ],
+         [
+          1,
+          0.82,
+          0.92,
+          1
+         ]
+        ]
+       },
+       "Size": {
+        "ns": [
+         [
+          0,
+          0
+         ],
+         [
+          0.3,
+          0.22,
+          0.08
+         ],
+         [
+          1,
+          0
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0
+         ],
+         [
+          1,
+          0.2
+         ]
+        ]
+       },
+       "Lifetime": {
+        "nr": [
+         0.6,
+         1.4
+        ]
+       },
+       "Rate": 40,
+       "Speed": {
+        "nr": [
+         0,
+         0.3
+        ]
+       },
+       "LightEmission": 1,
+       "Brightness": 3,
+       "Rotation": {
+        "nr": [
+         -180,
+         180
+        ]
+       },
+       "SpreadAngle": {
+        "v2": [
+         180,
+         180
+        ]
+       },
+       "Shape": {
+        "enum": "ParticleEmitterShape.Box"
+       },
+       "ShapeStyle": {
+        "enum": "ParticleEmitterShapeStyle.Volume"
+       }
+      }
+     },
+     {
+      "class": "ParticleEmitter",
+      "name": "Dust",
+      "props": {
+       "Texture": "texture://glow",
+       "Color": {
+        "cs": [
+         [
+          0,
+          0.82,
+          0.92,
+          1
+         ],
+         [
+          1,
+          0.32,
+          0.5,
+          1
+         ]
+        ]
+       },
+       "Size": {
+        "ns": [
+         [
+          0,
+          0.12,
+          0.05
+         ],
+         [
+          1,
+          0
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          1
+         ],
+         [
+          0.3,
+          0.3
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "Lifetime": {
+        "nr": [
+         2,
+         3.5
+        ]
+       },
+       "Rate": 30,
+       "Speed": {
+        "nr": [
+         0.2,
+         0.6
+        ]
+       },
+       "LightEmission": 1,
+       "Brightness": 3,
+       "Rotation": {
+        "nr": [
+         -180,
+         180
+        ]
+       },
+       "SpreadAngle": {
+        "v2": [
+         180,
+         180
+        ]
+       },
+       "Shape": {
+        "enum": "ParticleEmitterShape.Box"
+       },
+       "ShapeStyle": {
+        "enum": "ParticleEmitterShapeStyle.Volume"
+       },
+       "Acceleration": {
+        "v3": [
+         0,
+         0.6,
+         0
+        ]
+       }
+      }
+     }
+    ]
+   },
+   {
+    "class": "Part",
+    "name": "CoreHost",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "Size": {
+      "v3": [
+       0.5,
+       0.5,
+       0.5
+      ]
+     },
+     "Transparency": 1,
+     "CFrame": {
+      "cf": [
+       0,
+       2.0,
+       2.8,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "children": [
+     {
+      "class": "ParticleEmitter",
+      "name": "ShardStreaks",
+      "props": {
+       "Texture": "texture://streak",
+       "Color": {
+        "cs": [
+         [
+          0,
+          1,
+          1,
+          1
+         ],
+         [
+          1,
+          0.82,
+          0.92,
+          1
+         ]
+        ]
+       },
+       "Size": {
+        "ns": [
+         [
+          0,
+          1.4
+         ],
+         [
+          1,
+          0
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "Lifetime": {
+        "nr": [
+         0.35,
+         0.6
+        ]
+       },
+       "Rate": 14,
+       "Speed": {
+        "nr": [
+         14,
+         22
+        ]
+       },
+       "LightEmission": 1,
+       "Brightness": 3,
+       "Rotation": {
+        "nr": [
+         -180,
+         180
+        ]
+       },
+       "SpreadAngle": {
+        "v2": [
+         180,
+         180
+        ]
+       },
+       "Orientation": {
+        "enum": "ParticleOrientation.VelocityParallel"
+       },
+       "Drag": 3
+      }
+     },
+     {
+      "class": "PointLight",
+      "name": "Light",
+      "props": {
+       "Color": {
+        "c3": [
+         0.82,
+         0.92,
+         1
+        ]
+       },
+       "Range": 18,
+       "Brightness": 2.5
+      }
+     }
+    ]
+   },
+   {
+    "class": "MeshPart",
+    "name": "IceShard0",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "MeshId": "mesh://crystal?sides=5&seed=0&tip=0.4&base=0.3",
+     "Size": {
+      "v3": [
+       0.3147665529666325,
+       1.007252969493224,
+       0.3147665529666325
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       -27.932066086039846
+      ]
+     },
+     "Color": {
+      "c3": [
+       0.82,
+       0.92,
+       1
+      ]
+     },
+     "Material": {
+      "enum": "Material.Glass"
+     },
+     "Transparency": 0.15,
+     "CastShadow": false
+    },
+    "anim": {
+     "orbit": {
+      "radius": 5.711308262255796,
+      "speed": 34,
+      "phase": 0,
+      "y": -0.3420509706659658,
+      "tilt": [
+       10,
+       6
+      ],
+      "center": [
+       0,
+       1.2,
+       0.8
+      ]
+     },
+     "tumble": [
+      0,
+      102.87056034453514,
+      0
+     ]
+    },
+    "children": [
+     {
+      "class": "Attachment",
+      "name": "TA0",
+      "props": {
+       "CFrame": {
+        "cf": [
+         0,
+         0.14164494883498463,
+         0,
+         0,
+         0,
+         0
+        ]
+       }
+      }
+     },
+     {
+      "class": "Attachment",
+      "name": "TA1",
+      "props": {
+       "CFrame": {
+        "cf": [
+         0,
+         -0.14164494883498463,
+         0,
+         0,
+         0,
+         0
+        ]
+       }
+      }
+     },
+     {
+      "class": "Trail",
+      "name": "Trail",
+      "props": {
+       "Attachment0": {
+        "ref": "IceShard0/TA0"
+       },
+       "Attachment1": {
+        "ref": "IceShard0/TA1"
+       },
+       "Lifetime": 0.35,
+       "LightEmission": 1,
+       "Brightness": 3,
+       "FaceCamera": true,
+       "Color": {
+        "cs": [
+         [
+          0,
+          0.82,
+          0.92,
+          1
+         ],
+         [
+          1,
+          0.32,
+          0.5,
+          1
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0.1
+         ],
+         [
+          0.5,
+          0.5
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "WidthScale": {
+        "ns": [
+         [
+          0,
+          1
+         ],
+         [
+          1,
+          0.1
+         ]
+        ]
+       },
+       "MinLength": 0.05
+      }
+     }
+    ]
+   },
+   {
+    "class": "MeshPart",
+    "name": "IceShard1",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "MeshId": "mesh://crystal?sides=5&seed=1&tip=0.4&base=0.3",
+     "Size": {
+      "v3": [
+       0.3231377833825171,
+       1.0340409068240548,
+       0.3231377833825171
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       -35.36008601802345
+      ]
+     },
+     "Color": {
+      "c3": [
+       0.82,
+       0.92,
+       1
+      ]
+     },
+     "Material": {
+      "enum": "Material.Glass"
+     },
+     "Transparency": 0.15,
+     "CastShadow": false
+    },
+    "anim": {
+     "orbit": {
+      "radius": 5.5104100264651885,
+      "speed": 34,
+      "phase": 30,
+      "y": -0.37000347324641214,
+      "tilt": [
+       10,
+       6
+      ],
+      "center": [
+       0,
+       1.2,
+       0.8
+      ]
+     },
+     "tumble": [
+      0,
+      94.69165469299087,
+      0
+     ]
+    },
+    "children": [
+     {
+      "class": "Attachment",
+      "name": "TA0",
+      "props": {
+       "CFrame": {
+        "cf": [
+         0,
+         0.14541200252213268,
+         0,
+         0,
+         0,
+         0
+        ]
+       }
+      }
+     },
+     {
+      "class": "Attachment",
+      "name": "TA1",
+      "props": {
+       "CFrame": {
+        "cf": [
+         0,
+         -0.14541200252213268,
+         0,
+         0,
+         0,
+         0
+        ]
+       }
+      }
+     },
+     {
+      "class": "Trail",
+      "name": "Trail",
+      "props": {
+       "Attachment0": {
+        "ref": "IceShard1/TA0"
+       },
+       "Attachment1": {
+        "ref": "IceShard1/TA1"
+       },
+       "Lifetime": 0.35,
+       "LightEmission": 1,
+       "Brightness": 3,
+       "FaceCamera": true,
+       "Color": {
+        "cs": [
+         [
+          0,
+          0.82,
+          0.92,
+          1
+         ],
+         [
+          1,
+          0.32,
+          0.5,
+          1
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0.1
+         ],
+         [
+          0.5,
+          0.5
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "WidthScale": {
+        "ns": [
+         [
+          0,
+          1
+         ],
+         [
+          1,
+          0.1
+         ]
+        ]
+       },
+       "MinLength": 0.05
+      }
+     }
+    ]
+   },
+   {
+    "class": "MeshPart",
+    "name": "IceShard2",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "MeshId": "mesh://crystal?sides=5&seed=2&tip=0.4&base=0.3",
+     "Size": {
+      "v3": [
+       0.2639710847149238,
+       0.8447074710877562,
+       0.2639710847149238
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       -32.742958932490794
+      ]
+     },
+     "Color": {
+      "c3": [
+       0.82,
+       0.92,
+       1
+      ]
+     },
+     "Material": {
+      "enum": "Material.Glass"
+     },
+     "Transparency": 0.15,
+     "CastShadow": false
+    },
+    "anim": {
+     "orbit": {
+      "radius": 5.3943268647995195,
+      "speed": 34,
+      "phase": 60,
+      "y": 0.26148169973763047,
+      "tilt": [
+       10,
+       6
+      ],
+      "center": [
+       0,
+       1.2,
+       0.8
+      ]
+     },
+     "tumble": [
+      0,
+      69.90415689197165,
+      0
+     ]
+    },
+    "children": [
+     {
+      "class": "Attachment",
+      "name": "TA0",
+      "props": {
+       "CFrame": {
+        "cf": [
+         0,
+         0.11878698812171572,
+         0,
+         0,
+         0,
+         0
+        ]
+       }
+      }
+     },
+     {
+      "class": "Attachment",
+      "name": "TA1",
+      "props": {
+       "CFrame": {
+        "cf": [
+         0,
+         -0.11878698812171572,
+         0,
+         0,
+         0,
+         0
+        ]
+       }
+      }
+     },
+     {
+      "class": "Trail",
+      "name": "Trail",
+      "props": {
+       "Attachment0": {
+        "ref": "IceShard2/TA0"
+       },
+       "Attachment1": {
+        "ref": "IceShard2/TA1"
+       },
+       "Lifetime": 0.35,
+       "LightEmission": 1,
+       "Brightness": 3,
+       "FaceCamera": true,
+       "Color": {
+        "cs": [
+         [
+          0,
+          0.82,
+          0.92,
+          1
+         ],
+         [
+          1,
+          0.32,
+          0.5,
+          1
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0.1
+         ],
+         [
+          0.5,
+          0.5
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "WidthScale": {
+        "ns": [
+         [
+          0,
+          1
+         ],
+         [
+          1,
+          0.1
+         ]
+        ]
+       },
+       "MinLength": 0.05
+      }
+     }
+    ]
+   },
+   {
+    "class": "MeshPart",
+    "name": "IceShard3",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "MeshId": "mesh://crystal?sides=5&seed=3&tip=0.4&base=0.3",
+     "Size": {
+      "v3": [
+       0.2946477929214029,
+       0.9428729373484894,
+       0.2946477929214029
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       10.194657792447146
+      ]
+     },
+     "Color": {
+      "c3": [
+       0.82,
+       0.92,
+       1
+      ]
+     },
+     "Material": {
+      "enum": "Material.Glass"
+     },
+     "Transparency": 0.15,
+     "CastShadow": false
+    },
+    "anim": {
+     "orbit": {
+      "radius": 6.1267925194398085,
+      "speed": 34,
+      "phase": 90,
+      "y": 0.06168235889399892,
+      "tilt": [
+       10,
+       6
+      ],
+      "center": [
+       0,
+       1.2,
+       0.8
+      ]
+     },
+     "tumble": [
+      0,
+      91.73443797206241,
+      0
+     ]
+    },
+    "children": [
+     {
+      "class": "Attachment",
+      "name": "TA0",
+      "props": {
+       "CFrame": {
+        "cf": [
+         0,
+         0.1325915068146313,
+         0,
+         0,
+         0,
+         0
+        ]
+       }
+      }
+     },
+     {
+      "class": "Attachment",
+      "name": "TA1",
+      "props": {
+       "CFrame": {
+        "cf": [
+         0,
+         -0.1325915068146313,
+         0,
+         0,
+         0,
+         0
+        ]
+       }
+      }
+     },
+     {
+      "class": "Trail",
+      "name": "Trail",
+      "props": {
+       "Attachment0": {
+        "ref": "IceShard3/TA0"
+       },
+       "Attachment1": {
+        "ref": "IceShard3/TA1"
+       },
+       "Lifetime": 0.35,
+       "LightEmission": 1,
+       "Brightness": 3,
+       "FaceCamera": true,
+       "Color": {
+        "cs": [
+         [
+          0,
+          0.82,
+          0.92,
+          1
+         ],
+         [
+          1,
+          0.32,
+          0.5,
+          1
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0.1
+         ],
+         [
+          0.5,
+          0.5
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "WidthScale": {
+        "ns": [
+         [
+          0,
+          1
+         ],
+         [
+          1,
+          0.1
+         ]
+        ]
+       },
+       "MinLength": 0.05
+      }
+     }
+    ]
+   },
+   {
+    "class": "MeshPart",
+    "name": "IceShard4",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "MeshId": "mesh://crystal?sides=5&seed=4&tip=0.4&base=0.3",
+     "Size": {
+      "v3": [
+       0.44525102111858406,
+       1.424803267579469,
+       0.44525102111858406
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       -36.2733855505795
+      ]
+     },
+     "Color": {
+      "c3": [
+       0.82,
+       0.92,
+       1
+      ]
+     },
+     "Material": {
+      "enum": "Material.Glass"
+     },
+     "Transparency": 0.15,
+     "CastShadow": false
+    },
+    "anim": {
+     "orbit": {
+      "radius": 6.001855842668151,
+      "speed": 34,
+      "phase": 120,
+      "y": -0.168312570934659,
+      "tilt": [
+       10,
+       6
+      ],
+      "center": [
+       0,
+       1.2,
+       0.8
+      ]
+     },
+     "tumble": [
+      0,
+      71.540406668595,
+      0
+     ]
+    },
+    "children": [
+     {
+      "class": "Attachment",
+      "name": "TA0",
+      "props": {
+       "CFrame": {
+        "cf": [
+         0,
+         0.20036295950336283,
+         0,
+         0,
+         0,
+         0
+        ]
+       }
+      }
+     },
+     {
+      "class": "Attachment",
+      "name": "TA1",
+      "props": {
+       "CFrame": {
+        "cf": [
+         0,
+         -0.20036295950336283,
+         0,
+         0,
+         0,
+         0
+        ]
+       }
+      }
+     },
+     {
+      "class": "Trail",
+      "name": "Trail",
+      "props": {
+       "Attachment0": {
+        "ref": "IceShard4/TA0"
+       },
+       "Attachment1": {
+        "ref": "IceShard4/TA1"
+       },
+       "Lifetime": 0.35,
+       "LightEmission": 1,
+       "Brightness": 3,
+       "FaceCamera": true,
+       "Color": {
+        "cs": [
+         [
+          0,
+          0.82,
+          0.92,
+          1
+         ],
+         [
+          1,
+          0.32,
+          0.5,
+          1
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0.1
+         ],
+         [
+          0.5,
+          0.5
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "WidthScale": {
+        "ns": [
+         [
+          0,
+          1
+         ],
+         [
+          1,
+          0.1
+         ]
+        ]
+       },
+       "MinLength": 0.05
+      }
+     }
+    ]
+   },
+   {
+    "class": "MeshPart",
+    "name": "IceShard5",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "MeshId": "mesh://crystal?sides=5&seed=5&tip=0.4&base=0.3",
+     "Size": {
+      "v3": [
+       0.27355844761567366,
+       0.8753870323701558,
+       0.27355844761567366
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       -15.321454071845253
+      ]
+     },
+     "Color": {
+      "c3": [
+       0.82,
+       0.92,
+       1
+      ]
+     },
+     "Material": {
+      "enum": "Material.Glass"
+     },
+     "Transparency": 0.15,
+     "CastShadow": false
+    },
+    "anim": {
+     "orbit": {
+      "radius": 5.942576902768044,
+      "speed": 34,
+      "phase": 150,
+      "y": -0.25541889606085,
+      "tilt": [
+       10,
+       6
+      ],
+      "center": [
+       0,
+       1.2,
+       0.8
+      ]
+     },
+     "tumble": [
+      0,
+      106.5280130929973,
+      0
+     ]
+    },
+    "children": [
+     {
+      "class": "Attachment",
+      "name": "TA0",
+      "props": {
+       "CFrame": {
+        "cf": [
+         0,
+         0.12310130142705315,
+         0,
+         0,
+         0,
+         0
+        ]
+       }
+      }
+     },
+     {
+      "class": "Attachment",
+      "name": "TA1",
+      "props": {
+       "CFrame": {
+        "cf": [
+         0,
+         -0.12310130142705315,
+         0,
+         0,
+         0,
+         0
+        ]
+       }
+      }
+     },
+     {
+      "class": "Trail",
+      "name": "Trail",
+      "props": {
+       "Attachment0": {
+        "ref": "IceShard5/TA0"
+       },
+       "Attachment1": {
+        "ref": "IceShard5/TA1"
+       },
+       "Lifetime": 0.35,
+       "LightEmission": 1,
+       "Brightness": 3,
+       "FaceCamera": true,
+       "Color": {
+        "cs": [
+         [
+          0,
+          0.82,
+          0.92,
+          1
+         ],
+         [
+          1,
+          0.32,
+          0.5,
+          1
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0.1
+         ],
+         [
+          0.5,
+          0.5
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "WidthScale": {
+        "ns": [
+         [
+          0,
+          1
+         ],
+         [
+          1,
+          0.1
+         ]
+        ]
+       },
+       "MinLength": 0.05
+      }
+     }
+    ]
+   },
+   {
+    "class": "MeshPart",
+    "name": "IceShard6",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "MeshId": "mesh://crystal?sides=5&seed=6&tip=0.4&base=0.3",
+     "Size": {
+      "v3": [
+       0.3777826937852368,
+       1.208904620112758,
+       0.3777826937852368
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       -10.2081965819415
+      ]
+     },
+     "Color": {
+      "c3": [
+       0.82,
+       0.92,
+       1
+      ]
+     },
+     "Material": {
+      "enum": "Material.Glass"
+     },
+     "Transparency": 0.15,
+     "CastShadow": false
+    },
+    "anim": {
+     "orbit": {
+      "radius": 5.566842251993381,
+      "speed": 34,
+      "phase": 180,
+      "y": -0.3497688200213415,
+      "tilt": [
+       10,
+       6
+      ],
+      "center": [
+       0,
+       1.2,
+       0.8
+      ]
+     },
+     "tumble": [
+      0,
+      64.76809359729862,
+      0
+     ]
+    },
+    "children": [
+     {
+      "class": "Attachment",
+      "name": "TA0",
+      "props": {
+       "CFrame": {
+        "cf": [
+         0,
+         0.17000221220335657,
+         0,
+         0,
+         0,
+         0
+        ]
+       }
+      }
+     },
+     {
+      "class": "Attachment",
+      "name": "TA1",
+      "props": {
+       "CFrame": {
+        "cf": [
+         0,
+         -0.17000221220335657,
+         0,
+         0,
+         0,
+         0
+        ]
+       }
+      }
+     },
+     {
+      "class": "Trail",
+      "name": "Trail",
+      "props": {
+       "Attachment0": {
+        "ref": "IceShard6/TA0"
+       },
+       "Attachment1": {
+        "ref": "IceShard6/TA1"
+       },
+       "Lifetime": 0.35,
+       "LightEmission": 1,
+       "Brightness": 3,
+       "FaceCamera": true,
+       "Color": {
+        "cs": [
+         [
+          0,
+          0.82,
+          0.92,
+          1
+         ],
+         [
+          1,
+          0.32,
+          0.5,
+          1
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0.1
+         ],
+         [
+          0.5,
+          0.5
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "WidthScale": {
+        "ns": [
+         [
+          0,
+          1
+         ],
+         [
+          1,
+          0.1
+         ]
+        ]
+       },
+       "MinLength": 0.05
+      }
+     }
+    ]
+   },
+   {
+    "class": "MeshPart",
+    "name": "IceShard7",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "MeshId": "mesh://crystal?sides=5&seed=7&tip=0.4&base=0.3",
+     "Size": {
+      "v3": [
+       0.2911917425638653,
+       0.9318135762043691,
+       0.2911917425638653
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       14.431997854542871
+      ]
+     },
+     "Color": {
+      "c3": [
+       0.82,
+       0.92,
+       1
+      ]
+     },
+     "Material": {
+      "enum": "Material.Glass"
+     },
+     "Transparency": 0.15,
+     "CastShadow": false
+    },
+    "anim": {
+     "orbit": {
+      "radius": 5.398629227937164,
+      "speed": 34,
+      "phase": 210,
+      "y": -0.1486822636985668,
+      "tilt": [
+       10,
+       6
+      ],
+      "center": [
+       0,
+       1.2,
+       0.8
+      ]
+     },
+     "tumble": [
+      0,
+      106.8449490806111,
+      0
+     ]
+    },
+    "children": [
+     {
+      "class": "Attachment",
+      "name": "TA0",
+      "props": {
+       "CFrame": {
+        "cf": [
+         0,
+         0.13103628415373939,
+         0,
+         0,
+         0,
+         0
+        ]
+       }
+      }
+     },
+     {
+      "class": "Attachment",
+      "name": "TA1",
+      "props": {
+       "CFrame": {
+        "cf": [
+         0,
+         -0.13103628415373939,
+         0,
+         0,
+         0,
+         0
+        ]
+       }
+      }
+     },
+     {
+      "class": "Trail",
+      "name": "Trail",
+      "props": {
+       "Attachment0": {
+        "ref": "IceShard7/TA0"
+       },
+       "Attachment1": {
+        "ref": "IceShard7/TA1"
+       },
+       "Lifetime": 0.35,
+       "LightEmission": 1,
+       "Brightness": 3,
+       "FaceCamera": true,
+       "Color": {
+        "cs": [
+         [
+          0,
+          0.82,
+          0.92,
+          1
+         ],
+         [
+          1,
+          0.32,
+          0.5,
+          1
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0.1
+         ],
+         [
+          0.5,
+          0.5
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "WidthScale": {
+        "ns": [
+         [
+          0,
+          1
+         ],
+         [
+          1,
+          0.1
+         ]
+        ]
+       },
+       "MinLength": 0.05
+      }
+     }
+    ]
+   },
+   {
+    "class": "MeshPart",
+    "name": "IceShard8",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "MeshId": "mesh://crystal?sides=5&seed=8&tip=0.4&base=0.3",
+     "Size": {
+      "v3": [
+       0.3406368752741551,
+       1.0900380008772963,
+       0.3406368752741551
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       -16.018640250905413
+      ]
+     },
+     "Color": {
+      "c3": [
+       0.82,
+       0.92,
+       1
+      ]
+     },
+     "Material": {
+      "enum": "Material.Glass"
+     },
+     "Transparency": 0.15,
+     "CastShadow": false
+    },
+    "anim": {
+     "orbit": {
+      "radius": 5.912131274131488,
+      "speed": 34,
+      "phase": 240,
+      "y": 0.159195546983657,
+      "tilt": [
+       10,
+       6
+      ],
+      "center": [
+       0,
+       1.2,
+       0.8
+      ]
+     },
+     "tumble": [
+      0,
+      79.52772085777224,
+      0
+     ]
+    },
+    "children": [
+     {
+      "class": "Attachment",
+      "name": "TA0",
+      "props": {
+       "CFrame": {
+        "cf": [
+         0,
+         0.1532865938733698,
+         0,
+         0,
+         0,
+         0
+        ]
+       }
+      }
+     },
+     {
+      "class": "Attachment",
+      "name": "TA1",
+      "props": {
+       "CFrame": {
+        "cf": [
+         0,
+         -0.1532865938733698,
+         0,
+         0,
+         0,
+         0
+        ]
+       }
+      }
+     },
+     {
+      "class": "Trail",
+      "name": "Trail",
+      "props": {
+       "Attachment0": {
+        "ref": "IceShard8/TA0"
+       },
+       "Attachment1": {
+        "ref": "IceShard8/TA1"
+       },
+       "Lifetime": 0.35,
+       "LightEmission": 1,
+       "Brightness": 3,
+       "FaceCamera": true,
+       "Color": {
+        "cs": [
+         [
+          0,
+          0.82,
+          0.92,
+          1
+         ],
+         [
+          1,
+          0.32,
+          0.5,
+          1
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0.1
+         ],
+         [
+          0.5,
+          0.5
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "WidthScale": {
+        "ns": [
+         [
+          0,
+          1
+         ],
+         [
+          1,
+          0.1
+         ]
+        ]
+       },
+       "MinLength": 0.05
+      }
+     }
+    ]
+   },
+   {
+    "class": "MeshPart",
+    "name": "IceShard9",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "MeshId": "mesh://crystal?sides=5&seed=9&tip=0.4&base=0.3",
+     "Size": {
+      "v3": [
+       0.3648847420517342,
+       1.1676311745655494,
+       0.3648847420517342
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       2.0157203049161154
+      ]
+     },
+     "Color": {
+      "c3": [
+       0.82,
+       0.92,
+       1
+      ]
+     },
+     "Material": {
+      "enum": "Material.Glass"
+     },
+     "Transparency": 0.15,
+     "CastShadow": false
+    },
+    "anim": {
+     "orbit": {
+      "radius": 6.0251924938028,
+      "speed": 34,
+      "phase": 270,
+      "y": 0.18355623155137413,
+      "tilt": [
+       10,
+       6
+      ],
+      "center": [
+       0,
+       1.2,
+       0.8
+      ]
+     },
+     "tumble": [
+      0,
+      83.03502119121492,
+      0
+     ]
+    },
+    "children": [
+     {
+      "class": "Attachment",
+      "name": "TA0",
+      "props": {
+       "CFrame": {
+        "cf": [
+         0,
+         0.1641981339232804,
+         0,
+         0,
+         0,
+         0
+        ]
+       }
+      }
+     },
+     {
+      "class": "Attachment",
+      "name": "TA1",
+      "props": {
+       "CFrame": {
+        "cf": [
+         0,
+         -0.1641981339232804,
+         0,
+         0,
+         0,
+         0
+        ]
+       }
+      }
+     },
+     {
+      "class": "Trail",
+      "name": "Trail",
+      "props": {
+       "Attachment0": {
+        "ref": "IceShard9/TA0"
+       },
+       "Attachment1": {
+        "ref": "IceShard9/TA1"
+       },
+       "Lifetime": 0.35,
+       "LightEmission": 1,
+       "Brightness": 3,
+       "FaceCamera": true,
+       "Color": {
+        "cs": [
+         [
+          0,
+          0.82,
+          0.92,
+          1
+         ],
+         [
+          1,
+          0.32,
+          0.5,
+          1
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0.1
+         ],
+         [
+          0.5,
+          0.5
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "WidthScale": {
+        "ns": [
+         [
+          0,
+          1
+         ],
+         [
+          1,
+          0.1
+         ]
+        ]
+       },
+       "MinLength": 0.05
+      }
+     }
+    ]
+   },
+   {
+    "class": "MeshPart",
+    "name": "IceShard10",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "MeshId": "mesh://crystal?sides=5&seed=10&tip=0.4&base=0.3",
+     "Size": {
+      "v3": [
+       0.4460349694985164,
+       1.4273119023952525,
+       0.4460349694985164
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       -30.55473773960303
+      ]
+     },
+     "Color": {
+      "c3": [
+       0.82,
+       0.92,
+       1
+      ]
+     },
+     "Material": {
+      "enum": "Material.Glass"
+     },
+     "Transparency": 0.15,
+     "CastShadow": false
+    },
+    "anim": {
+     "orbit": {
+      "radius": 5.385371950499318,
+      "speed": 34,
+      "phase": 300,
+      "y": 0.2057127436521995,
+      "tilt": [
+       10,
+       6
+      ],
+      "center": [
+       0,
+       1.2,
+       0.8
+      ]
+     },
+     "tumble": [
+      0,
+      72.15876277284038,
+      0
+     ]
+    },
+    "children": [
+     {
+      "class": "Attachment",
+      "name": "TA0",
+      "props": {
+       "CFrame": {
+        "cf": [
+         0,
+         0.2007157362743324,
+         0,
+         0,
+         0,
+         0
+        ]
+       }
+      }
+     },
+     {
+      "class": "Attachment",
+      "name": "TA1",
+      "props": {
+       "CFrame": {
+        "cf": [
+         0,
+         -0.2007157362743324,
+         0,
+         0,
+         0,
+         0
+        ]
+       }
+      }
+     },
+     {
+      "class": "Trail",
+      "name": "Trail",
+      "props": {
+       "Attachment0": {
+        "ref": "IceShard10/TA0"
+       },
+       "Attachment1": {
+        "ref": "IceShard10/TA1"
+       },
+       "Lifetime": 0.35,
+       "LightEmission": 1,
+       "Brightness": 3,
+       "FaceCamera": true,
+       "Color": {
+        "cs": [
+         [
+          0,
+          0.82,
+          0.92,
+          1
+         ],
+         [
+          1,
+          0.32,
+          0.5,
+          1
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0.1
+         ],
+         [
+          0.5,
+          0.5
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "WidthScale": {
+        "ns": [
+         [
+          0,
+          1
+         ],
+         [
+          1,
+          0.1
+         ]
+        ]
+       },
+       "MinLength": 0.05
+      }
+     }
+    ]
+   },
+   {
+    "class": "MeshPart",
+    "name": "IceShard11",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "MeshId": "mesh://crystal?sides=5&seed=11&tip=0.4&base=0.3",
+     "Size": {
+      "v3": [
+       0.3477926200951611,
+       1.1129363843045155,
+       0.3477926200951611
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       -36.863419436204985
+      ]
+     },
+     "Color": {
+      "c3": [
+       0.82,
+       0.92,
+       1
+      ]
+     },
+     "Material": {
+      "enum": "Material.Glass"
+     },
+     "Transparency": 0.15,
+     "CastShadow": false
+    },
+    "anim": {
+     "orbit": {
+      "radius": 5.735502199148153,
+      "speed": 34,
+      "phase": 330,
+      "y": 0.21165669297025047,
+      "tilt": [
+       10,
+       6
+      ],
+      "center": [
+       0,
+       1.2,
+       0.8
+      ]
+     },
+     "tumble": [
+      0,
+      105.84207522219072,
+      0
+     ]
+    },
+    "children": [
+     {
+      "class": "Attachment",
+      "name": "TA0",
+      "props": {
+       "CFrame": {
+        "cf": [
+         0,
+         0.1565066790428225,
+         0,
+         0,
+         0,
+         0
+        ]
+       }
+      }
+     },
+     {
+      "class": "Attachment",
+      "name": "TA1",
+      "props": {
+       "CFrame": {
+        "cf": [
+         0,
+         -0.1565066790428225,
+         0,
+         0,
+         0,
+         0
+        ]
+       }
+      }
+     },
+     {
+      "class": "Trail",
+      "name": "Trail",
+      "props": {
+       "Attachment0": {
+        "ref": "IceShard11/TA0"
+       },
+       "Attachment1": {
+        "ref": "IceShard11/TA1"
+       },
+       "Lifetime": 0.35,
+       "LightEmission": 1,
+       "Brightness": 3,
+       "FaceCamera": true,
+       "Color": {
+        "cs": [
+         [
+          0,
+          0.82,
+          0.92,
+          1
+         ],
+         [
+          1,
+          0.32,
+          0.5,
+          1
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0.1
+         ],
+         [
+          0.5,
+          0.5
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "WidthScale": {
+        "ns": [
+         [
+          0,
+          1
+         ],
+         [
+          1,
+          0.1
+         ]
+        ]
+       },
+       "MinLength": 0.05
+      }
+     }
+    ]
+   },
+   {
+    "class": "MeshPart",
+    "name": "Comet0",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "MeshId": "mesh://sphere?sub=2",
+     "Size": {
+      "v3": [
+       0.35,
+       0.35,
+       0.35
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     },
+     "Color": {
+      "c3": [
+       1,
+       1,
+       1
+      ]
+     },
+     "Material": {
+      "enum": "Material.Neon"
+     },
+     "Transparency": 0,
+     "CastShadow": false
+    },
+    "anim": {
+     "orbit": {
+      "radius": 5.5,
+      "speed": -95,
+      "phase": 0,
+      "tilt": [
+       -18,
+       12
+      ],
+      "center": [
+       0,
+       2.5,
+       0.5
+      ]
+     },
+     "tumble": [
+      90,
+      140,
+      0
+     ]
+    },
+    "children": [
+     {
+      "class": "Attachment",
+      "name": "TA0",
+      "props": {
+       "CFrame": {
+        "cf": [
+         0,
+         0.27999999999999997,
+         0,
+         0,
+         0,
+         0
+        ]
+       }
+      }
+     },
+     {
+      "class": "Attachment",
+      "name": "TA1",
+      "props": {
+       "CFrame": {
+        "cf": [
+         0,
+         -0.27999999999999997,
+         0,
+         0,
+         0,
+         0
+        ]
+       }
+      }
+     },
+     {
+      "class": "Trail",
+      "name": "Trail",
+      "props": {
+       "Attachment0": {
+        "ref": "Comet0/TA0"
+       },
+       "Attachment1": {
+        "ref": "Comet0/TA1"
+       },
+       "Lifetime": 1.2,
+       "LightEmission": 1,
+       "Brightness": 3,
+       "FaceCamera": true,
+       "Color": {
+        "cs": [
+         [
+          0,
+          1,
+          1,
+          1
+         ],
+         [
+          1,
+          1,
+          1,
+          1
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0.1
+         ],
+         [
+          0.5,
+          0.5
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "WidthScale": {
+        "ns": [
+         [
+          0,
+          1
+         ],
+         [
+          1,
+          0.1
+         ]
+        ]
+       },
+       "MinLength": 0.05
+      }
+     },
+     {
+      "class": "ParticleEmitter",
+      "name": "Sparks",
+      "props": {
+       "Texture": "texture://sparkle",
+       "Color": {
+        "cs": [
+         [
+          0,
+          1,
+          1,
+          1
+         ],
+         [
+          1,
+          1,
+          1,
+          1
+         ]
+        ]
+       },
+       "Size": {
+        "ns": [
+         [
+          0,
+          0.35
+         ],
+         [
+          1,
+          0
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "Lifetime": {
+        "nr": [
+         0.3,
+         0.7
+        ]
+       },
+       "Rate": 22,
+       "Speed": {
+        "nr": [
+         0.2,
+         1.2
+        ]
+       },
+       "LightEmission": 1,
+       "Brightness": 3,
+       "Rotation": {
+        "nr": [
+         -180,
+         180
+        ]
+       },
+       "SpreadAngle": {
+        "v2": [
+         180,
+         180
+        ]
+       },
+       "Drag": 2,
+       "LockedToPart": false
+      }
+     }
+    ]
+   },
+   {
+    "class": "MeshPart",
+    "name": "Comet1",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "MeshId": "mesh://sphere?sub=2",
+     "Size": {
+      "v3": [
+       0.3,
+       0.3,
+       0.3
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     },
+     "Color": {
+      "c3": [
+       0.82,
+       0.92,
+       1
+      ]
+     },
+     "Material": {
+      "enum": "Material.Neon"
+     },
+     "Transparency": 0,
+     "CastShadow": false
+    },
+    "anim": {
+     "orbit": {
+      "radius": 6.5,
+      "speed": 80,
+      "phase": 180,
+      "tilt": [
+       22,
+       -10
+      ],
+      "center": [
+       0,
+       1.0,
+       0.5
+      ]
+     },
+     "tumble": [
+      90,
+      140,
+      0
+     ]
+    },
+    "children": [
+     {
+      "class": "Attachment",
+      "name": "TA0",
+      "props": {
+       "CFrame": {
+        "cf": [
+         0,
+         0.24,
+         0,
+         0,
+         0,
+         0
+        ]
+       }
+      }
+     },
+     {
+      "class": "Attachment",
+      "name": "TA1",
+      "props": {
+       "CFrame": {
+        "cf": [
+         0,
+         -0.24,
+         0,
+         0,
+         0,
+         0
+        ]
+       }
+      }
+     },
+     {
+      "class": "Trail",
+      "name": "Trail",
+      "props": {
+       "Attachment0": {
+        "ref": "Comet1/TA0"
+       },
+       "Attachment1": {
+        "ref": "Comet1/TA1"
+       },
+       "Lifetime": 1.0,
+       "LightEmission": 1,
+       "Brightness": 3,
+       "FaceCamera": true,
+       "Color": {
+        "cs": [
+         [
+          0,
+          0.82,
+          0.92,
+          1
+         ],
+         [
+          1,
+          0.82,
+          0.92,
+          1
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0.1
+         ],
+         [
+          0.5,
+          0.5
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "WidthScale": {
+        "ns": [
+         [
+          0,
+          1
+         ],
+         [
+          1,
+          0.1
+         ]
+        ]
+       },
+       "MinLength": 0.05
+      }
+     },
+     {
+      "class": "ParticleEmitter",
+      "name": "Sparks",
+      "props": {
+       "Texture": "texture://sparkle",
+       "Color": {
+        "cs": [
+         [
+          0,
+          1,
+          1,
+          1
+         ],
+         [
+          1,
+          0.82,
+          0.92,
+          1
+         ]
+        ]
+       },
+       "Size": {
+        "ns": [
+         [
+          0,
+          0.35
+         ],
+         [
+          1,
+          0
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "Lifetime": {
+        "nr": [
+         0.3,
+         0.7
+        ]
+       },
+       "Rate": 22,
+       "Speed": {
+        "nr": [
+         0.2,
+         1.2
+        ]
+       },
+       "LightEmission": 1,
+       "Brightness": 3,
+       "Rotation": {
+        "nr": [
+         -180,
+         180
+        ]
+       },
+       "SpreadAngle": {
+        "v2": [
+         180,
+         180
+        ]
+       },
+       "Drag": 2,
+       "LockedToPart": false
+      }
+     }
+    ]
+   },
+   {
+    "class": "MeshPart",
+    "name": "RippleRing1",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "MeshId": "mesh://torus?tube=0.01",
+     "Size": {
+      "v3": [
+       12,
+       0.1188118811881188,
+       12
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       0,
+       -2.87,
+       1.5,
+       0,
+       0,
+       0
+      ]
+     },
+     "Color": {
+      "c3": [
+       0.82,
+       0.92,
+       1
+      ]
+     },
+     "Material": {
+      "enum": "Material.Neon"
+     },
+     "Transparency": 0.2,
+     "CastShadow": false
+    },
+    "anim": {
+     "pulse": {
+      "amp": 0.12,
+      "period": 2.2
+     }
+    }
+   },
+   {
+    "class": "MeshPart",
+    "name": "RippleRing2",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "MeshId": "mesh://torus?tube=0.007",
+     "Size": {
+      "v3": [
+       18,
+       0.12512413108242304,
+       18
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       0,
+       -2.87,
+       1.5,
+       0,
+       0,
+       0
+      ]
+     },
+     "Color": {
+      "c3": [
+       0.32,
+       0.5,
+       1
+      ]
+     },
+     "Material": {
+      "enum": "Material.Neon"
+     },
+     "Transparency": 0.3,
+     "CastShadow": false
+    },
+    "anim": {
+     "pulse": {
+      "amp": 0.08,
+      "period": 3.1,
+      "phase": 2
+     }
+    }
+   },
+   {
+    "class": "MeshPart",
+    "name": "HaloRing",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "MeshId": "mesh://torus?tube=0.01",
+     "Size": {
+      "v3": [
+       9,
+       0.0891089108910891,
+       9
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       0,
+       2.0,
+       3.2,
+       90,
+       0,
+       0
+      ]
+     },
+     "Color": {
+      "c3": [
+       1,
+       1,
+       1
+      ]
+     },
+     "Material": {
+      "enum": "Material.Neon"
+     },
+     "Transparency": 0.35,
+     "CastShadow": false
+    },
+    "anim": {
+     "pulse": {
+      "amp": 0.06,
+      "period": 1.3
+     }
+    }
+   },
+   {
+    "class": "Part",
+    "name": "CoreBurst",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "Size": {
+      "v3": [
+       0.5,
+       0.5,
+       0.5
+      ]
+     },
+     "Transparency": 1,
+     "CFrame": {
+      "cf": [
+       0,
+       2.0,
+       2.7,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "children": [
+     {
+      "class": "ParticleEmitter",
+      "name": "Rays",
+      "props": {
+       "Texture": "texture://streak",
+       "Color": {
+        "cs": [
+         [
+          0,
+          1,
+          1,
+          1
+         ],
+         [
+          1,
+          0.32,
+          0.5,
+          1
+         ]
+        ]
+       },
+       "Size": {
+        "ns": [
+         [
+          0,
+          2.2
+         ],
+         [
+          1,
+          0
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0.1
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "Lifetime": {
+        "nr": [
+         0.25,
+         0.45
+        ]
+       },
+       "Rate": 10,
+       "Speed": {
+        "nr": [
+         20,
+         30
+        ]
+       },
+       "LightEmission": 1,
+       "Brightness": 3,
+       "Rotation": {
+        "nr": [
+         -180,
+         180
+        ]
+       },
+       "SpreadAngle": {
+        "v2": [
+         180,
+         180
+        ]
+       },
+       "Orientation": {
+        "enum": "ParticleOrientation.VelocityParallel"
+       },
+       "Drag": 4
+      }
+     },
+     {
+      "class": "ParticleEmitter",
+      "name": "Bloom",
+      "props": {
+       "Texture": "texture://glow_hot",
+       "Color": {
+        "cs": [
+         [
+          0,
+          1,
+          1,
+          1
+         ],
+         [
+          1,
+          0.82,
+          0.92,
+          1
+         ]
+        ]
+       },
+       "Size": {
+        "ns": [
+         [
+          0,
+          4
+         ],
+         [
+          1,
+          7
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0.5
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "Lifetime": {
+        "nr": [
+         0.4,
+         0.7
+        ]
+       },
+       "Rate": 5,
+       "Speed": {
+        "nr": [
+         0,
+         0
+        ]
+       },
+       "LightEmission": 1,
+       "Brightness": 3,
+       "Rotation": {
+        "nr": [
+         -180,
+         180
+        ]
+       },
+       "SpreadAngle": {
+        "v2": [
+         180,
+         180
+        ]
+       }
+      }
+     }
+    ]
+   },
+   {
+    "class": "Part",
+    "name": "IceUpdraft",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "Size": {
+      "v3": [
+       10,
+       0.5,
+       8
+      ]
+     },
+     "Transparency": 1,
+     "CFrame": {
+      "cf": [
+       0,
+       -2.6500000000000004,
+       1.7999999999999998,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "children": [
+     {
+      "class": "ParticleEmitter",
+      "name": "Streaks",
+      "props": {
+       "Texture": "texture://streak",
+       "Color": {
+        "cs": [
+         [
+          0,
+          1,
+          1,
+          1
+         ],
+         [
+          1,
+          0.32,
+          0.5,
+          1
+         ]
+        ]
+       },
+       "Size": {
+        "ns": [
+         [
+          0,
+          0.7
+         ],
+         [
+          1,
+          0.15
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0.3
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "Lifetime": {
+        "nr": [
+         0.6,
+         1.1
+        ]
+       },
+       "Rate": 18,
+       "Speed": {
+        "nr": [
+         5,
+         9
+        ]
+       },
+       "LightEmission": 1,
+       "Brightness": 3,
+       "Rotation": {
+        "nr": [
+         -180,
+         180
+        ]
+       },
+       "SpreadAngle": {
+        "v2": [
+         5,
+         5
+        ]
+       },
+       "Shape": {
+        "enum": "ParticleEmitterShape.Box"
+       },
+       "ShapeStyle": {
+        "enum": "ParticleEmitterShapeStyle.Volume"
+       },
+       "Orientation": {
+        "enum": "ParticleOrientation.VelocityParallel"
+       },
+       "EmissionDirection": {
+        "enum": "NormalId.Top"
+       }
+      }
+     }
+    ]
+   },
+   {
+    "class": "Highlight",
+    "name": "AuraOutline",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "FillColor": {
+      "c3": [
+       0.82,
+       0.92,
+       1
+      ]
+     },
+     "FillTransparency": 0.88,
+     "OutlineColor": {
+      "c3": [
+       1,
+       1,
+       1
+      ]
+     },
+     "OutlineTransparency": 0.15,
+     "DepthMode": {
+      "enum": "HighlightDepthMode.Occluded"
+     }
+    }
+   },
+   {
+    "class": "Attachment",
+    "name": "AuraHead",
+    "attach": "Head",
+    "props": {
+     "CFrame": {
+      "cf": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "children": [
+     {
+      "class": "ParticleEmitter",
+      "name": "Sparkle",
+      "props": {
+       "Texture": "texture://sparkle",
+       "Color": {
+        "cs": [
+         [
+          0,
+          1,
+          1,
+          1
+         ],
+         [
+          0.5,
+          0.82,
+          0.92,
+          1
+         ],
+         [
+          1,
+          0.32,
+          0.5,
+          1
+         ]
+        ]
+       },
+       "Size": {
+        "ns": [
+         [
+          0,
+          0
+         ],
+         [
+          0.15,
+          0.34,
+          0.12
+         ],
+         [
+          1,
+          0
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0
+         ],
+         [
+          0.7,
+          0.2
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "Lifetime": {
+        "nr": [
+         0.7,
+         1.4
+        ]
+       },
+       "Rate": 18,
+       "Speed": {
+        "nr": [
+         0.3,
+         1.0
+        ]
+       },
+       "LightEmission": 1,
+       "Brightness": 3,
+       "Rotation": {
+        "nr": [
+         -180,
+         180
+        ]
+       },
+       "SpreadAngle": {
+        "v2": [
+         180,
+         180
+        ]
+       },
+       "Acceleration": {
+        "v3": [
+         0,
+         2.2,
+         0
+        ]
+       },
+       "Drag": 1,
+       "Shape": {
+        "enum": "ParticleEmitterShape.Box"
+       },
+       "ShapeStyle": {
+        "enum": "ParticleEmitterShapeStyle.Surface"
+       },
+       "ZOffset": 0.5
+      }
+     },
+     {
+      "class": "ParticleEmitter",
+      "name": "Wisp",
+      "props": {
+       "Texture": "texture://glow",
+       "Color": {
+        "cs": [
+         [
+          0,
+          0.82,
+          0.92,
+          1
+         ],
+         [
+          1,
+          0.32,
+          0.5,
+          1
+         ]
+        ]
+       },
+       "Size": {
+        "ns": [
+         [
+          0,
+          0.8
+         ],
+         [
+          1,
+          2.2
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          1
+         ],
+         [
+          0.3,
+          0.86
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "Lifetime": {
+        "nr": [
+         0.9,
+         1.5
+        ]
+       },
+       "Rate": 4,
+       "Speed": {
+        "nr": [
+         0.4,
+         1.0
+        ]
+       },
+       "LightEmission": 1,
+       "Brightness": 2,
+       "Rotation": {
+        "nr": [
+         -180,
+         180
+        ]
+       },
+       "SpreadAngle": {
+        "v2": [
+         180,
+         180
+        ]
+       },
+       "Acceleration": {
+        "v3": [
+         0,
+         2.5,
+         0
+        ]
+       }
+      }
+     }
+    ]
+   },
+   {
+    "class": "Attachment",
+    "name": "AuraUpperTorso",
+    "attach": "UpperTorso",
+    "props": {
+     "CFrame": {
+      "cf": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "children": [
+     {
+      "class": "ParticleEmitter",
+      "name": "Sparkle",
+      "props": {
+       "Texture": "texture://sparkle",
+       "Color": {
+        "cs": [
+         [
+          0,
+          1,
+          1,
+          1
+         ],
+         [
+          0.5,
+          0.82,
+          0.92,
+          1
+         ],
+         [
+          1,
+          0.32,
+          0.5,
+          1
+         ]
+        ]
+       },
+       "Size": {
+        "ns": [
+         [
+          0,
+          0
+         ],
+         [
+          0.15,
+          0.34,
+          0.12
+         ],
+         [
+          1,
+          0
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0
+         ],
+         [
+          0.7,
+          0.2
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "Lifetime": {
+        "nr": [
+         0.7,
+         1.4
+        ]
+       },
+       "Rate": 18,
+       "Speed": {
+        "nr": [
+         0.3,
+         1.0
+        ]
+       },
+       "LightEmission": 1,
+       "Brightness": 3,
+       "Rotation": {
+        "nr": [
+         -180,
+         180
+        ]
+       },
+       "SpreadAngle": {
+        "v2": [
+         180,
+         180
+        ]
+       },
+       "Acceleration": {
+        "v3": [
+         0,
+         2.2,
+         0
+        ]
+       },
+       "Drag": 1,
+       "Shape": {
+        "enum": "ParticleEmitterShape.Box"
+       },
+       "ShapeStyle": {
+        "enum": "ParticleEmitterShapeStyle.Surface"
+       },
+       "ZOffset": 0.5
+      }
+     },
+     {
+      "class": "ParticleEmitter",
+      "name": "Wisp",
+      "props": {
+       "Texture": "texture://glow",
+       "Color": {
+        "cs": [
+         [
+          0,
+          0.82,
+          0.92,
+          1
+         ],
+         [
+          1,
+          0.32,
+          0.5,
+          1
+         ]
+        ]
+       },
+       "Size": {
+        "ns": [
+         [
+          0,
+          0.8
+         ],
+         [
+          1,
+          2.2
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          1
+         ],
+         [
+          0.3,
+          0.86
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "Lifetime": {
+        "nr": [
+         0.9,
+         1.5
+        ]
+       },
+       "Rate": 4,
+       "Speed": {
+        "nr": [
+         0.4,
+         1.0
+        ]
+       },
+       "LightEmission": 1,
+       "Brightness": 2,
+       "Rotation": {
+        "nr": [
+         -180,
+         180
+        ]
+       },
+       "SpreadAngle": {
+        "v2": [
+         180,
+         180
+        ]
+       },
+       "Acceleration": {
+        "v3": [
+         0,
+         2.5,
+         0
+        ]
+       }
+      }
+     }
+    ]
+   },
+   {
+    "class": "Attachment",
+    "name": "AuraLowerTorso",
+    "attach": "LowerTorso",
+    "props": {
+     "CFrame": {
+      "cf": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "children": [
+     {
+      "class": "ParticleEmitter",
+      "name": "Sparkle",
+      "props": {
+       "Texture": "texture://sparkle",
+       "Color": {
+        "cs": [
+         [
+          0,
+          1,
+          1,
+          1
+         ],
+         [
+          0.5,
+          0.82,
+          0.92,
+          1
+         ],
+         [
+          1,
+          0.32,
+          0.5,
+          1
+         ]
+        ]
+       },
+       "Size": {
+        "ns": [
+         [
+          0,
+          0
+         ],
+         [
+          0.15,
+          0.34,
+          0.12
+         ],
+         [
+          1,
+          0
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0
+         ],
+         [
+          0.7,
+          0.2
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "Lifetime": {
+        "nr": [
+         0.7,
+         1.4
+        ]
+       },
+       "Rate": 18,
+       "Speed": {
+        "nr": [
+         0.3,
+         1.0
+        ]
+       },
+       "LightEmission": 1,
+       "Brightness": 3,
+       "Rotation": {
+        "nr": [
+         -180,
+         180
+        ]
+       },
+       "SpreadAngle": {
+        "v2": [
+         180,
+         180
+        ]
+       },
+       "Acceleration": {
+        "v3": [
+         0,
+         2.2,
+         0
+        ]
+       },
+       "Drag": 1,
+       "Shape": {
+        "enum": "ParticleEmitterShape.Box"
+       },
+       "ShapeStyle": {
+        "enum": "ParticleEmitterShapeStyle.Surface"
+       },
+       "ZOffset": 0.5
+      }
+     },
+     {
+      "class": "ParticleEmitter",
+      "name": "Wisp",
+      "props": {
+       "Texture": "texture://glow",
+       "Color": {
+        "cs": [
+         [
+          0,
+          0.82,
+          0.92,
+          1
+         ],
+         [
+          1,
+          0.32,
+          0.5,
+          1
+         ]
+        ]
+       },
+       "Size": {
+        "ns": [
+         [
+          0,
+          0.8
+         ],
+         [
+          1,
+          2.2
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          1
+         ],
+         [
+          0.3,
+          0.86
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "Lifetime": {
+        "nr": [
+         0.9,
+         1.5
+        ]
+       },
+       "Rate": 4,
+       "Speed": {
+        "nr": [
+         0.4,
+         1.0
+        ]
+       },
+       "LightEmission": 1,
+       "Brightness": 2,
+       "Rotation": {
+        "nr": [
+         -180,
+         180
+        ]
+       },
+       "SpreadAngle": {
+        "v2": [
+         180,
+         180
+        ]
+       },
+       "Acceleration": {
+        "v3": [
+         0,
+         2.5,
+         0
+        ]
+       }
+      }
+     }
+    ]
+   },
+   {
+    "class": "Attachment",
+    "name": "AuraLeftUpperArm",
+    "attach": "LeftUpperArm",
+    "props": {
+     "CFrame": {
+      "cf": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "children": [
+     {
+      "class": "ParticleEmitter",
+      "name": "Sparkle",
+      "props": {
+       "Texture": "texture://sparkle",
+       "Color": {
+        "cs": [
+         [
+          0,
+          1,
+          1,
+          1
+         ],
+         [
+          0.5,
+          0.82,
+          0.92,
+          1
+         ],
+         [
+          1,
+          0.32,
+          0.5,
+          1
+         ]
+        ]
+       },
+       "Size": {
+        "ns": [
+         [
+          0,
+          0
+         ],
+         [
+          0.15,
+          0.34,
+          0.12
+         ],
+         [
+          1,
+          0
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0
+         ],
+         [
+          0.7,
+          0.2
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "Lifetime": {
+        "nr": [
+         0.7,
+         1.4
+        ]
+       },
+       "Rate": 10,
+       "Speed": {
+        "nr": [
+         0.3,
+         1.0
+        ]
+       },
+       "LightEmission": 1,
+       "Brightness": 3,
+       "Rotation": {
+        "nr": [
+         -180,
+         180
+        ]
+       },
+       "SpreadAngle": {
+        "v2": [
+         180,
+         180
+        ]
+       },
+       "Acceleration": {
+        "v3": [
+         0,
+         2.2,
+         0
+        ]
+       },
+       "Drag": 1,
+       "Shape": {
+        "enum": "ParticleEmitterShape.Box"
+       },
+       "ShapeStyle": {
+        "enum": "ParticleEmitterShapeStyle.Surface"
+       },
+       "ZOffset": 0.5
+      }
+     }
+    ]
+   },
+   {
+    "class": "Attachment",
+    "name": "AuraRightUpperArm",
+    "attach": "RightUpperArm",
+    "props": {
+     "CFrame": {
+      "cf": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "children": [
+     {
+      "class": "ParticleEmitter",
+      "name": "Sparkle",
+      "props": {
+       "Texture": "texture://sparkle",
+       "Color": {
+        "cs": [
+         [
+          0,
+          1,
+          1,
+          1
+         ],
+         [
+          0.5,
+          0.82,
+          0.92,
+          1
+         ],
+         [
+          1,
+          0.32,
+          0.5,
+          1
+         ]
+        ]
+       },
+       "Size": {
+        "ns": [
+         [
+          0,
+          0
+         ],
+         [
+          0.15,
+          0.34,
+          0.12
+         ],
+         [
+          1,
+          0
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0
+         ],
+         [
+          0.7,
+          0.2
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "Lifetime": {
+        "nr": [
+         0.7,
+         1.4
+        ]
+       },
+       "Rate": 10,
+       "Speed": {
+        "nr": [
+         0.3,
+         1.0
+        ]
+       },
+       "LightEmission": 1,
+       "Brightness": 3,
+       "Rotation": {
+        "nr": [
+         -180,
+         180
+        ]
+       },
+       "SpreadAngle": {
+        "v2": [
+         180,
+         180
+        ]
+       },
+       "Acceleration": {
+        "v3": [
+         0,
+         2.2,
+         0
+        ]
+       },
+       "Drag": 1,
+       "Shape": {
+        "enum": "ParticleEmitterShape.Box"
+       },
+       "ShapeStyle": {
+        "enum": "ParticleEmitterShapeStyle.Surface"
+       },
+       "ZOffset": 0.5
+      }
+     }
+    ]
+   },
+   {
+    "class": "Attachment",
+    "name": "AuraLeftLowerArm",
+    "attach": "LeftLowerArm",
+    "props": {
+     "CFrame": {
+      "cf": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "children": [
+     {
+      "class": "ParticleEmitter",
+      "name": "Sparkle",
+      "props": {
+       "Texture": "texture://sparkle",
+       "Color": {
+        "cs": [
+         [
+          0,
+          1,
+          1,
+          1
+         ],
+         [
+          0.5,
+          0.82,
+          0.92,
+          1
+         ],
+         [
+          1,
+          0.32,
+          0.5,
+          1
+         ]
+        ]
+       },
+       "Size": {
+        "ns": [
+         [
+          0,
+          0
+         ],
+         [
+          0.15,
+          0.34,
+          0.12
+         ],
+         [
+          1,
+          0
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0
+         ],
+         [
+          0.7,
+          0.2
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "Lifetime": {
+        "nr": [
+         0.7,
+         1.4
+        ]
+       },
+       "Rate": 10,
+       "Speed": {
+        "nr": [
+         0.3,
+         1.0
+        ]
+       },
+       "LightEmission": 1,
+       "Brightness": 3,
+       "Rotation": {
+        "nr": [
+         -180,
+         180
+        ]
+       },
+       "SpreadAngle": {
+        "v2": [
+         180,
+         180
+        ]
+       },
+       "Acceleration": {
+        "v3": [
+         0,
+         2.2,
+         0
+        ]
+       },
+       "Drag": 1,
+       "Shape": {
+        "enum": "ParticleEmitterShape.Box"
+       },
+       "ShapeStyle": {
+        "enum": "ParticleEmitterShapeStyle.Surface"
+       },
+       "ZOffset": 0.5
+      }
+     }
+    ]
+   },
+   {
+    "class": "Attachment",
+    "name": "AuraRightLowerArm",
+    "attach": "RightLowerArm",
+    "props": {
+     "CFrame": {
+      "cf": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "children": [
+     {
+      "class": "ParticleEmitter",
+      "name": "Sparkle",
+      "props": {
+       "Texture": "texture://sparkle",
+       "Color": {
+        "cs": [
+         [
+          0,
+          1,
+          1,
+          1
+         ],
+         [
+          0.5,
+          0.82,
+          0.92,
+          1
+         ],
+         [
+          1,
+          0.32,
+          0.5,
+          1
+         ]
+        ]
+       },
+       "Size": {
+        "ns": [
+         [
+          0,
+          0
+         ],
+         [
+          0.15,
+          0.34,
+          0.12
+         ],
+         [
+          1,
+          0
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0
+         ],
+         [
+          0.7,
+          0.2
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "Lifetime": {
+        "nr": [
+         0.7,
+         1.4
+        ]
+       },
+       "Rate": 10,
+       "Speed": {
+        "nr": [
+         0.3,
+         1.0
+        ]
+       },
+       "LightEmission": 1,
+       "Brightness": 3,
+       "Rotation": {
+        "nr": [
+         -180,
+         180
+        ]
+       },
+       "SpreadAngle": {
+        "v2": [
+         180,
+         180
+        ]
+       },
+       "Acceleration": {
+        "v3": [
+         0,
+         2.2,
+         0
+        ]
+       },
+       "Drag": 1,
+       "Shape": {
+        "enum": "ParticleEmitterShape.Box"
+       },
+       "ShapeStyle": {
+        "enum": "ParticleEmitterShapeStyle.Surface"
+       },
+       "ZOffset": 0.5
+      }
+     }
+    ]
+   },
+   {
+    "class": "Attachment",
+    "name": "AuraLeftHand",
+    "attach": "LeftHand",
+    "props": {
+     "CFrame": {
+      "cf": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "children": [
+     {
+      "class": "ParticleEmitter",
+      "name": "Sparkle",
+      "props": {
+       "Texture": "texture://sparkle",
+       "Color": {
+        "cs": [
+         [
+          0,
+          1,
+          1,
+          1
+         ],
+         [
+          0.5,
+          0.82,
+          0.92,
+          1
+         ],
+         [
+          1,
+          0.32,
+          0.5,
+          1
+         ]
+        ]
+       },
+       "Size": {
+        "ns": [
+         [
+          0,
+          0
+         ],
+         [
+          0.15,
+          0.34,
+          0.12
+         ],
+         [
+          1,
+          0
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0
+         ],
+         [
+          0.7,
+          0.2
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "Lifetime": {
+        "nr": [
+         0.7,
+         1.4
+        ]
+       },
+       "Rate": 10,
+       "Speed": {
+        "nr": [
+         0.3,
+         1.0
+        ]
+       },
+       "LightEmission": 1,
+       "Brightness": 3,
+       "Rotation": {
+        "nr": [
+         -180,
+         180
+        ]
+       },
+       "SpreadAngle": {
+        "v2": [
+         180,
+         180
+        ]
+       },
+       "Acceleration": {
+        "v3": [
+         0,
+         2.2,
+         0
+        ]
+       },
+       "Drag": 1,
+       "Shape": {
+        "enum": "ParticleEmitterShape.Box"
+       },
+       "ShapeStyle": {
+        "enum": "ParticleEmitterShapeStyle.Surface"
+       },
+       "ZOffset": 0.5
+      }
+     }
+    ]
+   },
+   {
+    "class": "Attachment",
+    "name": "AuraRightHand",
+    "attach": "RightHand",
+    "props": {
+     "CFrame": {
+      "cf": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "children": [
+     {
+      "class": "ParticleEmitter",
+      "name": "Sparkle",
+      "props": {
+       "Texture": "texture://sparkle",
+       "Color": {
+        "cs": [
+         [
+          0,
+          1,
+          1,
+          1
+         ],
+         [
+          0.5,
+          0.82,
+          0.92,
+          1
+         ],
+         [
+          1,
+          0.32,
+          0.5,
+          1
+         ]
+        ]
+       },
+       "Size": {
+        "ns": [
+         [
+          0,
+          0
+         ],
+         [
+          0.15,
+          0.34,
+          0.12
+         ],
+         [
+          1,
+          0
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0
+         ],
+         [
+          0.7,
+          0.2
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "Lifetime": {
+        "nr": [
+         0.7,
+         1.4
+        ]
+       },
+       "Rate": 10,
+       "Speed": {
+        "nr": [
+         0.3,
+         1.0
+        ]
+       },
+       "LightEmission": 1,
+       "Brightness": 3,
+       "Rotation": {
+        "nr": [
+         -180,
+         180
+        ]
+       },
+       "SpreadAngle": {
+        "v2": [
+         180,
+         180
+        ]
+       },
+       "Acceleration": {
+        "v3": [
+         0,
+         2.2,
+         0
+        ]
+       },
+       "Drag": 1,
+       "Shape": {
+        "enum": "ParticleEmitterShape.Box"
+       },
+       "ShapeStyle": {
+        "enum": "ParticleEmitterShapeStyle.Surface"
+       },
+       "ZOffset": 0.5
+      }
+     }
+    ]
+   },
+   {
+    "class": "Attachment",
+    "name": "AuraLeftUpperLeg",
+    "attach": "LeftUpperLeg",
+    "props": {
+     "CFrame": {
+      "cf": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "children": [
+     {
+      "class": "ParticleEmitter",
+      "name": "Sparkle",
+      "props": {
+       "Texture": "texture://sparkle",
+       "Color": {
+        "cs": [
+         [
+          0,
+          1,
+          1,
+          1
+         ],
+         [
+          0.5,
+          0.82,
+          0.92,
+          1
+         ],
+         [
+          1,
+          0.32,
+          0.5,
+          1
+         ]
+        ]
+       },
+       "Size": {
+        "ns": [
+         [
+          0,
+          0
+         ],
+         [
+          0.15,
+          0.34,
+          0.12
+         ],
+         [
+          1,
+          0
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0
+         ],
+         [
+          0.7,
+          0.2
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "Lifetime": {
+        "nr": [
+         0.7,
+         1.4
+        ]
+       },
+       "Rate": 10,
+       "Speed": {
+        "nr": [
+         0.3,
+         1.0
+        ]
+       },
+       "LightEmission": 1,
+       "Brightness": 3,
+       "Rotation": {
+        "nr": [
+         -180,
+         180
+        ]
+       },
+       "SpreadAngle": {
+        "v2": [
+         180,
+         180
+        ]
+       },
+       "Acceleration": {
+        "v3": [
+         0,
+         2.2,
+         0
+        ]
+       },
+       "Drag": 1,
+       "Shape": {
+        "enum": "ParticleEmitterShape.Box"
+       },
+       "ShapeStyle": {
+        "enum": "ParticleEmitterShapeStyle.Surface"
+       },
+       "ZOffset": 0.5
+      }
+     }
+    ]
+   },
+   {
+    "class": "Attachment",
+    "name": "AuraRightUpperLeg",
+    "attach": "RightUpperLeg",
+    "props": {
+     "CFrame": {
+      "cf": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "children": [
+     {
+      "class": "ParticleEmitter",
+      "name": "Sparkle",
+      "props": {
+       "Texture": "texture://sparkle",
+       "Color": {
+        "cs": [
+         [
+          0,
+          1,
+          1,
+          1
+         ],
+         [
+          0.5,
+          0.82,
+          0.92,
+          1
+         ],
+         [
+          1,
+          0.32,
+          0.5,
+          1
+         ]
+        ]
+       },
+       "Size": {
+        "ns": [
+         [
+          0,
+          0
+         ],
+         [
+          0.15,
+          0.34,
+          0.12
+         ],
+         [
+          1,
+          0
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0
+         ],
+         [
+          0.7,
+          0.2
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "Lifetime": {
+        "nr": [
+         0.7,
+         1.4
+        ]
+       },
+       "Rate": 10,
+       "Speed": {
+        "nr": [
+         0.3,
+         1.0
+        ]
+       },
+       "LightEmission": 1,
+       "Brightness": 3,
+       "Rotation": {
+        "nr": [
+         -180,
+         180
+        ]
+       },
+       "SpreadAngle": {
+        "v2": [
+         180,
+         180
+        ]
+       },
+       "Acceleration": {
+        "v3": [
+         0,
+         2.2,
+         0
+        ]
+       },
+       "Drag": 1,
+       "Shape": {
+        "enum": "ParticleEmitterShape.Box"
+       },
+       "ShapeStyle": {
+        "enum": "ParticleEmitterShapeStyle.Surface"
+       },
+       "ZOffset": 0.5
+      }
+     }
+    ]
+   },
+   {
+    "class": "Attachment",
+    "name": "AuraLeftLowerLeg",
+    "attach": "LeftLowerLeg",
+    "props": {
+     "CFrame": {
+      "cf": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "children": [
+     {
+      "class": "ParticleEmitter",
+      "name": "Sparkle",
+      "props": {
+       "Texture": "texture://sparkle",
+       "Color": {
+        "cs": [
+         [
+          0,
+          1,
+          1,
+          1
+         ],
+         [
+          0.5,
+          0.82,
+          0.92,
+          1
+         ],
+         [
+          1,
+          0.32,
+          0.5,
+          1
+         ]
+        ]
+       },
+       "Size": {
+        "ns": [
+         [
+          0,
+          0
+         ],
+         [
+          0.15,
+          0.34,
+          0.12
+         ],
+         [
+          1,
+          0
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0
+         ],
+         [
+          0.7,
+          0.2
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "Lifetime": {
+        "nr": [
+         0.7,
+         1.4
+        ]
+       },
+       "Rate": 10,
+       "Speed": {
+        "nr": [
+         0.3,
+         1.0
+        ]
+       },
+       "LightEmission": 1,
+       "Brightness": 3,
+       "Rotation": {
+        "nr": [
+         -180,
+         180
+        ]
+       },
+       "SpreadAngle": {
+        "v2": [
+         180,
+         180
+        ]
+       },
+       "Acceleration": {
+        "v3": [
+         0,
+         2.2,
+         0
+        ]
+       },
+       "Drag": 1,
+       "Shape": {
+        "enum": "ParticleEmitterShape.Box"
+       },
+       "ShapeStyle": {
+        "enum": "ParticleEmitterShapeStyle.Surface"
+       },
+       "ZOffset": 0.5
+      }
+     }
+    ]
+   },
+   {
+    "class": "Attachment",
+    "name": "AuraRightLowerLeg",
+    "attach": "RightLowerLeg",
+    "props": {
+     "CFrame": {
+      "cf": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "children": [
+     {
+      "class": "ParticleEmitter",
+      "name": "Sparkle",
+      "props": {
+       "Texture": "texture://sparkle",
+       "Color": {
+        "cs": [
+         [
+          0,
+          1,
+          1,
+          1
+         ],
+         [
+          0.5,
+          0.82,
+          0.92,
+          1
+         ],
+         [
+          1,
+          0.32,
+          0.5,
+          1
+         ]
+        ]
+       },
+       "Size": {
+        "ns": [
+         [
+          0,
+          0
+         ],
+         [
+          0.15,
+          0.34,
+          0.12
+         ],
+         [
+          1,
+          0
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0
+         ],
+         [
+          0.7,
+          0.2
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "Lifetime": {
+        "nr": [
+         0.7,
+         1.4
+        ]
+       },
+       "Rate": 10,
+       "Speed": {
+        "nr": [
+         0.3,
+         1.0
+        ]
+       },
+       "LightEmission": 1,
+       "Brightness": 3,
+       "Rotation": {
+        "nr": [
+         -180,
+         180
+        ]
+       },
+       "SpreadAngle": {
+        "v2": [
+         180,
+         180
+        ]
+       },
+       "Acceleration": {
+        "v3": [
+         0,
+         2.2,
+         0
+        ]
+       },
+       "Drag": 1,
+       "Shape": {
+        "enum": "ParticleEmitterShape.Box"
+       },
+       "ShapeStyle": {
+        "enum": "ParticleEmitterShapeStyle.Surface"
+       },
+       "ZOffset": 0.5
+      }
+     }
+    ]
+   },
+   {
+    "class": "MeshPart",
+    "name": "LUMHelix0",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "MeshId": "mesh://sphere?sub=2",
+     "Size": {
+      "v3": [
+       0.22,
+       0.22,
+       0.22
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     },
+     "Color": {
+      "c3": [
+       1,
+       1,
+       1
+      ]
+     },
+     "Material": {
+      "enum": "Material.Neon"
+     },
+     "Transparency": 0,
+     "CastShadow": false
+    },
+    "anim": {
+     "orbit": {
+      "radius": 2.7,
+      "speed": 170,
+      "phase": 0,
+      "center": [
+       0,
+       -0.2,
+       0
+      ]
+     },
+     "bob": {
+      "amp": 2.4,
+      "period": 2.6,
+      "phase": 0.0
+     }
+    },
+    "children": [
+     {
+      "class": "Attachment",
+      "name": "TA0",
+      "props": {
+       "CFrame": {
+        "cf": [
+         0,
+         0.11,
+         0,
+         0,
+         0,
+         0
+        ]
+       }
+      }
+     },
+     {
+      "class": "Attachment",
+      "name": "TA1",
+      "props": {
+       "CFrame": {
+        "cf": [
+         0,
+         -0.11,
+         0,
+         0,
+         0,
+         0
+        ]
+       }
+      }
+     },
+     {
+      "class": "Trail",
+      "name": "Trail",
+      "props": {
+       "Attachment0": {
+        "ref": "LUMHelix0/TA0"
+       },
+       "Attachment1": {
+        "ref": "LUMHelix0/TA1"
+       },
+       "Lifetime": 0.55,
+       "LightEmission": 1,
+       "Brightness": 3,
+       "FaceCamera": true,
+       "Color": {
+        "cs": [
+         [
+          0,
+          1,
+          1,
+          1
+         ],
+         [
+          1,
+          0.82,
+          0.92,
+          1
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0.1
+         ],
+         [
+          0.5,
+          0.5
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "WidthScale": {
+        "ns": [
+         [
+          0,
+          1
+         ],
+         [
+          1,
+          0.1
+         ]
+        ]
+       },
+       "MinLength": 0.05
+      }
+     },
+     {
+      "class": "ParticleEmitter",
+      "name": "Dust",
+      "props": {
+       "Texture": "texture://sparkle",
+       "Color": {
+        "cs": [
+         [
+          0,
+          1,
+          1,
+          1
+         ],
+         [
+          1,
+          0.82,
+          0.92,
+          1
+         ]
+        ]
+       },
+       "Size": {
+        "ns": [
+         [
+          0,
+          0.25
+         ],
+         [
+          1,
+          0
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "Lifetime": {
+        "nr": [
+         0.4,
+         0.8
+        ]
+       },
+       "Rate": 30,
+       "Speed": {
+        "nr": [
+         0,
+         0.4
+        ]
+       },
+       "LightEmission": 1,
+       "Brightness": 3,
+       "Rotation": {
+        "nr": [
+         -180,
+         180
+        ]
+       },
+       "SpreadAngle": {
+        "v2": [
+         180,
+         180
+        ]
+       },
+       "LockedToPart": false,
+       "Drag": 2
+      }
+     }
+    ]
+   },
+   {
+    "class": "MeshPart",
+    "name": "LUMHelix1",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "MeshId": "mesh://sphere?sub=2",
+     "Size": {
+      "v3": [
+       0.22,
+       0.22,
+       0.22
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     },
+     "Color": {
+      "c3": [
+       1,
+       1,
+       1
+      ]
+     },
+     "Material": {
+      "enum": "Material.Neon"
+     },
+     "Transparency": 0,
+     "CastShadow": false
+    },
+    "anim": {
+     "orbit": {
+      "radius": 2.7,
+      "speed": 170,
+      "phase": 120,
+      "center": [
+       0,
+       -0.2,
+       0
+      ]
+     },
+     "bob": {
+      "amp": 2.4,
+      "period": 2.6,
+      "phase": 2.1
+     }
+    },
+    "children": [
+     {
+      "class": "Attachment",
+      "name": "TA0",
+      "props": {
+       "CFrame": {
+        "cf": [
+         0,
+         0.11,
+         0,
+         0,
+         0,
+         0
+        ]
+       }
+      }
+     },
+     {
+      "class": "Attachment",
+      "name": "TA1",
+      "props": {
+       "CFrame": {
+        "cf": [
+         0,
+         -0.11,
+         0,
+         0,
+         0,
+         0
+        ]
+       }
+      }
+     },
+     {
+      "class": "Trail",
+      "name": "Trail",
+      "props": {
+       "Attachment0": {
+        "ref": "LUMHelix1/TA0"
+       },
+       "Attachment1": {
+        "ref": "LUMHelix1/TA1"
+       },
+       "Lifetime": 0.55,
+       "LightEmission": 1,
+       "Brightness": 3,
+       "FaceCamera": true,
+       "Color": {
+        "cs": [
+         [
+          0,
+          1,
+          1,
+          1
+         ],
+         [
+          1,
+          0.82,
+          0.92,
+          1
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0.1
+         ],
+         [
+          0.5,
+          0.5
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "WidthScale": {
+        "ns": [
+         [
+          0,
+          1
+         ],
+         [
+          1,
+          0.1
+         ]
+        ]
+       },
+       "MinLength": 0.05
+      }
+     },
+     {
+      "class": "ParticleEmitter",
+      "name": "Dust",
+      "props": {
+       "Texture": "texture://sparkle",
+       "Color": {
+        "cs": [
+         [
+          0,
+          1,
+          1,
+          1
+         ],
+         [
+          1,
+          0.82,
+          0.92,
+          1
+         ]
+        ]
+       },
+       "Size": {
+        "ns": [
+         [
+          0,
+          0.25
+         ],
+         [
+          1,
+          0
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "Lifetime": {
+        "nr": [
+         0.4,
+         0.8
+        ]
+       },
+       "Rate": 30,
+       "Speed": {
+        "nr": [
+         0,
+         0.4
+        ]
+       },
+       "LightEmission": 1,
+       "Brightness": 3,
+       "Rotation": {
+        "nr": [
+         -180,
+         180
+        ]
+       },
+       "SpreadAngle": {
+        "v2": [
+         180,
+         180
+        ]
+       },
+       "LockedToPart": false,
+       "Drag": 2
+      }
+     }
+    ]
+   },
+   {
+    "class": "MeshPart",
+    "name": "LUMHelix2",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "MeshId": "mesh://sphere?sub=2",
+     "Size": {
+      "v3": [
+       0.22,
+       0.22,
+       0.22
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     },
+     "Color": {
+      "c3": [
+       1,
+       1,
+       1
+      ]
+     },
+     "Material": {
+      "enum": "Material.Neon"
+     },
+     "Transparency": 0,
+     "CastShadow": false
+    },
+    "anim": {
+     "orbit": {
+      "radius": 2.7,
+      "speed": 170,
+      "phase": 240,
+      "center": [
+       0,
+       -0.2,
+       0
+      ]
+     },
+     "bob": {
+      "amp": 2.4,
+      "period": 2.6,
+      "phase": 4.2
+     }
+    },
+    "children": [
+     {
+      "class": "Attachment",
+      "name": "TA0",
+      "props": {
+       "CFrame": {
+        "cf": [
+         0,
+         0.11,
+         0,
+         0,
+         0,
+         0
+        ]
+       }
+      }
+     },
+     {
+      "class": "Attachment",
+      "name": "TA1",
+      "props": {
+       "CFrame": {
+        "cf": [
+         0,
+         -0.11,
+         0,
+         0,
+         0,
+         0
+        ]
+       }
+      }
+     },
+     {
+      "class": "Trail",
+      "name": "Trail",
+      "props": {
+       "Attachment0": {
+        "ref": "LUMHelix2/TA0"
+       },
+       "Attachment1": {
+        "ref": "LUMHelix2/TA1"
+       },
+       "Lifetime": 0.55,
+       "LightEmission": 1,
+       "Brightness": 3,
+       "FaceCamera": true,
+       "Color": {
+        "cs": [
+         [
+          0,
+          1,
+          1,
+          1
+         ],
+         [
+          1,
+          0.82,
+          0.92,
+          1
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0.1
+         ],
+         [
+          0.5,
+          0.5
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "WidthScale": {
+        "ns": [
+         [
+          0,
+          1
+         ],
+         [
+          1,
+          0.1
+         ]
+        ]
+       },
+       "MinLength": 0.05
+      }
+     },
+     {
+      "class": "ParticleEmitter",
+      "name": "Dust",
+      "props": {
+       "Texture": "texture://sparkle",
+       "Color": {
+        "cs": [
+         [
+          0,
+          1,
+          1,
+          1
+         ],
+         [
+          1,
+          0.82,
+          0.92,
+          1
+         ]
+        ]
+       },
+       "Size": {
+        "ns": [
+         [
+          0,
+          0.25
+         ],
+         [
+          1,
+          0
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0
+         ],
+         [
+          1,
+          1
+         ]
+        ]
+       },
+       "Lifetime": {
+        "nr": [
+         0.4,
+         0.8
+        ]
+       },
+       "Rate": 30,
+       "Speed": {
+        "nr": [
+         0,
+         0.4
+        ]
+       },
+       "LightEmission": 1,
+       "Brightness": 3,
+       "Rotation": {
+        "nr": [
+         -180,
+         180
+        ]
+       },
+       "SpreadAngle": {
+        "v2": [
+         180,
+         180
+        ]
+       },
+       "LockedToPart": false,
+       "Drag": 2
+      }
+     }
+    ]
+   },
+   {
+    "class": "MeshPart",
+    "name": "LUMShock0",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "MeshId": "mesh://torus?tube=0.012",
+     "Size": {
+      "v3": [
+       14,
+       0.16600790513833993,
+       14
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       0,
+       -2.89,
+       0.5,
+       0,
+       0,
+       0
+      ]
+     },
+     "Color": {
+      "c3": [
+       1,
+       1,
+       1
+      ]
+     },
+     "Material": {
+      "enum": "Material.Neon"
+     },
+     "Transparency": 0,
+     "CastShadow": false
+    },
+    "anim": {
+     "wave": {
+      "period": 2.7,
+      "phase": 0.0,
+      "from": 0.15,
+      "to": 1.25,
+      "fade": [
+       0.05,
+       1
+      ]
+     }
+    }
+   },
+   {
+    "class": "MeshPart",
+    "name": "LUMShock1",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "MeshId": "mesh://torus?tube=0.012",
+     "Size": {
+      "v3": [
+       14,
+       0.16600790513833993,
+       14
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       0,
+       -2.89,
+       0.5,
+       0,
+       0,
+       0
+      ]
+     },
+     "Color": {
+      "c3": [
+       0.82,
+       0.92,
+       1
+      ]
+     },
+     "Material": {
+      "enum": "Material.Neon"
+     },
+     "Transparency": 0,
+     "CastShadow": false
+    },
+    "anim": {
+     "wave": {
+      "period": 2.7,
+      "phase": 0.9,
+      "from": 0.15,
+      "to": 1.25,
+      "fade": [
+       0.05,
+       1
+      ]
+     }
+    }
+   },
+   {
+    "class": "MeshPart",
+    "name": "LUMShock2",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "MeshId": "mesh://torus?tube=0.012",
+     "Size": {
+      "v3": [
+       14,
+       0.16600790513833993,
+       14
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       0,
+       -2.89,
+       0.5,
+       0,
+       0,
+       0
+      ]
+     },
+     "Color": {
+      "c3": [
+       0.82,
+       0.92,
+       1
+      ]
+     },
+     "Material": {
+      "enum": "Material.Neon"
+     },
+     "Transparency": 0,
+     "CastShadow": false
+    },
+    "anim": {
+     "wave": {
+      "period": 2.7,
+      "phase": 1.8,
+      "from": 0.15,
+      "to": 1.25,
+      "fade": [
+       0.05,
+       1
+      ]
+     }
+    }
+   },
+   {
+    "class": "Plane",
+    "name": "LUMShockGlow",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "Image": "texture://ring",
+     "Size": {
+      "v2": [
+       14,
+       14
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       0,
+       -2.91,
+       0.5,
+       -90,
+       0,
+       0
+      ]
+     },
+     "Color": {
+      "c3": [
+       0.82,
+       0.92,
+       1
+      ]
+     },
+     "Brightness": 2,
+     "Transparency": 0.3
+    },
+    "anim": {
+     "wave": {
+      "period": 2.7,
+      "phase": 0.2,
+      "from": 0.1,
+      "to": 1.1,
+      "fade": [
+       0.2,
+       1
+      ]
+     }
+    }
+   },
+   {
+    "class": "Part",
+    "name": "LUMTwinkle0",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "Size": {
+      "v3": [
+       0.2,
+       0.2,
+       0.2
+      ]
+     },
+     "Transparency": 1,
+     "CFrame": {
+      "cf": [
+       7.976956753559213,
+       -1.0475890581855305,
+       0.1431531481220365,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "children": [
+     {
+      "class": "BillboardGui",
+      "name": "LUMTwinkle0Gui",
+      "props": {
+       "Size": {
+        "u2": [
+         2.6,
+         0,
+         2.6,
+         0
+        ]
+       },
+       "LightInfluence": 0,
+       "Brightness": 4,
+       "StudsOffset": {
+        "v3": [
+         0,
+         0,
+         0
+        ]
+       },
+       "MaxDistance": 200
+      },
+      "children": [
+       {
+        "class": "ImageLabel",
+        "name": "Img",
+        "props": {
+         "Image": "texture://star4",
+         "ImageColor3": {
+          "c3": [
+           1,
+           1,
+           1
+          ]
+         },
+         "ImageTransparency": 0.0,
+         "BackgroundTransparency": 1,
+         "Size": {
+          "u2": [
+           1,
+           0,
+           1,
+           0
+          ]
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "anim": {
+     "shimmer": {
+      "min": 0,
+      "max": 1,
+      "period": 1.0103335937065983,
+      "phase": 5.012993268776698
+     },
+     "bob": {
+      "amp": 0.3,
+      "period": 4.471939978137047,
+      "phase": 0
+     }
+    }
+   },
+   {
+    "class": "Part",
+    "name": "LUMTwinkle1",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "Size": {
+      "v3": [
+       0.2,
+       0.2,
+       0.2
+      ]
+     },
+     "Transparency": 1,
+     "CFrame": {
+      "cf": [
+       -2.7701804916778374,
+       3.3475533254276995,
+       -1.5112697366127459,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "children": [
+     {
+      "class": "BillboardGui",
+      "name": "LUMTwinkle1Gui",
+      "props": {
+       "Size": {
+        "u2": [
+         1.6,
+         0,
+         1.6,
+         0
+        ]
+       },
+       "LightInfluence": 0,
+       "Brightness": 4,
+       "StudsOffset": {
+        "v3": [
+         0,
+         0,
+         0
+        ]
+       },
+       "MaxDistance": 200
+      },
+      "children": [
+       {
+        "class": "ImageLabel",
+        "name": "Img",
+        "props": {
+         "Image": "texture://star4",
+         "ImageColor3": {
+          "c3": [
+           1,
+           1,
+           1
+          ]
+         },
+         "ImageTransparency": 0.0,
+         "BackgroundTransparency": 1,
+         "Size": {
+          "u2": [
+           1,
+           0,
+           1,
+           0
+          ]
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "anim": {
+     "shimmer": {
+      "min": 0,
+      "max": 1,
+      "period": 1.6888422537330894,
+      "phase": 3.4872241026720188
+     },
+     "bob": {
+      "amp": 0.3,
+      "period": 3.316765740509611,
+      "phase": 1
+     }
+    }
+   },
+   {
+    "class": "Part",
+    "name": "LUMTwinkle2",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "Size": {
+      "v3": [
+       0.2,
+       0.2,
+       0.2
+      ]
+     },
+     "Transparency": 1,
+     "CFrame": {
+      "cf": [
+       -5.506867531675421,
+       4.284096649899727,
+       3.037854218185714,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "children": [
+     {
+      "class": "BillboardGui",
+      "name": "LUMTwinkle2Gui",
+      "props": {
+       "Size": {
+        "u2": [
+         1.6,
+         0,
+         1.6,
+         0
+        ]
+       },
+       "LightInfluence": 0,
+       "Brightness": 4,
+       "StudsOffset": {
+        "v3": [
+         0,
+         0,
+         0
+        ]
+       },
+       "MaxDistance": 200
+      },
+      "children": [
+       {
+        "class": "ImageLabel",
+        "name": "Img",
+        "props": {
+         "Image": "texture://star4",
+         "ImageColor3": {
+          "c3": [
+           1,
+           1,
+           1
+          ]
+         },
+         "ImageTransparency": 0.0,
+         "BackgroundTransparency": 1,
+         "Size": {
+          "u2": [
+           1,
+           0,
+           1,
+           0
+          ]
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "anim": {
+     "shimmer": {
+      "min": 0,
+      "max": 1,
+      "period": 2.1932654318346656,
+      "phase": 5.696372838559461
+     },
+     "bob": {
+      "amp": 0.3,
+      "period": 4.088354094858642,
+      "phase": 2
+     }
+    }
+   },
+   {
+    "class": "Part",
+    "name": "LUMTwinkle3",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "Size": {
+      "v3": [
+       0.2,
+       0.2,
+       0.2
+      ]
+     },
+     "Transparency": 1,
+     "CFrame": {
+      "cf": [
+       -5.2417619795335595,
+       -1.212605364857139,
+       2.6355461803525895,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "children": [
+     {
+      "class": "BillboardGui",
+      "name": "LUMTwinkle3Gui",
+      "props": {
+       "Size": {
+        "u2": [
+         2.6,
+         0,
+         2.6,
+         0
+        ]
+       },
+       "LightInfluence": 0,
+       "Brightness": 4,
+       "StudsOffset": {
+        "v3": [
+         0,
+         0,
+         0
+        ]
+       },
+       "MaxDistance": 200
+      },
+      "children": [
+       {
+        "class": "ImageLabel",
+        "name": "Img",
+        "props": {
+         "Image": "texture://star4",
+         "ImageColor3": {
+          "c3": [
+           1,
+           1,
+           1
+          ]
+         },
+         "ImageTransparency": 0.0,
+         "BackgroundTransparency": 1,
+         "Size": {
+          "u2": [
+           1,
+           0,
+           1,
+           0
+          ]
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "anim": {
+     "shimmer": {
+      "min": 0,
+      "max": 1,
+      "period": 0.9356783142180647,
+      "phase": 2.7893631725838723
+     },
+     "bob": {
+      "amp": 0.3,
+      "period": 3.636930255707355,
+      "phase": 3
+     }
+    }
+   },
+   {
+    "class": "Part",
+    "name": "LUMTwinkle4",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "Size": {
+      "v3": [
+       0.2,
+       0.2,
+       0.2
+      ]
+     },
+     "Transparency": 1,
+     "CFrame": {
+      "cf": [
+       -5.881222704934761,
+       2.7060221531682265,
+       4.813078898743537,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "children": [
+     {
+      "class": "BillboardGui",
+      "name": "LUMTwinkle4Gui",
+      "props": {
+       "Size": {
+        "u2": [
+         1.6,
+         0,
+         1.6,
+         0
+        ]
+       },
+       "LightInfluence": 0,
+       "Brightness": 4,
+       "StudsOffset": {
+        "v3": [
+         0,
+         0,
+         0
+        ]
+       },
+       "MaxDistance": 200
+      },
+      "children": [
+       {
+        "class": "ImageLabel",
+        "name": "Img",
+        "props": {
+         "Image": "texture://star4",
+         "ImageColor3": {
+          "c3": [
+           1,
+           1,
+           1
+          ]
+         },
+         "ImageTransparency": 0.0,
+         "BackgroundTransparency": 1,
+         "Size": {
+          "u2": [
+           1,
+           0,
+           1,
+           0
+          ]
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "anim": {
+     "shimmer": {
+      "min": 0,
+      "max": 1,
+      "period": 1.6286634693344486,
+      "phase": 1.4167404426903725
+     },
+     "bob": {
+      "amp": 0.3,
+      "period": 3.047716158281564,
+      "phase": 4
+     }
+    }
+   },
+   {
+    "class": "Part",
+    "name": "LUMTwinkle5",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "Size": {
+      "v3": [
+       0.2,
+       0.2,
+       0.2
+      ]
+     },
+     "Transparency": 1,
+     "CFrame": {
+      "cf": [
+       -2.295231867496455,
+       2.581790766697609,
+       4.196797811637888,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "children": [
+     {
+      "class": "BillboardGui",
+      "name": "LUMTwinkle5Gui",
+      "props": {
+       "Size": {
+        "u2": [
+         1.6,
+         0,
+         1.6,
+         0
+        ]
+       },
+       "LightInfluence": 0,
+       "Brightness": 4,
+       "StudsOffset": {
+        "v3": [
+         0,
+         0,
+         0
+        ]
+       },
+       "MaxDistance": 200
+      },
+      "children": [
+       {
+        "class": "ImageLabel",
+        "name": "Img",
+        "props": {
+         "Image": "texture://star4",
+         "ImageColor3": {
+          "c3": [
+           1,
+           1,
+           1
+          ]
+         },
+         "ImageTransparency": 0.0,
+         "BackgroundTransparency": 1,
+         "Size": {
+          "u2": [
+           1,
+           0,
+           1,
+           0
+          ]
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "anim": {
+     "shimmer": {
+      "min": 0,
+      "max": 1,
+      "period": 2.1982886386503178,
+      "phase": 4.04687818407522
+     },
+     "bob": {
+      "amp": 0.3,
+      "period": 3.3636869936462888,
+      "phase": 5
+     }
+    }
+   },
+   {
+    "class": "Part",
+    "name": "LUMTwinkle6",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "Size": {
+      "v3": [
+       0.2,
+       0.2,
+       0.2
+      ]
+     },
+     "Transparency": 1,
+     "CFrame": {
+      "cf": [
+       6.031422263946963,
+       4.375213535151822,
+       -1.3594595393505045,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "children": [
+     {
+      "class": "BillboardGui",
+      "name": "LUMTwinkle6Gui",
+      "props": {
+       "Size": {
+        "u2": [
+         2.6,
+         0,
+         2.6,
+         0
+        ]
+       },
+       "LightInfluence": 0,
+       "Brightness": 4,
+       "StudsOffset": {
+        "v3": [
+         0,
+         0,
+         0
+        ]
+       },
+       "MaxDistance": 200
+      },
+      "children": [
+       {
+        "class": "ImageLabel",
+        "name": "Img",
+        "props": {
+         "Image": "texture://star4",
+         "ImageColor3": {
+          "c3": [
+           1,
+           1,
+           1
+          ]
+         },
+         "ImageTransparency": 0.0,
+         "BackgroundTransparency": 1,
+         "Size": {
+          "u2": [
+           1,
+           0,
+           1,
+           0
+          ]
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "anim": {
+     "shimmer": {
+      "min": 0,
+      "max": 1,
+      "period": 2.0785717448668297,
+      "phase": 4.577312902998425
+     },
+     "bob": {
+      "amp": 0.3,
+      "period": 4.579495274923526,
+      "phase": 6
+     }
+    }
+   },
+   {
+    "class": "Part",
+    "name": "LUMTwinkle7",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "Size": {
+      "v3": [
+       0.2,
+       0.2,
+       0.2
+      ]
+     },
+     "Transparency": 1,
+     "CFrame": {
+      "cf": [
+       -5.112191000252015,
+       6.195207503185806,
+       5.517209497070333,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "children": [
+     {
+      "class": "BillboardGui",
+      "name": "LUMTwinkle7Gui",
+      "props": {
+       "Size": {
+        "u2": [
+         1.6,
+         0,
+         1.6,
+         0
+        ]
+       },
+       "LightInfluence": 0,
+       "Brightness": 4,
+       "StudsOffset": {
+        "v3": [
+         0,
+         0,
+         0
+        ]
+       },
+       "MaxDistance": 200
+      },
+      "children": [
+       {
+        "class": "ImageLabel",
+        "name": "Img",
+        "props": {
+         "Image": "texture://star4",
+         "ImageColor3": {
+          "c3": [
+           1,
+           1,
+           1
+          ]
+         },
+         "ImageTransparency": 0.0,
+         "BackgroundTransparency": 1,
+         "Size": {
+          "u2": [
+           1,
+           0,
+           1,
+           0
+          ]
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "anim": {
+     "shimmer": {
+      "min": 0,
+      "max": 1,
+      "period": 1.1095400492952245,
+      "phase": 4.524024429911233
+     },
+     "bob": {
+      "amp": 0.3,
+      "period": 4.430301796474907,
+      "phase": 7
+     }
+    }
+   },
+   {
+    "class": "Part",
+    "name": "LUMTwinkle8",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "Size": {
+      "v3": [
+       0.2,
+       0.2,
+       0.2
+      ]
+     },
+     "Transparency": 1,
+     "CFrame": {
+      "cf": [
+       -6.4277022538740605,
+       2.4201113748015306,
+       2.4539593361113496,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "children": [
+     {
+      "class": "BillboardGui",
+      "name": "LUMTwinkle8Gui",
+      "props": {
+       "Size": {
+        "u2": [
+         1.6,
+         0,
+         1.6,
+         0
+        ]
+       },
+       "LightInfluence": 0,
+       "Brightness": 4,
+       "StudsOffset": {
+        "v3": [
+         0,
+         0,
+         0
+        ]
+       },
+       "MaxDistance": 200
+      },
+      "children": [
+       {
+        "class": "ImageLabel",
+        "name": "Img",
+        "props": {
+         "Image": "texture://star4",
+         "ImageColor3": {
+          "c3": [
+           1,
+           1,
+           1
+          ]
+         },
+         "ImageTransparency": 0.0,
+         "BackgroundTransparency": 1,
+         "Size": {
+          "u2": [
+           1,
+           0,
+           1,
+           0
+          ]
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "anim": {
+     "shimmer": {
+      "min": 0,
+      "max": 1,
+      "period": 2.102281693722942,
+      "phase": 3.0050463757839294
+     },
+     "bob": {
+      "amp": 0.3,
+      "period": 4.663048979583625,
+      "phase": 8
+     }
+    }
+   },
+   {
+    "class": "Part",
+    "name": "LUMTwinkle9",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "Size": {
+      "v3": [
+       0.2,
+       0.2,
+       0.2
+      ]
+     },
+     "Transparency": 1,
+     "CFrame": {
+      "cf": [
+       -4.879496191311135,
+       5.697604710053006,
+       5.327509148730923,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "children": [
+     {
+      "class": "BillboardGui",
+      "name": "LUMTwinkle9Gui",
+      "props": {
+       "Size": {
+        "u2": [
+         2.6,
+         0,
+         2.6,
+         0
+        ]
+       },
+       "LightInfluence": 0,
+       "Brightness": 4,
+       "StudsOffset": {
+        "v3": [
+         0,
+         0,
+         0
+        ]
+       },
+       "MaxDistance": 200
+      },
+      "children": [
+       {
+        "class": "ImageLabel",
+        "name": "Img",
+        "props": {
+         "Image": "texture://star4",
+         "ImageColor3": {
+          "c3": [
+           1,
+           1,
+           1
+          ]
+         },
+         "ImageTransparency": 0.0,
+         "BackgroundTransparency": 1,
+         "Size": {
+          "u2": [
+           1,
+           0,
+           1,
+           0
+          ]
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "anim": {
+     "shimmer": {
+      "min": 0,
+      "max": 1,
+      "period": 1.4993158143461291,
+      "phase": 3.4062304225214657
+     },
+     "bob": {
+      "amp": 0.3,
+      "period": 4.840660878383858,
+      "phase": 9
+     }
+    }
+   },
+   {
+    "class": "Part",
+    "name": "LUMRise",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "Size": {
+      "v3": [
+       7,
+       0.4,
+       7
+      ]
+     },
+     "Transparency": 1,
+     "CFrame": {
+      "cf": [
+       0,
+       -2.75,
+       0.5,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "children": [
+     {
+      "class": "ParticleEmitter",
+      "name": "Rise",
+      "props": {
+       "Texture": "texture://star4",
+       "Color": {
+        "cs": [
+         [
+          0,
+          1,
+          1,
+          1
+         ],
+         [
+          1,
+          0.82,
+          0.92,
+          1
+         ]
+        ]
+       },
+       "Size": {
+        "ns": [
+         [
+          0,
+          0
+         ],
+         [
+          0.2,
+          0.35,
+          0.1
+         ],
+         [
+          1,
+          0
+         ]
+        ]
+       },
+       "Transparency": {
+        "ns": [
+         [
+          0,
+          0
+         ],
+         [
+          1,
+          0.4
+         ]
+        ]
+       },
+       "Lifetime": {
+        "nr": [
+         1.8,
+         3
+        ]
+       },
+       "Rate": 22,
+       "Speed": {
+        "nr": [
+         2,
+         4
+        ]
+       },
+       "LightEmission": 1,
+       "Brightness": 3,
+       "Rotation": {
+        "nr": [
+         -180,
+         180
+        ]
+       },
+       "SpreadAngle": {
+        "v2": [
+         5,
+         5
+        ]
+       },
+       "Shape": {
+        "enum": "ParticleEmitterShape.Box"
+       },
+       "ShapeStyle": {
+        "enum": "ParticleEmitterShapeStyle.Volume"
+       },
+       "EmissionDirection": {
+        "enum": "NormalId.Top"
+       },
+       "RotSpeed": {
+        "nr": [
+         -90,
+         90
+        ]
+       }
+      }
+     }
+    ]
+   },
+   {
+    "class": "Part",
+    "name": "WheelStar0",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "Size": {
+      "v3": [
+       0.2,
+       0.2,
+       0.2
+      ]
+     },
+     "Transparency": 1,
+     "CFrame": {
+      "cf": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "children": [
+     {
+      "class": "BillboardGui",
+      "name": "WheelStar0Gui",
+      "props": {
+       "Size": {
+        "u2": [
+         2.2,
+         0,
+         2.2,
+         0
+        ]
+       },
+       "LightInfluence": 0,
+       "Brightness": 4,
+       "StudsOffset": {
+        "v3": [
+         0,
+         0,
+         0
+        ]
+       },
+       "MaxDistance": 200
+      },
+      "children": [
+       {
+        "class": "ImageLabel",
+        "name": "Img",
+        "props": {
+         "Image": "texture://star4",
+         "ImageColor3": {
+          "c3": [
+           1,
+           1,
+           1
+          ]
+         },
+         "ImageTransparency": 0.0,
+         "BackgroundTransparency": 1,
+         "Size": {
+          "u2": [
+           1,
+           0,
+           1,
+           0
+          ]
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "anim": {
+     "orbit": {
+      "radius": 4.2,
+      "speed": 40,
+      "phase": 0,
+      "tilt": [
+       90,
+       0
+      ],
+      "center": [
+       0,
+       2,
+       3.4
+      ]
+     },
+     "shimmer": {
+      "min": 0,
+      "max": 0.7,
+      "period": 1.4,
+      "phase": 0
+     }
+    }
+   },
+   {
+    "class": "Part",
+    "name": "WheelStar1",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "Size": {
+      "v3": [
+       0.2,
+       0.2,
+       0.2
+      ]
+     },
+     "Transparency": 1,
+     "CFrame": {
+      "cf": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "children": [
+     {
+      "class": "BillboardGui",
+      "name": "WheelStar1Gui",
+      "props": {
+       "Size": {
+        "u2": [
+         2.2,
+         0,
+         2.2,
+         0
+        ]
+       },
+       "LightInfluence": 0,
+       "Brightness": 4,
+       "StudsOffset": {
+        "v3": [
+         0,
+         0,
+         0
+        ]
+       },
+       "MaxDistance": 200
+      },
+      "children": [
+       {
+        "class": "ImageLabel",
+        "name": "Img",
+        "props": {
+         "Image": "texture://star4",
+         "ImageColor3": {
+          "c3": [
+           1,
+           1,
+           1
+          ]
+         },
+         "ImageTransparency": 0.0,
+         "BackgroundTransparency": 1,
+         "Size": {
+          "u2": [
+           1,
+           0,
+           1,
+           0
+          ]
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "anim": {
+     "orbit": {
+      "radius": 4.2,
+      "speed": 40,
+      "phase": 45,
+      "tilt": [
+       90,
+       0
+      ],
+      "center": [
+       0,
+       2,
+       3.4
+      ]
+     },
+     "shimmer": {
+      "min": 0,
+      "max": 0.7,
+      "period": 1.4,
+      "phase": 1
+     }
+    }
+   },
+   {
+    "class": "Part",
+    "name": "WheelStar2",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "Size": {
+      "v3": [
+       0.2,
+       0.2,
+       0.2
+      ]
+     },
+     "Transparency": 1,
+     "CFrame": {
+      "cf": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "children": [
+     {
+      "class": "BillboardGui",
+      "name": "WheelStar2Gui",
+      "props": {
+       "Size": {
+        "u2": [
+         2.2,
+         0,
+         2.2,
+         0
+        ]
+       },
+       "LightInfluence": 0,
+       "Brightness": 4,
+       "StudsOffset": {
+        "v3": [
+         0,
+         0,
+         0
+        ]
+       },
+       "MaxDistance": 200
+      },
+      "children": [
+       {
+        "class": "ImageLabel",
+        "name": "Img",
+        "props": {
+         "Image": "texture://star4",
+         "ImageColor3": {
+          "c3": [
+           1,
+           1,
+           1
+          ]
+         },
+         "ImageTransparency": 0.0,
+         "BackgroundTransparency": 1,
+         "Size": {
+          "u2": [
+           1,
+           0,
+           1,
+           0
+          ]
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "anim": {
+     "orbit": {
+      "radius": 4.2,
+      "speed": 40,
+      "phase": 90,
+      "tilt": [
+       90,
+       0
+      ],
+      "center": [
+       0,
+       2,
+       3.4
+      ]
+     },
+     "shimmer": {
+      "min": 0,
+      "max": 0.7,
+      "period": 1.4,
+      "phase": 2
+     }
+    }
+   },
+   {
+    "class": "Part",
+    "name": "WheelStar3",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "Size": {
+      "v3": [
+       0.2,
+       0.2,
+       0.2
+      ]
+     },
+     "Transparency": 1,
+     "CFrame": {
+      "cf": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "children": [
+     {
+      "class": "BillboardGui",
+      "name": "WheelStar3Gui",
+      "props": {
+       "Size": {
+        "u2": [
+         2.2,
+         0,
+         2.2,
+         0
+        ]
+       },
+       "LightInfluence": 0,
+       "Brightness": 4,
+       "StudsOffset": {
+        "v3": [
+         0,
+         0,
+         0
+        ]
+       },
+       "MaxDistance": 200
+      },
+      "children": [
+       {
+        "class": "ImageLabel",
+        "name": "Img",
+        "props": {
+         "Image": "texture://star4",
+         "ImageColor3": {
+          "c3": [
+           1,
+           1,
+           1
+          ]
+         },
+         "ImageTransparency": 0.0,
+         "BackgroundTransparency": 1,
+         "Size": {
+          "u2": [
+           1,
+           0,
+           1,
+           0
+          ]
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "anim": {
+     "orbit": {
+      "radius": 4.2,
+      "speed": 40,
+      "phase": 135,
+      "tilt": [
+       90,
+       0
+      ],
+      "center": [
+       0,
+       2,
+       3.4
+      ]
+     },
+     "shimmer": {
+      "min": 0,
+      "max": 0.7,
+      "period": 1.4,
+      "phase": 3
+     }
+    }
+   },
+   {
+    "class": "Part",
+    "name": "WheelStar4",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "Size": {
+      "v3": [
+       0.2,
+       0.2,
+       0.2
+      ]
+     },
+     "Transparency": 1,
+     "CFrame": {
+      "cf": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "children": [
+     {
+      "class": "BillboardGui",
+      "name": "WheelStar4Gui",
+      "props": {
+       "Size": {
+        "u2": [
+         2.2,
+         0,
+         2.2,
+         0
+        ]
+       },
+       "LightInfluence": 0,
+       "Brightness": 4,
+       "StudsOffset": {
+        "v3": [
+         0,
+         0,
+         0
+        ]
+       },
+       "MaxDistance": 200
+      },
+      "children": [
+       {
+        "class": "ImageLabel",
+        "name": "Img",
+        "props": {
+         "Image": "texture://star4",
+         "ImageColor3": {
+          "c3": [
+           1,
+           1,
+           1
+          ]
+         },
+         "ImageTransparency": 0.0,
+         "BackgroundTransparency": 1,
+         "Size": {
+          "u2": [
+           1,
+           0,
+           1,
+           0
+          ]
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "anim": {
+     "orbit": {
+      "radius": 4.2,
+      "speed": 40,
+      "phase": 180,
+      "tilt": [
+       90,
+       0
+      ],
+      "center": [
+       0,
+       2,
+       3.4
+      ]
+     },
+     "shimmer": {
+      "min": 0,
+      "max": 0.7,
+      "period": 1.4,
+      "phase": 4
+     }
+    }
+   },
+   {
+    "class": "Part",
+    "name": "WheelStar5",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "Size": {
+      "v3": [
+       0.2,
+       0.2,
+       0.2
+      ]
+     },
+     "Transparency": 1,
+     "CFrame": {
+      "cf": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "children": [
+     {
+      "class": "BillboardGui",
+      "name": "WheelStar5Gui",
+      "props": {
+       "Size": {
+        "u2": [
+         2.2,
+         0,
+         2.2,
+         0
+        ]
+       },
+       "LightInfluence": 0,
+       "Brightness": 4,
+       "StudsOffset": {
+        "v3": [
+         0,
+         0,
+         0
+        ]
+       },
+       "MaxDistance": 200
+      },
+      "children": [
+       {
+        "class": "ImageLabel",
+        "name": "Img",
+        "props": {
+         "Image": "texture://star4",
+         "ImageColor3": {
+          "c3": [
+           1,
+           1,
+           1
+          ]
+         },
+         "ImageTransparency": 0.0,
+         "BackgroundTransparency": 1,
+         "Size": {
+          "u2": [
+           1,
+           0,
+           1,
+           0
+          ]
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "anim": {
+     "orbit": {
+      "radius": 4.2,
+      "speed": 40,
+      "phase": 225,
+      "tilt": [
+       90,
+       0
+      ],
+      "center": [
+       0,
+       2,
+       3.4
+      ]
+     },
+     "shimmer": {
+      "min": 0,
+      "max": 0.7,
+      "period": 1.4,
+      "phase": 5
+     }
+    }
+   },
+   {
+    "class": "Part",
+    "name": "WheelStar6",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "Size": {
+      "v3": [
+       0.2,
+       0.2,
+       0.2
+      ]
+     },
+     "Transparency": 1,
+     "CFrame": {
+      "cf": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "children": [
+     {
+      "class": "BillboardGui",
+      "name": "WheelStar6Gui",
+      "props": {
+       "Size": {
+        "u2": [
+         2.2,
+         0,
+         2.2,
+         0
+        ]
+       },
+       "LightInfluence": 0,
+       "Brightness": 4,
+       "StudsOffset": {
+        "v3": [
+         0,
+         0,
+         0
+        ]
+       },
+       "MaxDistance": 200
+      },
+      "children": [
+       {
+        "class": "ImageLabel",
+        "name": "Img",
+        "props": {
+         "Image": "texture://star4",
+         "ImageColor3": {
+          "c3": [
+           1,
+           1,
+           1
+          ]
+         },
+         "ImageTransparency": 0.0,
+         "BackgroundTransparency": 1,
+         "Size": {
+          "u2": [
+           1,
+           0,
+           1,
+           0
+          ]
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "anim": {
+     "orbit": {
+      "radius": 4.2,
+      "speed": 40,
+      "phase": 270,
+      "tilt": [
+       90,
+       0
+      ],
+      "center": [
+       0,
+       2,
+       3.4
+      ]
+     },
+     "shimmer": {
+      "min": 0,
+      "max": 0.7,
+      "period": 1.4,
+      "phase": 6
+     }
+    }
+   },
+   {
+    "class": "Part",
+    "name": "WheelStar7",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "Size": {
+      "v3": [
+       0.2,
+       0.2,
+       0.2
+      ]
+     },
+     "Transparency": 1,
+     "CFrame": {
+      "cf": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "children": [
+     {
+      "class": "BillboardGui",
+      "name": "WheelStar7Gui",
+      "props": {
+       "Size": {
+        "u2": [
+         2.2,
+         0,
+         2.2,
+         0
+        ]
+       },
+       "LightInfluence": 0,
+       "Brightness": 4,
+       "StudsOffset": {
+        "v3": [
+         0,
+         0,
+         0
+        ]
+       },
+       "MaxDistance": 200
+      },
+      "children": [
+       {
+        "class": "ImageLabel",
+        "name": "Img",
+        "props": {
+         "Image": "texture://star4",
+         "ImageColor3": {
+          "c3": [
+           1,
+           1,
+           1
+          ]
+         },
+         "ImageTransparency": 0.0,
+         "BackgroundTransparency": 1,
+         "Size": {
+          "u2": [
+           1,
+           0,
+           1,
+           0
+          ]
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "anim": {
+     "orbit": {
+      "radius": 4.2,
+      "speed": 40,
+      "phase": 315,
+      "tilt": [
+       90,
+       0
+      ],
+      "center": [
+       0,
+       2,
+       3.4
+      ]
+     },
+     "shimmer": {
+      "min": 0,
+      "max": 0.7,
+      "period": 1.4,
+      "phase": 7
+     }
+    }
+   },
+   {
+    "class": "MeshPart",
+    "name": "HyStar",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "MeshId": "mesh://asset/hy_lum_txt",
+     "Size": {
+      "v3": [
+       22,
+       22,
+       2.2
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       0,
+       2.0,
+       3.1,
+       0.0,
+       0.0,
+       0.0
+      ]
+     },
+     "Color": {
+      "c3": [
+       0.7,
+       0.8,
+       1
+      ]
+     },
+     "Material": {
+      "enum": "Material.SmoothPlastic"
+     },
+     "Transparency": 0,
+     "CastShadow": false
+    },
+    "children": [
+     {
+      "class": "Highlight",
+      "name": "Edge",
+      "props": {
+       "FillTransparency": 1.0,
+       "OutlineColor": {
+        "c3": [
+         1,
+         1,
+         1
+        ]
+       },
+       "OutlineTransparency": 0.0,
+       "DepthMode": {
+        "enum": "HighlightDepthMode.Occluded"
+       }
+      }
+     }
+    ]
+   },
+   {
+    "class": "Part",
+    "name": "StarLight",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "Size": {
+      "v3": [
+       0.2,
+       0.2,
+       0.2
+      ]
+     },
+     "Transparency": 1,
+     "CFrame": {
+      "cf": [
+       0,
+       4,
+       -1.0,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "children": [
+     {
+      "class": "SpotLight",
+      "name": "L",
+      "props": {
+       "Face": {
+        "enum": "NormalId.Back"
+       },
+       "Angle": 120,
+       "Range": 30,
+       "Brightness": 18,
+       "Color": {
+        "c3": [
+         0.75,
+         0.85,
+         1
+        ]
+       }
+      }
+     }
+    ]
+   },
+   {
+    "class": "MeshPart",
+    "name": "HyStarGlow",
+    "attach": "HumanoidRootPart",
+    "props": {
+     "MeshId": "mesh://asset/hy_lum_txt",
+     "Size": {
+      "v3": [
+       23.5,
+       23.5,
+       1
+      ]
+     },
+     "CFrame": {
+      "cf": [
+       0,
+       2.0,
+       3.4,
+       0.0,
+       0.0,
+       0.0
+      ]
+     },
+     "Color": {
+      "c3": [
+       0.3,
+       0.45,
+       1
+      ]
+     },
+     "Material": {
+      "enum": "Material.Neon"
+     },
+     "Transparency": 0.55,
+     "CastShadow": false
+    },
+    "anim": {
+     "pulse": {
+      "amp": 0.03,
+      "period": 2.4
+     }
+    }
+   }
+  ]
+ },
  "legendary_blade": {
   "tags": [
    "sword",
