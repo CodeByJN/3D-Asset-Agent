@@ -16,3 +16,5 @@ Stars are 1-10 (half stars allowed). Rate what you'd ship, not effort. Verdicts:
 
 When you rate, say what works and what's wrong (the review window has fields for both). The words matter more
 than the number: they become the `What works` / `What's wrong` sections every later version is checked against.
+
+Sub-scores, style score, genres and the quick chat format: [[Grading guide]].

@@ -28,6 +28,16 @@ from pathlib import Path
 
 VAULT = Path(__file__).resolve().parents[2] / "quality"
 KEEP = ("category", "share", "tags", "failures")  # hand-edited fields survive a rewrite
+# The grade beyond the overall stars (all optional; 0-10, half points allowed). A newer grade replaces these.
+DIMENSIONS = {
+    "shape": "form, silhouette and proportions of the model itself (the mesh)",
+    "surface": "texture, colour and materials",
+    "vfx": "effects: do they fit and frame the model (blank if it has none)",
+    "function": "does it work in a game: scripts, animations, usability (blank if not applicable)",
+    "fit": "does it belong in Roblox and in the genres it's for",
+}
+GRADE = ("scores", "style_score", "genres", "judged_from", "grader")
+JUDGED = ("thumbnail", "studio", "review")  # what the grader looked at
 THUMB = 256
 
 
@@ -60,6 +70,33 @@ def write(path: Path, meta: dict, body: str):
     path.parent.mkdir(parents=True, exist_ok=True)
     head = "\n".join(f"{k}: {json.dumps(v, ensure_ascii=False)}" for k, v in meta.items())
     path.write_text(f"---\n{head}\n---\n{body.rstrip()}\n", encoding="utf-8")
+
+
+def clean_scores(scores: dict | None) -> dict:
+    """Sub-scores by dimension, numbers 0-10; unknown dimensions are an error, blanks are dropped."""
+    out = {}
+    for k, v in (scores or {}).items():
+        if k not in DIMENSIONS:
+            raise ValueError(f"unknown dimension {k!r}: use {', '.join(DIMENSIONS)}")
+        if v in (None, ""):
+            continue
+        v = float(v)
+        if not 0 <= v <= 10:
+            raise ValueError(f"{k} must be 0-10, got {v}")
+        out[k] = int(v) if v == int(v) else v
+    return out
+
+
+def score_line(meta: dict) -> str:
+    """The sub-scores as one readable line under a note's title."""
+    parts = [f"{k} {meta['scores'][k]}" for k in DIMENSIONS if k in (meta.get("scores") or {})]
+    if meta.get("style_score") is not None:
+        parts.append(f"within its style {meta['style_score']}")
+    if meta.get("genres"):
+        parts.append("fits " + ", ".join(meta["genres"]))
+    if meta.get("judged_from"):
+        parts.append(f"judged from the {meta['judged_from']}")
+    return ("**" + " · ".join(parts) + "**\n\n") if parts else ""
 
 
 def _feedback(note: str) -> str:
@@ -102,8 +139,12 @@ def record(kind: str, name: str, version, stars: float, note: str = "", category
     meta = {"kind": kind, "name": name, "version": version, "stars": stars, "verdict": verdict(stars),
             "category": category or kind, "method": method or "unknown", "share": False, "tags": [],
             "failures": [], "rated": old.get("rated") or time.strftime("%Y-%m-%d")}
-    meta.update(extra or {})
+    extra = dict(extra or {})
+    if "scores" in extra:
+        extra["scores"] = clean_scores(extra["scores"])
+    meta.update(extra)
     meta.update({k: old[k] for k in KEEP if k in old})
+    meta.update({k: old[k] for k in GRADE if k in old and not extra.get(k)})  # a re-rating without them keeps them
     path = _note_path(kind, name, version, bool(meta.get("share")))
     img = ""
     if not (thumb and Path(thumb).exists()) and old.get("image"):
@@ -118,8 +159,7 @@ def record(kind: str, name: str, version, stars: float, note: str = "", category
         im.save(dest, optimize=True)
         meta["image"] = f"img/{dest.name}"
         img = f"![[{dest.name}]]\n\n"
-    links = f"Standards: [[{_standard(meta['category'])}]] · [[Rating scale]]\n"
-    body = f"\n# {name} v{version}: {stars}/10 ({meta['verdict']})\n\n{img}{_feedback(note)}\n{links}"
+    body = f"\n# {name} v{version}: {stars}/10 ({meta['verdict']})\n\n{img}{score_line(meta)}{_feedback(note)}\n{_links(meta)}"
     write(path, meta, body)
     if found and found != path:
         _move_image(found, path, meta)
@@ -259,7 +299,7 @@ def _sections(body: str) -> dict:
         if line.startswith("## "):
             cur = keys.get(line[3:].strip())
             continue
-        if cur and line.strip() and not line.startswith(("Standards:", "![[")):
+        if cur and line.strip() and not line.startswith(("Standards:", "Failures:", "![[", "**")):
             out[cur] = (out.get(cur, "") + " " + line.strip()).strip()
     return out
 
@@ -320,6 +360,41 @@ def brief(category: str, top: int = 5, examples: int = 3) -> str:
     if bad:
         lines += ["Worst:"] + [line(m, b, "wrong") for m, b in bad]
     return "\n".join(lines)
+
+
+def _group(meta: dict):
+    """Notes that compete with each other: one store search, or the versions of one of our assets."""
+    if meta.get("kind") == "store":
+        return ("store", meta.get("query"), meta.get("category"))
+    return (meta.get("kind"), meta.get("name"))
+
+
+def pairs(include_private: bool = False, margin: float = 1) -> str:
+    """quality/dataset/pairs.jsonl: preference pairs for reward-model training. Within a group (a store search,
+    or an asset's versions) and for one grader, every two notes whose overall stars differ by `margin` or more
+    make a pair, as do their sub-scores on each dimension both have."""
+    out = VAULT / "dataset" / ("pairs.private.jsonl" if include_private else "pairs.jsonl")
+    out.parent.mkdir(parents=True, exist_ok=True)
+    groups = {}
+    for meta, body, path in notes():
+        if not isinstance(meta.get("stars"), (int, float)) or not (meta.get("share") or include_private):
+            continue
+        ref = str(path.relative_to(VAULT)).replace("\\", "/")
+        groups.setdefault((_group(meta), meta.get("grader", "human")), []).append((meta, ref))
+    rows = []
+    for (group, grader), items in groups.items():
+        for i, (a, ra) in enumerate(items):
+            for b, rb in items[i + 1:]:
+                dims = [("overall", a["stars"], b["stars"])] + [
+                    (d, (a.get("scores") or {})[d], (b.get("scores") or {})[d]) for d in DIMENSIONS
+                    if d in (a.get("scores") or {}) and d in (b.get("scores") or {})]
+                for dim, sa, sb in dims:
+                    if abs(sa - sb) >= margin:
+                        win, lose = (ra, rb) if sa > sb else (rb, ra)
+                        rows.append({"dimension": dim, "chosen": win, "rejected": lose, "margin": abs(sa - sb),
+                                     "group": [g for g in group if g], "grader": grader})
+    out.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows), encoding="utf-8")
+    return f"{len(rows)} pairs -> {out}"
 
 
 def summary() -> str:

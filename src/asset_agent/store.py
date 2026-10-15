@@ -3,7 +3,8 @@
 search(query, n) reads Roblox's public Creator Store API (search, item details, thumbnails): each model's
 triangles, mesh parts, scripts, votes and a 420 px thumbnail. It writes a contact sheet to look at and a pending
 list. gallery(query) inserts those models into the open Studio place (Workspace.StoreGallery), each with a sign
-and Stars/Pros/Cons/Failures attributes for the user to fill in the Properties panel; collect() reads the grades
+and Stars, sub-score (Shape, Surface, VFX, Function, Fit, StyleScore), Genres, Pros/Cons/Failures attributes for the
+user to fill in the Properties panel; collect() reads the grades
 back as vault notes (kind "store", grader "human").
 
 Notes link to the item by id and URL. Thumbnails are other creators' images, so they stay in the git-ignored
@@ -122,29 +123,40 @@ def search(query: str, n: int = 20) -> str:
 
 
 def grade(asset_id: int, stars: float, note: str, failures: list[str] | None = None, category: str | None = None,
-          grader: str = "human", tags: list[str] | None = None) -> Path:
-    """A vault note for one store model (it must have come through search)."""
-    pending = json.loads((_dir() / "_pending.json").read_text())
+          grader: str = "human", tags: list[str] | None = None, scores: dict | None = None,
+          style_score: float | None = None, genres: list[str] | None = None, judged_from: str = "thumbnail") -> Path:
+    """A vault note for one store model (it must have come through search). scores: sub-scores by
+    quality.DIMENSIONS; style_score: the grade within its own style (e.g. among stud assets); genres: the
+    games it fits; judged_from: what the grader looked at (the thumbnail, or the model in Studio)."""
+    pending = json.loads((_dir() / "_pending.json").read_text(encoding="utf-8"))
     f = pending[str(asset_id)]
     extra = {k: f[k] for k in ("asset_id", "title", "creator", "verified_creator", "store_category", "tris",
                                "mesh_parts", "scripts", "upvote_pct", "votes", "url", "query") if f.get(k) is not None}
-    extra["grader"] = grader
+    extra.update(grader=grader, judged_from=judged_from)
+    if scores:
+        extra["scores"] = scores
+    if style_score is not None:
+        extra["style_score"] = style_score
+    if genres:
+        extra["genres"] = genres
     p = quality.record("store", f"{f['title'][:40]} {asset_id}", 1, stars, note, category or f["category"],
                        "store", extra, Path(f["thumb"]))
     if failures or tags:
         meta, body = quality.read(p)
         meta["failures"] = sorted(set(meta.get("failures") or []) | set(failures or []))
         meta["tags"] = sorted(set(meta.get("tags") or []) | set(tags or []))
-        quality.write(p, meta, body)
-        quality.relink()
+        kept = "\n".join(ln for ln in body.rstrip().splitlines() if not ln.startswith(("Standards:", "Failures:")))
+        quality.write(p, meta, kept.rstrip() + "\n\n" + quality._links(meta))
     return p
 
 
 def grade_file(path: Path) -> str:
-    """Grades from a JSON list: [{"id", "stars", "note", "failures"?, "category"?, "grader"?, "tags"?}]."""
-    rows = json.loads(Path(path).read_text())
+    """Grades from a JSON list: [{"id", "stars", "note", "failures"?, "category"?, "grader"?, "tags"?, "scores"?,
+    "style_score"?, "genres"?, "judged_from"?}]."""
+    rows = json.loads(Path(path).read_text(encoding="utf-8"))
     for r in rows:
-        grade(r["id"], r["stars"], r["note"], r.get("failures"), r.get("category"), r.get("grader", "human"), r.get("tags"))
+        grade(r["id"], r["stars"], r["note"], r.get("failures"), r.get("category"), r.get("grader", "human"),
+              r.get("tags"), r.get("scores"), r.get("style_score"), r.get("genres"), r.get("judged_from", "thumbnail"))
     return f"graded {len(rows)} store models"
 
 
@@ -177,7 +189,8 @@ for _, it in items do  -- adopt the newly inserted models
 		if d:IsA("BaseScript") then d.Enabled = false end
 		if d:IsA("BasePart") then d.Anchored = true end
 	end
-	for k, v in {AssetId = tostring(it.asset_id), Stars = 0, Pros = "", Cons = "", Failures = ""} do
+	for k, v in {AssetId = tostring(it.asset_id), Stars = 0, Shape = 0, Surface = 0, VFX = 0, Function = 0, Fit = 0,
+		StyleScore = 0, Genres = "", Pros = "", Cons = "", Failures = ""} do
 		if m:GetAttribute(k) == nil then m:SetAttribute(k, v) end
 	end
 	local sign = Instance.new("Part")
@@ -229,8 +242,15 @@ local g = workspace:FindFirstChild("StoreGallery")
 for _, m in (g and g:GetChildren() or {}) do
 	local stars = m:GetAttribute("Stars")
 	if m:IsA("Model") and type(stars) == "number" and stars > 0 then
-		table.insert(out, {id = m:GetAttribute("AssetId"), stars = stars, pros = m:GetAttribute("Pros") or "",
-			cons = m:GetAttribute("Cons") or "", failures = m:GetAttribute("Failures") or ""})
+		local row = {id = m:GetAttribute("AssetId"), stars = stars, scores = {}}
+		for _, k in {"Pros", "Cons", "Failures", "Genres"} do row[k:lower()] = m:GetAttribute(k) or "" end
+		for _, k in {"Shape", "Surface", "VFX", "Function", "Fit"} do
+			local v = m:GetAttribute(k)
+			if type(v) == "number" and v > 0 then row.scores[k:lower()] = v end
+		end
+		local ss = m:GetAttribute("StyleScore")
+		if type(ss) == "number" and ss > 0 then row.style_score = ss end
+		table.insert(out, row)
 	end
 end
 return game:GetService("HttpService"):JSONEncode(out)
@@ -269,8 +289,8 @@ def gallery(query: str | None = None, n: int = 15) -> str:
         res = await st.luau(LAYOUT % json.dumps(items))
         return res, failed
     res, failed = studio_client.run(fn)
-    return (f"{' '.join(res.split())} of {len(items)} in Workspace.StoreGallery; grade each model's Stars (1-10), "
-            f"Pros, Cons and Failures in Properties, then `store collect`" + (f"; failed: {', '.join(failed)}" if failed else ""))
+    return (f"{' '.join(res.split())} of {len(items)} in Workspace.StoreGallery; grade each model's Stars (1-10) and "
+            f"any sub-scores, Genres, Pros, Cons and Failures in Properties, then `store collect`" + (f"; failed: {', '.join(failed)}" if failed else ""))
 
 
 def collect() -> str:
@@ -281,5 +301,7 @@ def collect() -> str:
     for r in rows:
         note = "; ".join(f"{k}: {r[k]}" for k in ("pros", "cons") if r[k].strip())
         fails = [f.strip() for f in r["failures"].replace(";", ",").split(",") if f.strip()]
-        grade(int(r["id"]), r["stars"], note, fails)
+        genres = [g.strip() for g in r.get("genres", "").replace(";", ",").split(",") if g.strip()]
+        grade(int(r["id"]), r["stars"], note, fails, scores=r.get("scores") or None, style_score=r.get("style_score"),
+              genres=genres or None, judged_from="studio")
     return f"collected {len(rows)} grade(s) from the Studio gallery"

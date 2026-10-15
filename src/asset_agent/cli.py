@@ -53,9 +53,9 @@ def main(argv=None):
     s.add_argument("--textured", action="store_true", help="ask Hunyuan for its own texture too")
     sub.add_parser("jobs", help="the generate queue")
     s = sub.add_parser("quality", help="the quality vault (quality/): sync ratings into notes, export the dataset")
-    s.add_argument("action", choices=["sync", "export", "summary", "brief"])
+    s.add_argument("action", choices=["sync", "export", "pairs", "summary", "brief"])
     s.add_argument("category", nargs="?", default="prop", help="brief: prop, character, creature, vfx or animation")
-    s.add_argument("--all", action="store_true", help="export: include notes not marked share: true")
+    s.add_argument("--all", action="store_true", help="export, pairs: include notes not marked share: true")
     s = sub.add_parser("store", help="grade Creator Store models into the quality vault")
     s.add_argument("action", choices=["search", "gallery", "collect", "grade"])
     s.add_argument("arg", nargs="?", help="search: a query; gallery: a query (default: every ungraded one); "
@@ -110,6 +110,8 @@ def main(argv=None):
                 print(quality.sync(Path(os.environ.get("ASSET_AGENT_HOME", "assets"))))
             elif a.action == "export":
                 print(quality.export(include_private=a.all))
+            elif a.action == "pairs":
+                print(quality.pairs(include_private=a.all))
             elif a.action == "brief":
                 print(quality.brief(a.category))
             else:

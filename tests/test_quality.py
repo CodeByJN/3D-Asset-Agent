@@ -51,3 +51,19 @@ def test_brief_is_bounded_and_ranks(vault):
     b = quality.brief("prop")
     assert "Clipping (x40): Check every view." in b and len(b.splitlines()) == 1 + 2 + 1 + 3 + 1 + 3
     assert "Best:\n- crate" in b and "Worst:\n- crate" in b and "1/10: lid " in b and " 5/10" not in b
+
+
+def test_sub_scores_survive_and_make_pairs(vault):
+    quality.record("store", "tree a", 1, 8, "pros: clean", "prop", "store",
+                   {"query": "tree", "scores": {"shape": 8, "surface": 6}, "genres": ["hangout"], "judged_from": "thumbnail"})
+    p = quality.record("store", "tree b", 1, 3, "cons: flat", "prop", "store",
+                       {"query": "tree", "scores": {"shape": 7, "surface": 2}, "style_score": 7})
+    meta, body = quality.read(p)
+    assert meta["scores"] == {"shape": 7, "surface": 2} and "**shape 7 · surface 2 · within its style 7**" in body
+    p = quality.record("store", "tree b", 1, 3.5, "cons: flat", "prop", "store", {"query": "tree"})  # re-rated, no scores
+    assert quality.read(p)[0]["scores"] == {"shape": 7, "surface": 2}
+    with pytest.raises(ValueError):
+        quality.clean_scores({"looks": 5})
+    assert quality.pairs(include_private=True).startswith("3 pairs")  # overall, shape (by 1) and surface
+    rows = [json.loads(x) for x in (vault / "dataset" / "pairs.private.jsonl").read_text().splitlines()]
+    assert {r["dimension"] for r in rows} >= {"overall", "surface"} and all("tree_a" in r["chosen"] for r in rows)
