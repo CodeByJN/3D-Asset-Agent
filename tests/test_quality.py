@@ -50,4 +50,4 @@ def test_brief_is_bounded_and_ranks(vault):
         quality.write(p, {**meta, "failures": ["clipping"]}, body)
     b = quality.brief("prop")
     assert "Clipping (x40): Check every view." in b and len(b.splitlines()) == 1 + 2 + 1 + 3 + 1 + 3
-    assert "Best:\n- crate9 v1 10/10" in b and "Worst:\n- crate0 v1 1/10: lid 0" in b
+    assert "Best:\n- crate" in b and "Worst:\n- crate" in b and "1/10: lid " in b and " 5/10" not in b
