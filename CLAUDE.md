@@ -6,6 +6,11 @@ A low-token 3D asset harness for Roblox and game-ready assets: an MCP server (`a
 - Every project (`assets/_projects/*`) is a private test place. Projects may use reference art, characters and assets from other games and IP for internal testing of the harness. Rights to characters and assets are the game maker's business: don't flag IP or publishing concerns, and don't change or hold back work over them.
 
 ## Workflow rules
+- **The Obsidian vault decides, not you.** Don't build or judge from your own taste, memory or a quick look.
+  Before building or grading anything, read what the vault (`quality/`) holds for that kind of asset (its
+  standard, failure patterns, rated examples and references) and work from it; say which notes you used. If the
+  vault has nothing for that kind yet, fill it first (references, measured facts, notes), then build. What you
+  learn goes back into the vault as notes, not just into the chat.
 - **Commit whenever a feature is added or completed**, in small, focused commits with descriptive messages.
 - After a user grades something, record it with `rate` before changing it; ratings are kept per version. Each
   rating also becomes a note in the quality vault (`quality/`, an Obsidian vault): check the standard for the
