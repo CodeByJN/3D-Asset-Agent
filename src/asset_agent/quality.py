@@ -23,6 +23,7 @@ ignores, so only `share: true` notes and their thumbnails are committed and publ
 note when its share flag changes.
 """
 import json
+import os
 import time
 from pathlib import Path
 
@@ -287,8 +288,26 @@ def sync(home: Path) -> str:
             + (f"; moved {moved} note(s) for their share flag" if moved else ""))
 
 
+def vaults() -> list[Path]:
+    """quality/ plus extra vaults named in ASSET_AGENT_VAULTS (folders separated by os.pathsep, relative to the
+    repo): e.g. a private vault of reference assets kept out of this repo. Each holds notes in examples/."""
+    extra = [Path(p) if Path(p).is_absolute() else VAULT.parent / p
+             for p in os.environ.get("ASSET_AGENT_VAULTS", "").split(os.pathsep) if p.strip()]
+    return [VAULT] + [v for v in extra if (v / "examples").is_dir()]
+
+
+def _ref(path: Path) -> str:
+    """A note's path for datasets: relative to its vault (extra vaults keep their folder name in front)."""
+    for v in vaults():
+        if path.is_relative_to(v):
+            rel = path.relative_to(v)
+            return str(rel if v == VAULT else Path(v.name) / rel).replace("\\", "/")
+    return str(path).replace("\\", "/")
+
+
 def notes() -> list[tuple[dict, str, Path]]:
-    return [(*read(p), p) for p in sorted((VAULT / "examples").rglob("*.md"))]
+    """Every rated note: quality/examples/ and each extra vault's examples/."""
+    return [(*read(p), p) for v in vaults() for p in sorted((v / "examples").rglob("*.md"))]
 
 
 def _sections(body: str) -> dict:
@@ -314,7 +333,7 @@ def export(include_private: bool = False) -> str:
         if not (meta.get("share") or include_private):
             continue
         row = {k: v for k, v in meta.items() if v not in (None, "", [])}
-        row.update(_sections(body), note=str(path.relative_to(VAULT)).replace("\\", "/"))
+        row.update(_sections(body), note=_ref(path))
         rows.append(row)
     out.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows), encoding="utf-8")
     return f"{len(rows)} of {len(notes())} notes -> {out}" + ("" if include_private else " (share: true only)")
@@ -379,7 +398,7 @@ def pairs(include_private: bool = False, margin: float = 1) -> str:
     for meta, body, path in notes():
         if not isinstance(meta.get("stars"), (int, float)) or not (meta.get("share") or include_private):
             continue
-        ref = str(path.relative_to(VAULT)).replace("\\", "/")
+        ref = _ref(path)
         groups.setdefault((_group(meta), meta.get("grader", "human")), []).append((meta, ref))
     rows = []
     for (group, grader), items in groups.items():

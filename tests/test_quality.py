@@ -67,3 +67,19 @@ def test_sub_scores_survive_and_make_pairs(vault):
     assert quality.pairs(include_private=True).startswith("3 pairs")  # overall, shape (by 1) and surface
     rows = [json.loads(x) for x in (vault / "dataset" / "pairs.private.jsonl").read_text().splitlines()]
     assert {r["dimension"] for r in rows} >= {"overall", "surface"} and all("tree_a" in r["chosen"] for r in rows)
+
+
+def test_extra_vaults_are_read_but_kept_apart(vault, tmp_path, monkeypatch):
+    quality.record("asset", "crate", 1, 6, "cons: plain", "prop", "build")
+    other = tmp_path / "private_vault"
+    quality.write(other / "examples" / "prop" / "ref crate v1.md",
+                  {"kind": "reference", "name": "ref crate", "version": 1, "stars": 10, "category": "prop",
+                   "scores": {"shape": 9.5, "surface": 10}},
+                  "\n# ref crate\n\n## What works\nbevelled planks\n")
+    assert len(quality.notes()) == 1  # not named: not read
+    monkeypatch.setenv("ASSET_AGENT_VAULTS", str(other))
+    assert len(quality.notes()) == 2
+    assert "ref crate v1 10/10: bevelled planks" in quality.brief("prop")
+    quality.export(include_private=True)
+    rows = [json.loads(x) for x in (vault / "dataset" / "ratings.private.jsonl").read_text().splitlines()]
+    assert {r["note"] for r in rows} == {"examples/private/asset/crate v1.md", "private_vault/examples/prop/ref crate v1.md"}
