@@ -1,6 +1,7 @@
 """asset-agent: check this machine (doctor), set up and run the GPU shape server, connect to one on another
 machine, check status."""
 import argparse
+import os
 import sys
 from pathlib import Path
 
@@ -58,6 +59,8 @@ def main(argv=None):
     s.add_argument("--note", default="", help="what to change (down) or what's good (up)")
     s.add_argument("--back-to", help="down: redo from this earlier stage")
     s.add_argument("--stars", type=float, help="at review: rate the asset 1-10 too")
+    s = sub.add_parser("grade-refs", help="grade the vault's reference assets in the review window (runs until Ctrl+C)")
+    s.add_argument("category", nargs="?", help="only this category (e.g. pickaxe)")
     s = sub.add_parser("quality", help="the quality vault (quality/): sync ratings into notes, export the dataset")
     s.add_argument("action", choices=["sync", "export", "pairs", "summary", "brief"])
     s.add_argument("category", nargs="?", default="prop", help="brief: prop, character, creature, vfx or animation")
@@ -108,6 +111,18 @@ def main(argv=None):
             print({"search": lambda: store.search(a.arg, a.n), "gallery": lambda: store.gallery(a.arg, a.n),
                    "collect": store.collect, "grade": lambda: store.grade_file(a.arg)}[a.action]())
             return 0
+        if a.cmd == "grade-refs":
+            import time
+            import webbrowser
+            from . import review
+            n, page = review.add_references(Path(os.environ.get("ASSET_AGENT_HOME", "assets")), a.category)
+            print(f"{n} references to grade at {page}\n(keep this running while you grade; Ctrl+C to stop)", flush=True)
+            webbrowser.open(page)
+            try:
+                while True:
+                    time.sleep(3600)
+            except KeyboardInterrupt:
+                return 0
         if a.cmd == "quality":
             import os
             from pathlib import Path

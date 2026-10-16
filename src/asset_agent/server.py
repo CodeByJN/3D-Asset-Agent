@@ -275,34 +275,35 @@ def plan(project: str, brief: str | None = None, references: list[str] | None = 
 
 
 @tool
-def rate(name: str, stars: int, note: str = "") -> str:
+def rate(name: str, stars: int, note: str = "", scores: dict | None = None) -> str:
     """Rate an asset's current version (or a VFX or animation preset) 1-10 with a short note on what's
-    good or wrong. Ratings tune the project's defaults and show up in plan() and animate('help')."""
-    return _rate(name, stars, note)
+    good or wrong; scores: 0-10 each of shape, surface, vfx, function, fit. Ratings feed plan() and animate('help')."""
+    return _rate(name, stars, note, scores)
 
 
-def _rate(name: str, stars: int, note: str = "") -> str:
+def _rate(name: str, stars: int, note: str = "", scores: dict | None = None, na: list | None = None) -> str:
     line = _rate_core(name, stars, note)
     try:  # every rating also becomes a note in the quality vault (quality/); never fails the rating
-        _vault_note(name, stars, note)
+        _vault_note(name, stars, note, scores, na)
     except Exception as e:  # noqa: BLE001
         line += f" (vault note failed: {type(e).__name__}: {e})"[:160]
     return line
 
 
-def _vault_note(name: str, stars: float, note: str):
+def _vault_note(name: str, stars: float, note: str, scores: dict | None = None, na: list | None = None):
     from . import quality
     if not (home() / name / "manifest.json").exists() and name in vfx.presets():
         quality.record_vfx(name, vfx.raw_presets()[name])
     elif anim.Animation.exists(home() / name):
         a = anim.Animation(home() / name)
         quality.record("animation", name, a.m["version"], stars, note, "animation", "procedural",
-                       {"preset": a.m["spec"].get("preset")})
+                       {"preset": a.m["spec"].get("preset"), **({"scores": scores} if scores else {}),
+                        **({"na": sorted(na)} if na else {})})
     elif not (home() / name).exists() and name in anim.presets():
         p = anim._library()[name]
         quality.record_animation(name, p["ratings"][-1], p)
     else:
-        quality.record_asset(home(), name, _asset(name).m["version"], stars, note)
+        quality.record_asset(home(), name, _asset(name).m["version"], stars, note, scores, na)
 
 
 def _rate_core(name: str, stars: int, note: str = "") -> str:
@@ -426,8 +427,13 @@ def job_submit(name: str, output: dict) -> str:
 @server.tool(structured_output=False)
 async def review(name: str) -> str:
     """Newest version (model or animation) in the browser review window; waits for the user's
-    rating, notes and choice."""
+    rating, notes and choice. 'refs[:category]': the vault's references to grade (returns at once)."""
     try:
+        if name == "refs" or name.startswith("refs:"):
+            n, page = review_board.add_references(home(), name[5:] or None)
+            import webbrowser
+            webbrowser.open(page)
+            return f"{n} references queued for grading at {page}"
         if not anim.Animation.exists(home() / name):
             _asset(name)
         _queue(name, "")  # its current version, if not queued yet

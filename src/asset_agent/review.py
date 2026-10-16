@@ -5,7 +5,11 @@ writes pros, cons and notes, and presses
   Regenerate  - record the rating and send it back, so Claude makes a new version from the notes,
   Looks good  - record the rating and keep it as it is,
   Place       - record the rating and put it in the open Studio place.
-The arrows step through earlier reviews.
+The arrows step through earlier reviews. Every grade is granular: besides the stars, each dimension of
+quality.DIMENSIONS (shape, surface, vfx, function, fit) gets a 0-10 score or n/a before it can be saved.
+
+References (vault notes of kind "reference": the bar to meet, e.g. another creator's assets) queue here too
+(add_references): the page shows their image and facts, and Save grade writes the grade into the note.
 review.wait() blocks the review tool until one of those, so the decision comes back as one line
 and Claude never needs a preview image to judge the model.
 
@@ -102,13 +106,48 @@ def add(home, name: str, v: int, glb: Path | None, line: str, kind: str = "model
     return url()
 
 
+def add_references(home, category: str | None = None) -> tuple[int, str]:
+    """Queue every reference note (in category) for grading; ones already queued get their current grade.
+    Returns (how many, the page's address)."""
+    from . import quality
+    b = board(home)
+    refs = quality.references(category)
+    with _cv:
+        have = {i.get("note"): i for i in b.items if i.get("kind") == "reference"}
+        for r in refs:
+            if r["note"] in have:
+                have[r["note"]].update(ref=r, image=r["image"], line=r["facts"])
+                continue
+            b.items.append({"id": max((i["id"] for i in b.items), default=0) + 1, "name": r["name"], "v": r["v"],
+                            "kind": "reference", "glb": None, "note": r["note"], "image": r["image"], "ref": r,
+                            "line": r["facts"], "added": time.time(), "decision": None, "fx": {}, "anim": None})
+        b.save()
+        _cv.notify_all()
+    return len(refs), url()
+
+
+def _check_scores(scores: dict | None):
+    """The page's breakdown {dimension: number | None (n/a)}: every dimension must be there. Returns
+    (scores, n/a dimensions) or an error string."""
+    from . import quality
+    scores = scores or {}
+    missing = [k for k in quality.DIMENSIONS if k not in scores]
+    if missing:
+        return f"score each part or mark it n/a: {', '.join(missing)}"
+    try:
+        nums = quality.clean_scores({k: v for k, v in scores.items() if v is not None})
+    except (ValueError, TypeError) as e:
+        return str(e)
+    return nums, [k for k, v in scores.items() if v is None]
+
+
 def note(pros: str = "", cons: str = "", notes: str = "") -> str:
     parts = [f"{k}: {' '.join(v.split())}" for k, v in (("pros", pros), ("cons", cons), ("notes", notes)) if v.strip()]
     return "; ".join(p for p in parts if p)
 
 
 def decide(home, item_id: int, action: str, stars: int | None = None, pros: str = "", cons: str = "",
-           background: bool = False, notes: str = "") -> dict:
+           background: bool = False, notes: str = "", scores: dict | None = None) -> dict:
     """What the buttons do: regenerate (action "next": rate, then Claude makes a new version from the
     notes), keep (rate it, no changes) or place (rate it and put it in Studio). Returns {ok, line} or {ok: False, error}. background: Place
     (building it in Studio, or an upload) runs on its own thread; the item shows `placing`, then its decision or
@@ -118,6 +157,8 @@ def decide(home, item_id: int, action: str, stars: int | None = None, pros: str 
         item = b.get(item_id)
         if item is None:
             return {"ok": False, "error": "no such item"}
+        if item.get("kind") == "reference":
+            return _grade_reference(b, item, action, stars, pros, cons, scores)
         if item["decision"]:
             return {"ok": False, "error": f"already {item['decision']['action']}"}
         if item.get("placing"):
@@ -131,20 +172,48 @@ def decide(home, item_id: int, action: str, stars: int | None = None, pros: str 
     if stars is not None and not 1 <= int(stars) <= 10:
         return {"ok": False, "error": "stars must be 1-10"}
     stars = int(stars) if stars else None
+    checked = _check_scores(scores) if stars else ({}, [])  # a rating is granular; Place without one isn't rated
+    if isinstance(checked, str):
+        return {"ok": False, "error": checked}
     if action == "place" and background:
         with _cv:
             item["placing"], item["error"] = True, None
-        threading.Thread(target=_apply, args=(b, item, action, stars, note(pros, cons, notes)), daemon=True).start()
+        threading.Thread(target=_apply, args=(b, item, action, stars, note(pros, cons, notes), checked),
+                         daemon=True).start()
         return {"ok": True, "line": "placing in Studio", "pending": True}
-    return _apply(b, item, action, stars, note(pros, cons, notes))
+    return _apply(b, item, action, stars, note(pros, cons, notes), checked)
 
 
-def _apply(b: Board, item: dict, action: str, stars: int | None, text: str) -> dict:
-    lines = []
+def _grade_reference(b: Board, item: dict, action: str, stars, pros: str, cons: str, scores: dict | None) -> dict:
+    """Save grade on a reference: written straight into its vault note (called holding _cv)."""
+    from . import quality
+    if action != "grade":
+        return {"ok": False, "error": "a reference can only be graded"}
+    if not stars or not 1 <= float(stars) <= 10:
+        return {"ok": False, "error": "rate it with the stars first"}
+    checked = _check_scores(scores)
+    if isinstance(checked, str):
+        return {"ok": False, "error": checked}
+    scores, na = checked
+    stars = int(stars) if float(stars) == int(float(stars)) else float(stars)
     try:
-        if stars and item.get("rated") != [stars, text]:  # not twice when Place failed, then Next
-            lines.append(hooks["rate"](item["name"], stars, text))
-            item["rated"] = [stars, text]
+        quality.grade(Path(item["note"]), stars, scores, pros, cons, na)
+    except (OSError, ValueError) as e:
+        return {"ok": False, "error": f"{type(e).__name__}: {e}"[:300]}
+    item["ref"] = {**item["ref"], "stars": stars, "scores": scores, "na": na, "works": pros, "wrong": cons}
+    item["graded"] = time.time()
+    b.save()
+    _cv.notify_all()
+    return {"ok": True, "line": f"graded {item['name']} {stars}/10"}
+
+
+def _apply(b: Board, item: dict, action: str, stars: int | None, text: str, checked=({}, [])) -> dict:
+    lines = []
+    scores, na = checked
+    try:
+        if stars and item.get("rated") != [stars, text, scores]:  # not twice when Place failed, then Next
+            lines.append(hooks["rate"](item["name"], stars, text, scores, na))
+            item["rated"] = [stars, text, scores]
         if action == "place":
             lines.append(hooks["place"](item["name"]))
     except Exception as e:  # e.g. Studio not open: the rating stays, the item stays open
@@ -156,7 +225,7 @@ def _apply(b: Board, item: dict, action: str, stars: int | None, text: str) -> d
     with _cv:
         item["placing"], item["error"] = False, None
         item["decision"] = {"action": action, "stars": stars, "note": text, "result": " | ".join(lines),
-                            "at": time.time(), "delivered": False}
+                            "scores": scores, "na": na, "at": time.time(), "delivered": False}
         b.save()
         _cv.notify_all()
     return {"ok": True, "line": " | ".join(lines)}
@@ -204,8 +273,11 @@ def state(b: Board) -> dict:
     latest = {}
     for i in b.items:
         latest[i["name"]] = i["id"]
-    return {"items": [{k: v for k, v in i.items() if k not in ("glb", "rated", "fx", "anim")} |
-                      {"has_glb": bool(i["glb"]), "has_fx": bool(i.get("fx")), "has_anim": bool(i.get("anim")), "current": latest[i["name"]] == i["id"]}
+    from . import quality
+    return {"dimensions": quality.DIMENSIONS,
+            "items": [{k: v for k, v in i.items() if k not in ("glb", "rated", "fx", "anim", "note", "image")} |
+                      {"has_glb": bool(i["glb"]), "has_fx": bool(i.get("fx")), "has_anim": bool(i.get("anim")),
+                       "has_img": bool(i.get("image")), "current": latest[i["name"]] == i["id"]}
                       for i in b.items]}
 
 
@@ -253,6 +325,14 @@ class Handler(BaseHTTPRequestHandler):
             if item and item["glb"] and Path(item["glb"]).exists():
                 return self._send(200, Path(item["glb"]).read_bytes(), "model/gltf-binary")
             return self._send(404, b"no model", "text/plain")
+        if u.path.startswith("/img/"):
+            with _cv:
+                item = _board.get(int(u.path[5:])) if u.path[5:].isdigit() else None
+            f = Path(item["image"]) if item and item.get("image") else None
+            types = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp"}
+            if f and f.is_file() and f.suffix.lower() in types:
+                return self._send(200, f.read_bytes(), types[f.suffix.lower()])
+            return self._send(404, b"no image", "text/plain")
         if u.path.startswith("/anim/"):
             with _cv:
                 item = _board.get(int(u.path[6:])) if u.path[6:].isdigit() else None
@@ -306,7 +386,8 @@ class Handler(BaseHTTPRequestHandler):
         try:
             body = json.loads(self.rfile.read(int(self.headers.get("Content-Length") or 0)) or b"{}")
             res = decide(_board.home, int(body["id"]), body.get("action", ""), body.get("stars") or None,
-                         body.get("pros", ""), body.get("cons", ""), background=True, notes=body.get("notes", ""))
+                         body.get("pros", ""), body.get("cons", ""), background=True, notes=body.get("notes", ""),
+                         scores=body.get("scores"))
         except (ValueError, KeyError) as e:
             res = {"ok": False, "error": f"bad request: {e}"}
         self._json(200 if res["ok"] else 409, res)

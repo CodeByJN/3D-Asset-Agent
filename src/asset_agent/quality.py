@@ -37,7 +37,7 @@ DIMENSIONS = {
     "function": "does it work in a game: scripts, animations, usability (blank if not applicable)",
     "fit": "does it belong in Roblox and in the genres it's for",
 }
-GRADE = ("scores", "style_score", "genres", "judged_from", "grader")
+GRADE = ("scores", "na", "style_score", "genres", "judged_from", "grader")
 JUDGED = ("thumbnail", "studio", "review")  # what the grader looked at
 THUMB = 256
 
@@ -226,12 +226,77 @@ def asset_facts(root: Path) -> dict:
     return {"category": category, "method": method, "extra": {k: v for k, v in extra.items() if v is not None}}
 
 
-def record_asset(home: Path, name: str, version: int, stars: float, note: str) -> Path:
+def record_asset(home: Path, name: str, version: int, stars: float, note: str, scores: dict | None = None,
+                 na: list | None = None) -> Path:
     root = Path(home) / name
     f = asset_facts(root)
     m = json.loads((root / "manifest.json").read_text())
     thumb = root / "preview.png" if m.get("version") == version else None  # only the version on disk has a preview
-    return record("asset", name, version, stars, note, f["category"], f["method"], f["extra"], thumb)
+    extra = {**f["extra"], **({"scores": scores} if scores else {}), **({"na": sorted(na)} if na else {})}
+    return record("asset", name, version, stars, note, f["category"], f["method"], extra, thumb)
+
+
+def references(category: str | None = None) -> list[dict]:
+    """Reference notes (kind "reference": assets graded as the bar, e.g. another creator's, from any vault),
+    with their image path and current grade, for the review window."""
+    out = []
+    for meta, body, path in notes():
+        if meta.get("kind") != "reference" or (category and meta.get("category") != category):
+            continue
+        img = path.parent.parent / meta["image"] if meta.get("image") else None
+        s = _sections(body)
+        out.append({"note": str(path), "name": meta.get("name", path.stem), "v": meta.get("version", 1),
+                    "category": meta.get("category"), "image": str(img) if img and img.exists() else None,
+                    "stars": meta.get("stars"), "scores": meta.get("scores") or {}, "na": meta.get("na") or [],
+                    "works": s.get("works", ""), "wrong": s.get("wrong", ""), "facts": s.get("notes", "")})
+    return out
+
+
+def _set_section(body: str, title: str, text: str) -> str:
+    """Replace the text under '## title' (adding the section before '## Notes', or at the end, if missing)."""
+    lines, out, i, done = body.split("\n"), [], 0, False
+    while i < len(lines):
+        if lines[i].strip() == f"## {title}":
+            out += [lines[i], text.strip(), ""]
+            i += 1
+            while i < len(lines) and not lines[i].startswith("## ") and not lines[i].startswith(("Standards:", "Category:")):
+                i += 1
+            done = True
+            continue
+        out.append(lines[i])
+        i += 1
+    if not done:
+        at = next((k for k, x in enumerate(out) if x.strip() == "## Notes"), len(out))
+        out[at:at] = [f"## {title}", text.strip(), ""]
+    return "\n".join(out)
+
+
+def grade(path: Path, stars: float, scores: dict, works: str = "", wrong: str = "", na: list | None = None,
+          grader: str | None = None) -> Path:
+    """Grade an existing note in place: overall stars, a sub-score per dimension (na: dimensions that don't
+    apply), and what works / what's wrong. The title and score line follow the new grade."""
+    path = Path(path)
+    meta, body = read(path)
+    meta.update(stars=stars, verdict=verdict(stars), scores=clean_scores(scores), na=sorted(set(na or [])),
+                graded=time.strftime("%Y-%m-%d"))
+    if grader:
+        meta["grader"] = grader
+    lines = body.split("\n")
+    for k, x in enumerate(lines):  # the title: "# name vN: X/10 (verdict)"
+        if x.startswith("# "):
+            lines[k] = f"# {meta.get('name')} v{meta.get('version')}: {stars}/10 ({meta['verdict']})"
+            break
+    first = next((k for k, x in enumerate(lines) if x.startswith("## ")), len(lines))
+    lines = [x for k, x in enumerate(lines) if not (k < first and (x.startswith("**") or x.startswith("To grade:")))]
+    first = next((k for k, x in enumerate(lines) if x.startswith("## ")), len(lines))
+    line = score_line(meta).strip()
+    if line:
+        lines[first:first] = [line, ""]
+    body = "\n".join(lines)
+    body = _set_section(body, "What works", works)
+    body = _set_section(body, "What's wrong", wrong)
+    write(path, meta, body)
+    return path
 
 
 def record_vfx(name: str, preset: dict) -> Path | None:

@@ -119,7 +119,8 @@ def test_review_window_gets_every_new_version(home, monkeypatch):
     item = review.board(home).latest("crate")
     v = Asset(home / "crate").m["version"]
     assert item["v"] == v and Path(item["glb"]).parts[-2:] == (f"v{v}", "crate.glb") and item["line"].startswith("ok tris=")
-    threading.Timer(0.3, review.decide, (home, item["id"], "next", 6, "solid planks", "lid too thin")).start()
+    threading.Timer(0.3, review.decide, (home, item["id"], "next", 6, "solid planks", "lid too thin"),
+                    {"scores": {"shape": 7, "surface": 6, "vfx": None, "function": None, "fit": 7}}).start()
     out = text(call("review", name="crate"))
     assert out.startswith(f"next: crate v{v} rated 6/10 (pros: solid planks; cons: lid too thin)"), out
     assert Asset(home / "crate").m["ratings"][-1] == {"v": v, "stars": 6, "note": "pros: solid planks; cons: lid too thin"}
@@ -134,7 +135,8 @@ def test_review_asks_again_for_a_reviewed_version(home, monkeypatch):
     server._queue("crate", "")  # a version already reviewed is queued again: the user is asked again
     item = review.board(home).latest("crate")
     assert item["v"] == v and item["decision"] is None
-    threading.Timer(0.5, review.decide, (home, item["id"], "next", 7, "", "lid too thin")).start()
+    threading.Timer(0.5, review.decide, (home, item["id"], "next", 7, "", "lid too thin"),
+                    {"scores": {"shape": 7, "surface": 6, "vfx": None, "function": None, "fit": 7}}).start()
     out = text(call("review", name="crate"))
     assert out.startswith(f"next: crate v{v} rated 7/10 (cons: lid too thin)"), out
 

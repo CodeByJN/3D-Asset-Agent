@@ -66,6 +66,18 @@ textarea:disabled { color: var(--muted); }
 .status { min-height: 40px; font-size: 13px; color: var(--muted); }
 .status.err { color: var(--bad); } .status.ok { color: var(--good); }
 .hint { font: 400 11px var(--mono); color: var(--muted); }
+.dims { display: flex; flex-direction: column; gap: 9px; }
+.dim { display: grid; grid-template-columns: 74px minmax(0, 1fr) 34px 38px; align-items: center; gap: 8px; }
+.dim label { font: 500 13px var(--body); }
+.dim input[type=range] { width: 100%; accent-color: var(--accent); }
+.dim input[type=range].unset { opacity: .35; }
+.dim .val { font: 500 13px var(--mono); color: var(--accent); text-align: right; }
+.dim .na { font: 500 11px var(--mono); padding: 4px 0; border-radius: 6px; border: 1px solid var(--line); background: none; color: var(--muted); cursor: pointer; }
+.dim .na[aria-pressed="true"] { border-color: var(--info); color: var(--info); }
+.dim.missing label { color: var(--bad); }
+#refimg { position: absolute; inset: 56px 16px 64px; width: calc(100% - 32px); height: calc(100% - 120px); object-fit: contain; }
+.buttons .grade { grid-column: 1 / -1; background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.badge.ref { color: var(--info); }
 @media (max-width: 760px) {
   .app { grid-template-columns: 1fr; grid-template-rows: 55vh auto; height: auto; }
   aside { border-left: 0; border-top: 1px solid var(--line); }
@@ -76,6 +88,7 @@ textarea:disabled { color: var(--muted); }
 <div class="app">
   <section class="stage">
     <div id="view" role="img" aria-label="3D model under review"></div>
+    <img id="refimg" alt="Reference asset: front, side and 3/4 views" hidden>
     <div class="empty" id="empty" hidden></div>
     <div class="hud"><h1 id="name">Asset Review</h1><span class="ver" id="ver"></span><span class="count" id="count"></span>
       <span class="nav"><button id="prev" title="Earlier review (←)" aria-label="Earlier review">‹</button><button id="fwd" title="Later review (→)" aria-label="Later review">›</button></span></div>
@@ -96,16 +109,18 @@ textarea:disabled { color: var(--muted); }
       <div class="rating"><div class="stars" id="stars" role="group" aria-label="Rating"></div><div class="score" id="score"></div></div>
       <div class="word" id="word"></div>
     </div>
-    <div><h2><label for="pros">Pros</label></h2><textarea id="pros" placeholder="What works: shape, colours, detail…"></textarea></div>
-    <div><h2><label for="cons">Cons</label></h2><textarea id="cons" placeholder="What's off…"></textarea></div>
-    <div><h2><label for="notes">Notes for the next version</label></h2><textarea id="notes" placeholder="Anything else: what to change, references, ideas…"></textarea></div>
+    <div><h2>Breakdown <span class="hint">· 0-10 each, or n/a</span></h2><div class="dims" id="dims"></div></div>
+    <div><h2><label for="pros" id="pros-label">Pros</label></h2><textarea id="pros" placeholder="What works: shape, colours, detail…"></textarea></div>
+    <div><h2><label for="cons" id="cons-label">Cons</label></h2><textarea id="cons" placeholder="What's off…"></textarea></div>
+    <div id="notes-box"><h2><label for="notes">Notes for the next version</label></h2><textarea id="notes" placeholder="Anything else: what to change, references, ideas…"></textarea></div>
     <div class="status" id="status" role="status"></div>
     <div class="buttons">
       <button class="btn regen" id="regen" title="Save the rating and have Claude make a new version from your cons and notes">Regenerate<small>make a new version from my notes</small></button>
       <button class="btn" id="keep" title="Save the rating and keep this version as it is">Looks good<small>save rating, keep it</small></button>
       <button class="btn place" id="place" title="Save the rating and put it in the open Roblox Studio place">Place in Studio<small>save rating, add to place</small></button>
+      <button class="btn grade" id="grade" hidden title="Write this grade into the reference's vault note, then go to the next ungraded one">Save grade<small>into its vault note, then the next one</small></button>
     </div>
-    <div class="hint">Drag to orbit · scroll to zoom · right-drag to pan · 1–0 rate · ‹ › or ← → earlier reviews</div>
+    <div class="hint">Drag to orbit · scroll to zoom · right-drag to pan · 1–0 rate · ‹ › or ← → step through · every part scored or n/a</div>
   </aside>
 </div>
 <script>
@@ -488,9 +503,40 @@ for (let s = 1; s <= 5; s++) {
   $("stars").append(star);
 }
 const item = () => items[idx];
-const draft = () => (drafts[item()?.id] ??= {stars: 0, pros: "", cons: "", notes: ""});
+const draft = () => (drafts[item()?.id] ??= fromRef(item()));
+const isRef = it => it?.kind === "reference";
+function fromRef(it) {  // a reference starts from the grade already in its note
+  const r = isRef(it) ? it.ref || {} : {}, scores = {};
+  for (const k of Object.keys(DIMS)) if (k in (r.scores || {})) scores[k] = r.scores[k]; else if ((r.na || []).includes(k)) scores[k] = null;
+  return {stars: Math.round(r.stars || 0), pros: r.works || "", cons: r.wrong || "", notes: "", scores};
+}
+const graded = it => { const r = it?.ref || {}; return Object.keys(DIMS).every(k => k in (r.scores || {}) || (r.na || []).includes(k)); };
 const draftStars = () => { const it = item(); return it?.decision ? it.decision.stars || 0 : (drafts[it?.id]?.stars || 0); };
-const open = it => it && !it.decision && it.current && !it.placing;
+const open = it => it && (isRef(it) || (!it.decision && it.current && !it.placing));
+
+let DIMS = {};
+function buildDims(dims) {
+  if (JSON.stringify(Object.keys(dims)) === JSON.stringify(Object.keys(DIMS))) return;
+  DIMS = dims; $("dims").innerHTML = "";
+  for (const [k, help] of Object.entries(dims)) {
+    const row = document.createElement("div"); row.className = "dim"; row.id = "dim-" + k; row.title = help;
+    row.innerHTML = `<label for="r-${k}">${k[0].toUpperCase() + k.slice(1)}</label><input type="range" id="r-${k}" min="0" max="10" step="0.5" value="5" class="unset" aria-describedby="v-${k}"><span class="val" id="v-${k}">–</span><button class="na" id="na-${k}" aria-pressed="false" title="Doesn't apply to this asset">n/a</button>`;
+    $("dims").append(row);
+    $("r-" + k).oninput = e => { draft().scores[k] = +e.target.value; paintDims(draft().scores, true); };
+    $("r-" + k).onpointerup = e => { if (!e.target.disabled) { draft().scores[k] = +e.target.value; paintDims(draft().scores, true); } };  // a click on the middle counts too
+    $("na-" + k).onclick = () => { const s = draft().scores; s[k] = s[k] === null ? undefined : null; if (s[k] === undefined) delete s[k]; paintDims(s, true); };
+  }
+}
+function paintDims(scores, enabled) {
+  for (const k of Object.keys(DIMS)) {
+    const v = scores ? scores[k] : undefined, r = $("r-" + k), na = v === null;
+    r.classList.toggle("unset", v == null); if (typeof v === "number") r.value = v;
+    $("v-" + k).textContent = na ? "n/a" : typeof v === "number" ? String(v) : "–";
+    $("na-" + k).setAttribute("aria-pressed", na); r.disabled = !enabled || na; $("na-" + k).disabled = !enabled;
+    $("dim-" + k).classList.remove("missing");
+  }
+}
+function decidedScores(d) { const s = {...(d.scores || {})}; for (const k of d.na || []) s[k] = null; return s; }
 for (const k of ["pros", "cons", "notes"]) $(k).oninput = e => { draft()[k] = e.target.value; };
 
 const WORDS = ["", "awful", "very poor", "poor", "weak", "below average", "okay", "good", "great", "excellent", "perfect"];
@@ -514,11 +560,27 @@ function render(force) {
     $("empty").hidden = false; $("empty").textContent = "Nothing to review yet. Make, build, revise or animate something and it shows up here.";
     mv.clear(); for (const b of ["regen", "keep", "place"]) $(b).disabled = true; return;
   }
-  const pending = open(it);
-  for (const b of ["regen", "keep", "place"]) $(b).disabled = busy || !pending;
+  const pending = open(it), ref = isRef(it);
+  for (const b of ["regen", "keep", "place"]) { $(b).hidden = ref; $(b).disabled = busy || !pending; }
+  $("grade").hidden = !ref; $("grade").disabled = busy;
+  $("notes-box").hidden = ref; document.querySelector(".tools").hidden = ref;
+  $("pros-label").textContent = ref ? "What works" : "Pros"; $("cons-label").textContent = ref ? "What's wrong" : "Cons";
   if (key === shownKey && !force) return;
   shownKey = key;
-  $("name").textContent = it.name; $("ver").textContent = `v${it.v}` + (it.kind === "animation" ? " · animation" : "");
+  $("name").textContent = it.name; $("ver").textContent = `v${it.v}` + (it.kind === "animation" ? " · animation" : ref ? ` · reference · ${it.ref?.category || ""}` : "");
+  $("refimg").hidden = !ref; $("view").hidden = ref;  // the 3D canvas would grey out the image's stage
+  if (ref) {
+    mv.clear(); $("empty").hidden = it.has_img;
+    if (it.has_img) $("refimg").src = q(`/img/${it.id}`); else $("empty").textContent = "No image for this reference yet.";
+    $("stats").textContent = it.line || "";
+    const g = graded(it), badge = $("badge");
+    badge.className = "badge " + (g ? "placed" : "ref"); badge.textContent = g ? "reference · graded" : "reference · to grade";
+    const dr = draft(); $("pros").value = dr.pros; $("cons").value = dr.cons; paintStars(dr.stars); paintDims(dr.scores, true);
+    for (const k of ["pros", "cons"]) $(k).disabled = false;
+    document.querySelectorAll(".half").forEach(b => b.disabled = false);
+    if (!$("status").classList.contains("ok") && !$("status").classList.contains("err")) setStatus("");
+    return;
+  }
   const fail = /(^|\| )FAIL/.test(it.line);
   $("stats").innerHTML = ""; const s = document.createElement("span");
   s.textContent = it.line; if (fail) s.className = "fail"; $("stats").append(s);
@@ -534,15 +596,15 @@ function render(force) {
     const word = {place: ["placed", "placed in studio"], keep: ["placed", "kept as it is"], next: ["next", "regenerating"]}[d.action];
     badge.className = "badge " + word[0]; badge.textContent = word[1];
     const n = splitNote(d.note);
-    $("pros").value = n.pros; $("cons").value = n.cons; $("notes").value = n.notes; paintStars(d.stars || 0);
+    $("pros").value = n.pros; $("cons").value = n.cons; $("notes").value = n.notes; paintStars(d.stars || 0); paintDims(decidedScores(d), false);
   } else if (it.placing) {
     badge.className = "badge placed"; badge.textContent = "placing in studio…";
   } else if (!it.current) {
     badge.className = "badge old"; badge.textContent = "older version, not reviewed";
-    $("pros").value = $("cons").value = $("notes").value = ""; paintStars(0);
+    $("pros").value = $("cons").value = $("notes").value = ""; paintStars(0); paintDims({}, false);
   } else {
     badge.className = "badge pending"; badge.textContent = "waiting for your review";
-    const dr = draft(); $("pros").value = dr.pros; $("cons").value = dr.cons; $("notes").value = dr.notes; paintStars(dr.stars);
+    const dr = draft(); $("pros").value = dr.pros; $("cons").value = dr.cons; $("notes").value = dr.notes; paintStars(dr.stars); paintDims(dr.scores, true);
   }
   for (const k of ["pros", "cons", "notes"]) $(k).disabled = !pending;
   document.querySelectorAll(".half").forEach(b => b.disabled = !pending);
@@ -563,11 +625,13 @@ async function poll() {
     const r = await fetch(q("/state"), {cache: "no-store"});
     if (r.status === 401) { setStatus("The harness restarted: open the newest review link.", "err"); return; }
     const data = await r.json();
+    buildDims(data.dimensions || {});
     const before = items.length, wasId = item()?.id;
     items = data.items;
     if (idx < 0 || (follow && items.length !== before)) {
-      const pend = items.map((x, i) => open(x) ? i : -1).filter(i => i >= 0);
-      idx = pend.length ? pend[pend.length - 1] : items.length - 1;
+      const pend = items.map((x, i) => open(x) && !isRef(x) ? i : -1).filter(i => i >= 0);
+      const toGrade = items.findIndex(x => isRef(x) && !graded(x));
+      idx = pend.length ? pend[pend.length - 1] : toGrade >= 0 ? toGrade : items.length - 1;
     } else {
       idx = Math.max(0, items.findIndex(x => x.id === wasId));
     }
@@ -578,33 +642,50 @@ async function poll() {
 async function send(action) {
   const it = item(), d = draft();
   if (!d.stars) { setStatus("Give it a star rating first.", "err"); return; }
+  const missing = Object.keys(DIMS).filter(k => !(k in d.scores));
+  if (missing.length) {
+    for (const k of missing) $("dim-" + k).classList.add("missing");
+    setStatus(`Score each part or mark it n/a: ${missing.join(", ")}.`, "err"); return;
+  }
   if (action === "next" && !(d.cons.trim() || d.notes.trim())) {
     setStatus("Add a con or a note so the next version knows what to change.", "err"); return;
   }
-  busy = true; render(true); setStatus({place: "Placing in Studio…", keep: "Saving…", next: "Sending…"}[action]);
+  busy = true; render(true); setStatus({place: "Placing in Studio…", keep: "Saving…", next: "Sending…", grade: "Saving…"}[action]);
   try {
     const r = await fetch(q("/decide"), {method: "POST", headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({id: it.id, action, stars: d.stars, pros: d.pros, cons: d.cons, notes: d.notes})});
+      body: JSON.stringify({id: it.id, action, stars: d.stars, pros: d.pros, cons: d.cons, notes: d.notes, scores: d.scores})});
     const res = await r.json();
     if (!res.ok) setStatus((res.lines?.length ? res.lines.join(" | ") + " | " : "") + res.error, "err");
+    if (action === "grade") {
+      await poll();
+      if (res.ok) {
+        delete drafts[it.id];
+        const next = items.findIndex((x, i) => i > idx && isRef(x) && !graded(x));
+        if (next >= 0) idx = next;
+        setStatus(`Saved ${it.name}. ${next >= 0 ? "Next one to grade." : "That was the last ungraded one."}`, "ok");
+        render(true);
+      }
+      return;
+    }
     follow = true;
     await poll();
     if (res.ok) render(true);
   } finally { busy = false; render(); }
 }
 
-const step = k => { const n = idx + k; if (n >= 0 && n < items.length) { idx = n; follow = n === items.length - 1; render(true); } };
+const step = k => { const n = idx + k; if (n >= 0 && n < items.length) { idx = n; follow = n === items.length - 1; setStatus(""); render(true); } };
 $("prev").onclick = () => step(-1);
 $("fwd").onclick = () => step(1);
 $("regen").onclick = () => send("next");
 $("keep").onclick = () => send("keep");
 $("place").onclick = () => send("place");
+$("grade").onclick = () => send("grade");
 for (const [id, fn] of [["spin", mv.spin], ["fx", mv.fx], ["beam", mv.beam], ["wire", mv.wire], ["player", mv.player]]) {
   $(id).onclick = () => { const on = $(id).getAttribute("aria-pressed") !== "true"; $(id).setAttribute("aria-pressed", on); fn(on); };
 }
 $("reset").onclick = () => mv.reset();
 document.addEventListener("keydown", e => {
-  if (e.target.tagName === "TEXTAREA") return;
+  if (e.target.tagName === "TEXTAREA" || e.target.type === "range") return;
   const k = e.key.toLowerCase();
   if (e.key === "ArrowLeft") step(-1);
   else if (e.key === "ArrowRight") step(1);
