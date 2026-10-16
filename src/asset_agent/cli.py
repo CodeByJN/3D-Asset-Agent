@@ -124,8 +124,6 @@ def main(argv=None):
             except KeyboardInterrupt:
                 return 0
         if a.cmd == "quality":
-            import os
-            from pathlib import Path
             from . import quality
             if a.action == "sync":
                 print(quality.sync(Path(os.environ.get("ASSET_AGENT_HOME", "assets"))))
@@ -157,8 +155,6 @@ def main(argv=None):
                 print(j.next(a.name) if j.get(a.name) else f"no job {a.name}")
             return 0
         if a.cmd in ("generate", "jobs"):
-            import os
-            from pathlib import Path
             from .pipeline import Queue, describe
             q = Queue(Path(os.environ.get("ASSET_AGENT_HOME", "assets")))
             if a.cmd == "generate":
