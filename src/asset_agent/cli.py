@@ -52,6 +52,12 @@ def main(argv=None):
     s.add_argument("--backend", default="auto", choices=["auto", "hf", "local"])
     s.add_argument("--textured", action="store_true", help="ask Hunyuan for its own texture too")
     sub.add_parser("jobs", help="the generate queue")
+    s = sub.add_parser("job", help="asset studio jobs: the board, a job's stage, your thumbs up or down")
+    s.add_argument("name", nargs="?", help="a job (none: the board)")
+    s.add_argument("verdict", nargs="?", choices=["up", "down", "trace"], help="thumbs on its stage, or its trace")
+    s.add_argument("--note", default="", help="what to change (down) or what's good (up)")
+    s.add_argument("--back-to", help="down: redo from this earlier stage")
+    s.add_argument("--stars", type=float, help="at review: rate the asset 1-10 too")
     s = sub.add_parser("quality", help="the quality vault (quality/): sync ratings into notes, export the dataset")
     s.add_argument("action", choices=["sync", "export", "pairs", "summary", "brief"])
     s.add_argument("category", nargs="?", default="prop", help="brief: prop, character, creature, vfx or animation")
@@ -116,6 +122,24 @@ def main(argv=None):
                 print(quality.brief(a.category))
             else:
                 print(quality.summary())
+            return 0
+        if a.cmd == "job":
+            import json
+            from . import server
+            j = server._studio_jobs()
+            if not a.name:
+                from .jobs import board
+                print(board(j))
+            elif a.verdict == "trace":
+                print("\n".join(f"{e['stage']} {e['kind']}: {json.dumps(e['data'])[:200]}" for e in j.trace(a.name)))
+            elif a.verdict:
+                try:
+                    print(j.approve(a.name, a.verdict == "up", a.note, a.back_to, a.stars))
+                except (KeyError, ValueError) as e:
+                    print(f"error: {e}", file=sys.stderr)
+                    return 1
+            else:
+                print(j.next(a.name) if j.get(a.name) else f"no job {a.name}")
             return 0
         if a.cmd in ("generate", "jobs"):
             import os

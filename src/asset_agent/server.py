@@ -29,7 +29,8 @@ server = MCPServer("asset-agent", instructions=(
     "already in the place (e.g. Creator Store packs inserted with Studio's insert_asset) as presets. "
     "Animation: animate (R15 presets or your own tracks; revise by calling it again with what changes). "
     "Concept art: generate(images) queues them for Hunyuan3D (generate() shows progress); clean each raw mesh in the "
-    "blender server (open, inspect, cleanup, export), then review and studio."))
+    "blender server (open, inspect, cleanup, export), then review and studio. Asset studio jobs: job_next(name) "
+    "says what the current stage needs, job_submit hands it in; never skip a stage or give the user's thumbs up."))
 
 
 def home() -> Path:
@@ -384,6 +385,27 @@ def _place_from_review(name: str) -> str:
 
 
 review_board.hooks.update(rate=_rate, place=_place_from_review)
+
+
+def _studio_jobs():
+    from . import jobs
+    jobs.hooks.update(place=_place_from_review, rate=_rate)
+    return jobs.Jobs(home())
+
+
+@tool
+def job_next(name: str = "") -> str:
+    """Asset studio: what job `name`'s current stage needs (starts the job at its brief). No name: the
+    board. Stages run in order; each waits for the user's thumbs up."""
+    from .jobs import board
+    return _studio_jobs().next(name) if name else board(_studio_jobs())
+
+
+@tool
+def job_submit(name: str, output: dict) -> str:
+    """Hand in the current stage's output (job_next says its shape); its checks run, then it waits for
+    the user."""
+    return _studio_jobs().submit(name, output)
 
 
 @server.tool(structured_output=False)
