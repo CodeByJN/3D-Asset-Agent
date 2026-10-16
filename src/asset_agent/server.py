@@ -6,6 +6,7 @@ import asyncio
 import functools
 import json
 import os
+import webbrowser
 from pathlib import Path
 
 from mcp.server.mcpserver import Image, MCPServer
@@ -393,19 +394,33 @@ def _studio_jobs():
     return jobs.Jobs(home())
 
 
-@tool
-def job_next(name: str = "") -> str:
+@server.tool(structured_output=False)
+async def job_next(name: str = "") -> str:
     """Asset studio: what job `name`'s current stage needs (starts the job at its brief). No name: the
-    board. Stages run in order; each waits for the user's thumbs up."""
-    from .jobs import board
-    return _studio_jobs().next(name) if name else board(_studio_jobs())
+    board. Stages run in order; while one waits for the user's thumbs up, this waits too."""
+    try:
+        from . import studio_board
+        from .jobs import board
+        js = _studio_jobs()
+        page = review_board.studio_url(home(), name or None)
+        if not name:
+            return f"{board(js)} | board: {page}"
+        j = js.get(name)
+        if j and j["status"] in ("awaiting", "stuck"):
+            wait = float(os.environ.get("ASSET_AGENT_REVIEW_WAIT", 600))
+            opener = functools.partial(webbrowser.open, page)
+            if await asyncio.to_thread(studio_board.wait, home(), name, wait, opener) is None:
+                return f"{js.next(name)} | still waiting at {page}; call job_next again"
+        return f"{js.next(name)} | board: {page}"
+    except Exception as e:
+        return f"error: {type(e).__name__}: {' '.join(str(e).split())}"[:300]
 
 
 @tool
 def job_submit(name: str, output: dict) -> str:
-    """Hand in the current stage's output (job_next says its shape); its checks run, then it waits for
-    the user."""
-    return _studio_jobs().submit(name, output)
+    """Hand in the current stage's output (job_next says its shape); its checks run, then job_next waits
+    for the user's thumbs up."""
+    return f"{_studio_jobs().submit(name, output)} | board: {review_board.studio_url(home(), name)}"
 
 
 @server.tool(structured_output=False)

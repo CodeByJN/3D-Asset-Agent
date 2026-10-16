@@ -115,3 +115,63 @@ def test_cleanup_and_texture_gates_read_the_asset(fixtures, tmp_path):  # noqa: 
     assert gates.glb_tris(gates.glb_json(glb)) == s["tris"]
     assert not gates.run("rig", job, {"asset": "crate"}, tmp_path)["pass"]
     assert not gates.run("cleanup", job, {"asset": "nope"}, tmp_path)["pass"]
+
+
+def test_a_stuck_brief_cant_be_accepted_but_a_stuck_stage_can(tmp_path, monkeypatch):
+    j = jobs.Jobs(tmp_path)
+    j.next("crate")
+    for _ in range(3):
+        j.submit("crate", {})
+    with pytest.raises(ValueError):
+        j.approve("crate", True)
+    j.approve("crate", False, "here's the reference")
+    j.submit("crate", brief_out(tmp_path))
+    j.approve("crate", True)
+    monkeypatch.setitem(gates.GATES, "shape", lambda job, out, home: gates.report("shape", [gates.check("x", False)]))
+    for _ in range(3):
+        j.submit("crate", {"asset": "crate", "try": _})
+    assert "on to cleanup" in j.approve("crate", True, "good enough")
+    assert j.get("crate")["outputs"]["shape"] == {"asset": "crate", "try": 2}
+
+
+def test_job_board_page_and_thumbs(tmp_path, monkeypatch):
+    import json
+    import urllib.request
+    from asset_agent import review, studio_board
+    monkeypatch.setenv("ASSET_AGENT_REVIEW_PORT", "0")
+    j = jobs.Jobs(tmp_path)
+    j.next("crate")
+    j.submit("crate", brief_out(tmp_path))
+    page = review.studio_url(tmp_path, "crate")
+    base, token = page.split("/studio?t=")
+    token = token.split("#")[0]
+
+    def get(path, t=token):
+        try:
+            with urllib.request.urlopen(f"{base}{path}?t={t}") as r:
+                return r.status, r.read()
+        except urllib.error.HTTPError as e:
+            return e.code, e.read()
+
+    def post(path, body):
+        req = urllib.request.Request(f"{base}{path}?t={token}", json.dumps(body).encode(), method="POST",
+                                     headers={"Content-Type": "application/json"})
+        try:
+            with urllib.request.urlopen(req) as r:
+                return r.status, json.loads(r.read())
+        except urllib.error.HTTPError as e:
+            return e.code, json.loads(e.read())
+
+    assert get("/studio")[0] == 200 and b"Asset Studio" in get("/studio")[1]
+    assert get("/jobs", "wrong")[0] == 401
+    b = json.loads(get("/jobs")[1])
+    assert b["jobs"][0]["name"] == "crate" and b["jobs"][0]["status"] == "awaiting"
+    d = json.loads(get("/jobs/crate")[1])
+    assert d["stages"][0]["state"] == "awaiting" and d["stages"][0]["report"]["pass"]
+    assert d["stages"][0]["output"]["images"] == [0]
+    assert get("/jobs/crate/file/0") == (200, b"png")  # the brief's reference, from its copy in the job
+    assert get("/jobs/crate/file/5")[0] == 404 and get("/jobs/nope")[0] == 404
+    assert post("/jobs/crate/thumbs", {"up": False, "note": "", "back_to": "place"})[0] == 409
+    code, res = post("/jobs/crate/thumbs", {"up": True, "note": "good"})
+    assert code == 200 and "on to shape" in res["line"]
+    assert studio_board.wait(tmp_path, "crate", 1)["stage"] == "shape"

@@ -29,6 +29,7 @@ hooks = {}  # rate(name, stars, note) -> line and place(name) -> line, set by th
 _cv = threading.Condition()
 _board = None
 _httpd = None
+_studio_home = None  # the assets folder whose asset studio jobs /studio shows
 
 
 class Board:
@@ -72,6 +73,14 @@ def url() -> str:
             _httpd.daemon_threads = True
             threading.Thread(target=_httpd.serve_forever, daemon=True).start()
         return f"http://127.0.0.1:{_httpd.server_address[1]}/?t={TOKEN}"
+
+
+def studio_url(home, name: str | None = None) -> str:
+    """The asset studio's job board (on the same server), opened at job `name`."""
+    global _studio_home
+    _studio_home = Path(home)
+    base = url().replace("/?t=", "/studio?t=")
+    return base + (f"#{name}" if name else "")
 
 
 def add(home, name: str, v: int, glb: Path | None, line: str, kind: str = "model", fx: dict | None = None,
@@ -231,6 +240,8 @@ class Handler(BaseHTTPRequestHandler):
             return
         if u.path == "/":
             return self._send(200, PAGE.read_bytes(), "text/html; charset=utf-8")
+        if u.path == "/studio" or u.path.startswith("/jobs"):
+            return self._studio_get(u.path, q)
         if _board is None:
             return self._json(200, {"items": []})
         if u.path == "/state":
@@ -252,10 +263,44 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(200, (item or {}).get("fx") or {})
         self._send(404, b"not found", "text/plain")
 
+    def _studio_get(self, path: str, q):
+        from . import studio_board as sb
+        if path == "/studio":
+            return self._send(200, sb.PAGE.read_bytes(), "text/html; charset=utf-8")
+        if _studio_home is None:
+            return self._json(200, {"stages": [], "jobs": []})
+        parts = path.split("/")[2:]  # /jobs, /jobs/<name>, /jobs/<name>/model/<stage>, /jobs/<name>/file/<i>
+        if not parts:
+            return self._json(200, sb.board(_studio_home))
+        j = sb._jobs(_studio_home).get(parts[0])
+        if j is None:
+            return self._send(404, b"no such job", "text/plain")
+        if len(parts) == 1:
+            return self._json(200, sb.detail(_studio_home, parts[0]))
+        if parts[1:2] == ["model"] and len(parts) == 3:
+            glb = sb.model(_studio_home, j, parts[2])
+            if glb:
+                return self._send(200, glb.read_bytes(), "model/gltf-binary")
+        if parts[1:2] == ["file"] and len(parts) == 3 and parts[2].isdigit():
+            fs = sb.files(j)
+            f = Path(fs[int(parts[2])]) if int(parts[2]) < len(fs) else None
+            types = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp"}
+            if f and f.is_file() and f.suffix.lower() in types:
+                return self._send(200, f.read_bytes(), types[f.suffix.lower()])
+        return self._send(404, b"not found", "text/plain")
+
     def do_POST(self):
         u = urlparse(self.path)
         if not self._authed(parse_qs(u.query)):
             return
+        if u.path.startswith("/jobs/") and u.path.endswith("/thumbs") and _studio_home is not None:
+            from . import studio_board as sb
+            try:
+                body = json.loads(self.rfile.read(int(self.headers.get("Content-Length") or 0)) or b"{}")
+                res = sb.thumbs(_studio_home, u.path.split("/")[2], body)
+            except ValueError as e:
+                res = {"ok": False, "error": f"bad request: {e}"}
+            return self._json(200 if res["ok"] else 409, res)
         if u.path != "/decide" or _board is None:
             return self._send(404, b"not found", "text/plain")
         try:

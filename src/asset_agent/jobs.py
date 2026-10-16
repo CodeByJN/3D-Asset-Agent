@@ -225,6 +225,10 @@ class Jobs:
             j["tries"][back], j["note"] = 0, note
             self._save(j)
             return f"job {name}: back to {back} with the user's note"
+        if j["status"] == "stuck":  # accepted as it is: the last output becomes the stage's
+            if stage == "brief":
+                raise ValueError("a brief with failed checks can't be accepted: send Claude a note instead")
+            j["outputs"][stage] = next(e["data"] for e in reversed(self.trace(name)) if e["kind"] == "submit")
         j["tries"][stage], j["note"] = 0, note
         later = [s for s in STAGES[STAGES.index(stage) + 1:] if self.applies(j, s)]
         for s in STAGES[STAGES.index(stage) + 1:STAGES.index(later[0]) if later else None]:

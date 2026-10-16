@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Asset Studio</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Rubik:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<style>
+/* The review window's dark theme: models are judged against a dark stage, as in Studio at night. */
+:root {
+  --bg: #0b0d16; --panel: #141a2c; --panel-2: #1a2138; --line: #283153; --fg: #eef1fb; --muted: #94a0c4;
+  --accent: #ffc83d; --accent-ink: #1d1600; --good: #3ccf8e; --bad: #ff6b6b; --info: #6cb6ff;
+  --display: "Lilita One", "Arial Rounded MT Bold", "Trebuchet MS", sans-serif;
+  --body: "Rubik", "Segoe UI", system-ui, sans-serif; --mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; margin: 0; }
+body { background: var(--bg); color: var(--fg); font: 400 14px/1.45 var(--body); }
+.app { height: 100%; display: grid; grid-template-columns: 250px minmax(0, 1fr); }
+
+/* the board: one card per job */
+nav { background: var(--panel); border-right: 1px solid var(--line); overflow-y: auto; padding: 16px 12px; display: flex; flex-direction: column; gap: 8px; }
+nav h1 { font: 400 26px/1 var(--display); margin: 2px 6px 10px; }
+.card { display: block; width: 100%; text-align: left; font: inherit; color: inherit; background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; cursor: pointer; }
+.card[aria-current="true"] { border-color: var(--accent); }
+.card b { font: 600 14px var(--body); display: block; overflow-wrap: anywhere; }
+.card .what { color: var(--muted); font-size: 12px; display: block; margin: 2px 0 8px; overflow-wrap: anywhere; }
+.dots { display: flex; gap: 3px; }
+.dots i { flex: 1; height: 4px; border-radius: 2px; background: var(--line); }
+.dots i.done { background: var(--good); } .dots i.skipped { background: var(--line); opacity: .4; }
+.dots i.working { background: var(--info); } .dots i.awaiting { background: var(--accent); } .dots i.stuck { background: var(--bad); }
+.card .st { font: 500 11px var(--mono); color: var(--muted); margin-top: 6px; display: flex; justify-content: space-between; gap: 6px; }
+.none { color: var(--muted); font-size: 13px; padding: 6px; }
+
+/* a job */
+main { min-width: 0; overflow-y: auto; display: flex; flex-direction: column; }
+.head { padding: 16px 20px 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; }
+.head h2 { font: 400 30px/1 var(--display); margin: 0; overflow-wrap: anywhere; }
+.head .what { color: var(--muted); }
+.pill { font: 600 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; border-radius: 5px; padding: 5px 7px; border: 1px solid currentColor; }
+.pill.working { color: var(--info); } .pill.awaiting { color: var(--accent); } .pill.stuck { color: var(--bad); }
+.pill.done { color: var(--good); } .pill.todo, .pill.skipped { color: var(--muted); }
+.track { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 6px; padding: 14px 20px; }
+.step { font: 500 12px var(--body); color: var(--muted); background: none; border: 0; border-top: 4px solid var(--line); padding: 7px 2px 0; text-align: left; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.step span { font: 500 10px var(--mono); display: block; }
+.step.done { border-color: var(--good); color: var(--fg); } .step.skipped { opacity: .45; }
+.step.working { border-color: var(--info); color: var(--fg); } .step.awaiting { border-color: var(--accent); color: var(--fg); }
+.step.stuck { border-color: var(--bad); color: var(--fg); }
+.step[aria-current="true"] { color: var(--accent); }
+.step:focus-visible, .card:focus-visible, button:focus-visible, textarea:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
+.body { flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) 360px; min-height: 0; border-top: 1px solid var(--line); }
+.work { min-width: 0; padding: 18px 20px; display: flex; flex-direction: column; gap: 16px; }
+.side { background: var(--panel); border-left: 1px solid var(--line); padding: 18px; display: flex; flex-direction: column; gap: 18px; }
+h3 { font: 500 11px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin: 0 0 8px; }
+.viewer { position: relative; height: 420px; border-radius: 12px; overflow: hidden; background: radial-gradient(ellipse at 50% 40%, #1a2140 0%, #070910 70%); border: 1px solid var(--line); }
+.viewer canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.viewer .hint { position: absolute; left: 12px; bottom: 10px; font: 400 11px var(--mono); color: var(--muted); pointer-events: none; }
+.empty { color: var(--muted); padding: 30px 0; text-align: center; }
+.imgs { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.imgs a { display: block; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #070910; aspect-ratio: 1; }
+.imgs img { width: 100%; height: 100%; object-fit: contain; display: block; }
+dl.kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 14px; margin: 0; }
+dl.kv dt { color: var(--muted); font: 400 12px var(--mono); padding-top: 2px; }
+dl.kv dd { margin: 0; overflow-wrap: anywhere; }
+ul.details { margin: 0; padding-left: 18px; }
+.quote { border-left: 3px solid var(--accent); padding: 4px 12px; color: var(--fg); background: var(--panel); border-radius: 0 8px 8px 0; }
+.bars { display: grid; grid-template-columns: max-content minmax(0, 1fr) 2.5em; gap: 6px 10px; align-items: center; }
+.bars .bar { height: 8px; border-radius: 4px; background: var(--line); overflow: hidden; }
+.bars .bar i { display: block; height: 100%; background: var(--info); }
+.bars .n { font: 500 12px var(--mono); text-align: right; }
+pre.raw { margin: 0; font: 400 12px/1.5 var(--mono); color: var(--muted); white-space: pre-wrap; overflow-wrap: anywhere; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
+
+/* checks, thumbs, history */
+.checks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.checks li { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 4px 8px; font-size: 13px; }
+.checks .mark { font: 600 13px var(--mono); }
+.checks .pass .mark { color: var(--good); } .checks .fail .mark { color: var(--bad); } .checks .warn .mark { color: var(--accent); }
+.checks .val { grid-column: 2; font: 400 11px var(--mono); color: var(--muted); overflow-wrap: anywhere; }
+.thumbs { display: flex; flex-direction: column; gap: 10px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+.thumbs.ready { border-color: var(--accent); }
+.thumbs p { margin: 0; font-size: 13px; color: var(--muted); }
+textarea { width: 100%; min-height: 70px; resize: vertical; font: 400 13px/1.4 var(--body); color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+label.row { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+select, input[type=number] { font: 400 13px var(--body); color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 7px; padding: 5px 8px; }
+input[type=number] { width: 5em; }
+.btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.btn { font: 600 14px var(--body); padding: 11px 0; border-radius: 9px; border: 1px solid var(--line); background: var(--panel); color: var(--fg); cursor: pointer; }
+.btn.up { background: var(--good); border-color: var(--good); color: #04140c; }
+.btn.down { border-color: var(--bad); color: var(--bad); }
+.btn:disabled { opacity: .35; cursor: default; }
+.status { min-height: 18px; font-size: 13px; color: var(--muted); }
+.status.err { color: var(--bad); } .status.ok { color: var(--good); }
+ol.hist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; font-size: 12px; }
+ol.hist li { display: grid; grid-template-columns: 4.2em minmax(0, 1fr); gap: 8px; }
+ol.hist time { font: 400 11px var(--mono); color: var(--muted); }
+ol.hist .k { font-weight: 600; }
+details summary { cursor: pointer; font: 500 11px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.notice { color: var(--muted); padding: 40px 20px; }
+@media (max-width: 1100px) { .body { grid-template-columns: 1fr; } .side { border-left: 0; border-top: 1px solid var(--line); } }
+@media (max-width: 760px) {
+  .app { grid-template-columns: 1fr; height: auto; }
+  nav { border-right: 0; border-bottom: 1px solid var(--line); max-height: 40vh; }
+  .track { grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 12px 16px; }
+  .head, .work { padding-left: 16px; padding-right: 16px; }
+  .viewer { height: 300px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <nav aria-label="Jobs"><h1>Asset Studio</h1><div id="cards"></div></nav>
+  <main id="main"><div class="notice" id="notice">Loading the board…</div>
+    <div id="job" hidden>
+      <div class="head"><h2 id="jname"></h2><span class="what" id="jwhat"></span><span class="pill" id="jstatus"></span></div>
+      <div class="track" id="track" role="tablist" aria-label="Stages"></div>
+      <div class="body">
+        <section class="work" id="work"></section>
+        <aside class="side">
+          <div class="thumbs" id="thumbs"></div>
+          <div id="checks"></div>
+          <div id="hist"></div>
+          <details id="vaultbox"><summary>Vault brief</summary><pre class="raw" id="vault"></pre></details>
+        </aside>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+// The 3D view: orbit/zoom, a floor and an R15-sized figure for scale. Roblox imports GLB metres at 0.28 m a stud.
+function makeViewer(el) {
+  const STUD = 0.28;
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.outputEncoding = THREE.sRGBEncoding; renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.shadowMap.enabled = true;
+  el.append(renderer.domElement);
+  const scene = new THREE.Scene(); scene.fog = new THREE.Fog(0x0b0d16, 8, 20);
+  const camera = new THREE.PerspectiveCamera(40, 1, 0.01, 200);
+  const controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true; controls.autoRotate = true; controls.autoRotateSpeed = 1.2;
+  scene.add(new THREE.HemisphereLight(0x9aa4d0, 0x0a0a0c, 0.9));
+  const key = new THREE.DirectionalLight(0xfff3e6, 1.6); key.position.set(2, 4, -3); key.castShadow = true; scene.add(key);
+  const rim = new THREE.DirectionalLight(0x6f8cff, 0.35); rim.position.set(-3, 2, 3); scene.add(rim);
+  const floor = new THREE.Mesh(new THREE.CircleGeometry(10, 64), new THREE.MeshStandardMaterial({ color: 0x141826, roughness: 0.95 }));
+  floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+  const figure = new THREE.Group(); scene.add(figure);
+  const fm = new THREE.MeshStandardMaterial({ color: 0x5b5e6b, roughness: 0.8, transparent: true, opacity: 0.8 });
+  [[0.9, 2, 1, -0.5, 1], [0.9, 2, 1, 0.5, 1], [2, 2, 1, 0, 3], [0.9, 2, 1, -1.5, 3], [0.9, 2, 1, 1.5, 3], [1.2, 1.2, 1.2, 0, 4.7]]
+    .forEach(([w, h, d, x, y]) => { const b = new THREE.Mesh(new THREE.BoxGeometry(w * STUD, h * STUD, d * STUD), fm); b.position.set(x * STUD, y * STUD, 0); figure.add(b); });
+  let model = null, src = null;
+  const loader = new THREE.GLTFLoader(), size = new THREE.Vector3();
+  function resize() { const w = el.clientWidth, h = el.clientHeight; if (!w || !h) return; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
+  new ResizeObserver(resize).observe(el); resize();
+  (function tick() { requestAnimationFrame(tick); controls.update(); renderer.render(scene, camera); })();
+  renderer.domElement.addEventListener("pointerdown", () => { controls.autoRotate = false; });
+  return {
+    load(url) {
+      if (url === src) return; src = url;
+      loader.load(url, gltf => {
+        if (url !== src) return;
+        if (model) scene.remove(model);
+        model = gltf.scene;
+        model.traverse(o => { if (o.isMesh) { o.castShadow = true; (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => { if (m.map) m.map.encoding = THREE.sRGBEncoding; }); } });
+        const box = new THREE.Box3().setFromObject(model), c = box.getCenter(new THREE.Vector3()); box.getSize(size);
+        model.position.set(-c.x, -box.min.y, -c.z); scene.add(model);
+        figure.position.set(-(size.x / 2 + 0.6), 0, 0);
+        const h = Math.max(size.y, 0.3), r = Math.max(h, size.x, size.z);
+        controls.target.set(0, h * 0.5, 0); camera.position.set(r * 0.9, h * 0.75, -r * 1.6); controls.update();
+        controls.maxDistance = Math.max(15, r * 6); floor.scale.setScalar(Math.max(1, r / 3));
+        scene.fog.near = Math.max(8, r * 2); scene.fog.far = Math.max(20, r * 8);
+      }, undefined, () => { if (url === src) src = null; });
+    },
+  };
+}
+</script>
+<script>
+const T = new URLSearchParams(location.search).get("t") || "";
+const q = path => `${path}${path.includes("?") ? "&" : "?"}t=${encodeURIComponent(T)}`;
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+const LABEL = {brief: "Brief", shape: "Shape", cleanup: "Cleanup", texture: "Texture", rig: "Rig + scripts", critic: "Auto critic", review: "Your review", place: "Place"};
+const STATE = {working: "Claude working", awaiting: "Your thumbs", stuck: "Stuck: your call", done: "Done", todo: "To do", skipped: "Skipped"};
+let board = {stages: [], jobs: []}, job = null, viewing = null, viewer = null, lastJob = "", lastBoard = "", lastWork = "";
+
+const current = () => decodeURIComponent(location.hash.slice(1));
+const ago = t => { const s = Date.now() / 1000 - t; return s < 60 ? "now" : s < 3600 ? `${Math.round(s / 60)}m ago` : s < 86400 ? `${Math.round(s / 3600)}h ago` : `${Math.round(s / 86400)}d ago`; };
+
+function renderBoard() {
+  const cards = $("cards");
+  if (!board.jobs.length) { cards.innerHTML = `<p class="none">No jobs yet. Ask Claude to start one: job_next("name").</p>`; return; }
+  cards.innerHTML = board.jobs.map(j => {
+    const dots = board.stages.map((s, i) => `<i class="${i < j.index ? "done" : i === j.index ? j.status : ""}"></i>`).join("");
+    return `<button class="card" data-name="${esc(j.name)}" aria-current="${j.name === current()}">
+      <b>${esc(j.name)}</b><span class="what">${esc(j.what || "no brief yet")}</span>
+      <span class="dots">${dots}</span>
+      <span class="st"><span>${esc(LABEL[j.stage])} · ${esc(STATE[j.status] || j.status)}</span><span>${ago(j.updated)}</span></span></button>`;
+  }).join("");
+}
+$("cards").addEventListener("click", e => { const c = e.target.closest(".card"); if (c) location.hash = encodeURIComponent(c.dataset.name); });
+
+function checksHtml(rep) {
+  if (!rep) return `<h3>Checks</h3><p class="none">Not submitted yet.</p>`;
+  const rows = rep.checks.map(c => {
+    const cls = c.pass ? "pass" : c.blocking === false ? "warn" : "fail";
+    const val = c.pass ? esc(JSON.stringify(c.value)) : `${esc(JSON.stringify(c.value))}${c.want != null ? ` · want ${esc(c.want)}` : ""}`;
+    return `<li class="${cls}"><span class="mark">${c.pass ? "✓" : cls === "warn" ? "!" : "✗"}</span><span>${esc(c.name)}</span><span class="val">${val}</span></li>`;
+  }).join("");
+  return `<h3>Checks · ${rep.pass ? "passed" : "failed"}</h3><ul class="checks">${rows || "<li>none</li>"}</ul>`;
+}
+
+function histHtml(h) {
+  if (!h.length) return "";
+  const what = e => {
+    const d = e.data || {};
+    if (e.kind === "thumbs_up") return `<span class="k">👍 thumbs up</span>${d.stars ? ` · ${d.stars}/10` : ""}${d.note ? ` · ${esc(d.note)}` : ""}`;
+    if (e.kind === "thumbs_down") return `<span class="k">👎 redo${d.back_to ? ` from ${esc(LABEL[d.back_to])}` : ""}</span>${d.note ? ` · ${esc(d.note)}` : ""}`;
+    if (e.kind === "loop_back") return `<span class="k">↩ back to ${esc(LABEL[d.to])}</span> · ${esc((d.checks || []).join(", "))}`;
+    if (e.kind === "stuck") return `<span class="k">stopped</span> after ${esc(d.tries)} failed checks`;
+    if (e.kind === "submit") return `<span class="k">submitted</span>`;
+    return `<span class="k">${esc(e.kind.replace("_", " "))}</span>`;
+  };
+  return `<h3>History</h3><ol class="hist">${h.slice().reverse().slice(0, 12).map(e => `<li><time>${ago(e.at)}</time><span>${what(e)}</span></li>`).join("")}</ol>`;
+}
+
+function workHtml(st) {
+  const o = st.output, name = job.name;
+  const img = i => `<a href="${q(`/jobs/${encodeURIComponent(name)}/file/${i}`)}" target="_blank" rel="noopener"><img alt="" src="${q(`/jobs/${encodeURIComponent(name)}/file/${i}`)}"></a>`;
+  let html = "";
+  if (st.has_model) html += `<div class="viewer" id="viewer"><span class="hint">drag to orbit · scroll to zoom · grey figure = R15 character</span></div>`;
+  if (!o) {
+    const why = st.state === "todo" ? "This stage hasn't started." : st.state === "skipped" ? "Skipped: nothing in the brief needs it." :
+      st.state === "stuck" ? "The last submission failed its checks 3 times (see Checks): your call." :
+      st.stage === "review" ? "Your review: look at the model in the earlier stages, then give it a thumbs up or send it back." : "Claude is working on this stage.";
+    return html + `<p class="empty">${why}</p>`;
+  }
+  if (st.stage === "brief") {
+    const d = o.description || {};
+    html += `<div><h3>References</h3><div class="imgs">${(o.images || []).map(img).join("")}</div></div>`;
+    html += `<div><h3>Description</h3><dl class="kv">${["what", "style", "colours", "size_studs", "genre", "use"].map(k => `<dt>${k.replace("_", " ")}</dt><dd>${esc(d[k])}</dd>`).join("")}
+      <dt>category</dt><dd>${esc(o.category)}</dd><dt>route</dt><dd>${esc(o.route)}</dd><dt>budget</dt><dd>${esc(o.budget || "roblox_prop")}</dd>
+      <dt>moves</dt><dd>${o.moves ? "yes (rigged)" : "no"}</dd><dt>critic target</dt><dd>${esc(o.target || 7)}/10</dd></dl></div>`;
+    html += `<div><h3>Key details</h3><ul class="details">${(o.details || []).map(x => `<li>${esc(x)}</li>`).join("")}</ul></div>`;
+    if (o.parts) html += `<div><h3>Hybrid split</h3><dl class="kv"><dt>organic</dt><dd>${esc((o.parts.organic || []).join(", "))}</dd><dt>built</dt><dd>${esc((o.parts.built || []).join(", "))}</dd></dl></div>`;
+    html += `<div><h3>Claude's restatement</h3><p class="quote">${esc(o.restatement)}</p></div>`;
+    return html;
+  }
+  if (st.stage === "critic") {
+    if ((o.views || []).length) html += `<div><h3>What the critic looked at</h3><div class="imgs">${o.views.map(img).join("")}</div></div>`;
+    const sc = o.scores || {};
+    html += `<div><h3>Scores · overall ${esc(o.score)}/10 (target ${esc(job.brief?.target || 7)})</h3><div class="bars">${Object.entries(sc).map(([k, v]) =>
+      `<span>${esc(k)}</span><span class="bar"><i style="width:${Math.max(0, Math.min(10, v)) * 10}%"></i></span><span class="n">${esc(v)}</span>`).join("")}</div></div>`;
+    html += `<div><h3>Key details</h3><ul class="details">${Object.entries(o.details || {}).map(([k, v]) => `<li>${v ? "✓" : "✗"} ${esc(k)}</li>`).join("")}</ul></div>`;
+    if (o.notes) html += `<div><h3>Notes</h3><p class="quote">${esc(o.notes)}</p></div>`;
+    return html;
+  }
+  const facts = Object.entries(o).filter(([k]) => !["parts"].includes(k));
+  html += `<div><h3>Output</h3><dl class="kv">${facts.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(typeof v === "object" ? JSON.stringify(v) : v)}</dd>`).join("")}</dl></div>`;
+  if (o.parts) html += `<div><h3>Parts</h3><pre class="raw">${esc(JSON.stringify(o.parts, null, 1))}</pre></div>`;
+  return html;
+}
+
+function thumbsHtml(st) {
+  const live = st.stage === job.stage && (job.status === "awaiting" || job.status === "stuck");
+  if (!live) {
+    const msg = job.status === "done" ? "This job is done." : st.stage !== job.stage ? `Viewing ${LABEL[st.stage]}. The job is at ${LABEL[job.stage]}.` :
+      `Claude is working on ${LABEL[job.stage]}${job.tries ? ` (${job.tries}/${job.max_tries} failed checks)` : ""}. Your thumbs open once its checks pass.`;
+    return `<h3>Your thumbs</h3><p>${esc(msg)}</p>`;
+  }
+  const i = board.stages.indexOf(job.stage);
+  const back = board.stages.slice(0, i + 1).filter(s => job.stages.find(x => x.stage === s).state !== "skipped").reverse()
+    .map(s => `<option value="${s}">${s === job.stage ? `redo ${LABEL[s]}` : `back to ${LABEL[s]}`}</option>`).join("");
+  const noAccept = job.status === "stuck" && job.stage === "brief";
+  const stuck = job.status !== "stuck" ? "" : noAccept ? `<p>The brief failed its checks ${job.tries} times. Send Claude a note with what's missing (images, description, details).</p>` :
+    `<p>The checks failed ${job.tries} times. Thumbs up accepts it as it is; thumbs down sends Claude back with your note.</p>`;
+  const stars = st.stage === "review" ? `<label class="row">Rating <input type="number" id="stars" min="1" max="10" step="0.5" placeholder="1-10"> /10</label>` : "";
+  return `<h3>Your thumbs · ${esc(LABEL[job.stage])}</h3>${stuck}
+    <textarea id="note" placeholder="Notes: what's good, or what to change"></textarea>${stars}
+    <label class="row">If redoing <select id="back">${back}</select></label>
+    <div class="btns"><button class="btn down" id="down">👎 Redo</button><button class="btn up" id="up"${noAccept ? " disabled" : ""}>👍 Approve</button></div>
+    <div class="status" id="status" role="status"></div>`;
+}
+
+function renderJob() {
+  if (!job) return;
+  $("notice").hidden = true; $("job").hidden = false;
+  $("jname").textContent = job.name;
+  $("jwhat").textContent = job.brief?.description?.what || "";
+  const pill = $("jstatus"); pill.className = `pill ${job.status}`; pill.textContent = STATE[job.status] || job.status;
+  if (!viewing || !job.stages.find(s => s.stage === viewing)) viewing = job.stage;
+  $("track").innerHTML = job.stages.map((s, i) => `<button class="step ${s.state}" role="tab" data-s="${s.stage}" aria-current="${s.stage === viewing}" title="${esc(STATE[s.state] || s.state)}"><span>${i + 1}</span>${esc(LABEL[s.stage])}</button>`).join("");
+  const st = job.stages.find(s => s.stage === viewing);
+  const work = workHtml(st);
+  if (work !== lastWork) { lastWork = work; $("work").innerHTML = work; if (st.has_model) { viewer = makeViewer($("viewer")); viewer.load(q(`/jobs/${encodeURIComponent(job.name)}/model/${st.stage}?v=${encodeURIComponent(JSON.stringify(st.output?.version ?? ""))}`)); } }
+  const keep = $("note")?.value || "", keepStars = $("stars")?.value || "";
+  const box = $("thumbs"); box.innerHTML = thumbsHtml(st);
+  box.classList.toggle("ready", st.stage === job.stage && ["awaiting", "stuck"].includes(job.status));
+  if ($("note")) { $("note").value = keep; if ($("stars")) $("stars").value = keepStars; $("up").onclick = () => send(true); $("down").onclick = () => send(false); }
+  $("checks").innerHTML = checksHtml(st.report);
+  $("hist").innerHTML = histHtml(st.history);
+  $("vault").textContent = job.vault || "No vault brief until the brief names a category.";
+  if (job.note && st.stage === job.stage && job.status === "working") $("hist").insertAdjacentHTML("afterbegin", `<h3>Your note</h3><p class="quote">${esc(job.note)}</p>`);
+}
+$("track").addEventListener("click", e => { const b = e.target.closest(".step"); if (b) { viewing = b.dataset.s; renderJob(); } });
+
+async function send(up) {
+  const note = $("note").value.trim(), stars = $("stars")?.value, back = $("back").value;
+  const status = $("status");
+  if (!up && !note) { status.className = "status err"; status.textContent = "Say what to change, so Claude can redo it."; return; }
+  if (job.stage === "review" && up && !stars) { status.className = "status err"; status.textContent = "Rate it 1-10 first."; return; }
+  $("up").disabled = $("down").disabled = true; status.className = "status"; status.textContent = "Saving…";
+  try {
+    const r = await fetch(q(`/jobs/${encodeURIComponent(job.name)}/thumbs`), {method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({up, note, back_to: up ? null : back, stars: stars ? Number(stars) : null})});
+    const res = await r.json();
+    if (!res.ok) throw new Error(res.error);
+    $("note").value = ""; viewing = null; lastJob = "";
+    await poll();
+  } catch (e) {
+    status.className = "status err"; status.textContent = e.message;
+    $("up").disabled = $("down").disabled = false;
+  }
+}
+
+async function poll() {
+  try {
+    const r = await fetch(q("/jobs"), {cache: "no-store"});
+    if (r.status === 401) { $("notice").hidden = false; $("job").hidden = true; $("notice").textContent = "The harness restarted: open the newest board link from Claude."; return; }
+    const text = await r.text();
+    if (text !== lastBoard) { lastBoard = text; board = JSON.parse(text); renderBoard(); }
+    let name = current();
+    if (!name && board.jobs.length) { name = board.jobs[0].name; history.replaceState(null, "", `#${encodeURIComponent(name)}`); renderBoard(); }
+    if (!name) { $("notice").hidden = false; $("job").hidden = true; $("notice").textContent = "No jobs yet."; return; }
+    const jr = await fetch(q(`/jobs/${encodeURIComponent(name)}`), {cache: "no-store"});
+    if (!jr.ok) { $("notice").hidden = false; $("job").hidden = true; $("notice").textContent = `No job ${name}.`; return; }
+    const jt = await jr.text();
+    if (jt !== lastJob) {
+      const was = job?.name, wasStage = job?.stage;
+      lastJob = jt; job = JSON.parse(jt);
+      if (was !== job.name || wasStage !== job.stage) viewing = null;
+      renderJob();
+    }
+  } catch (e) { /* the server may be restarting: try again next tick */ }
+}
+addEventListener("hashchange", () => { lastJob = ""; viewing = null; renderBoard(); poll(); });
+poll(); setInterval(poll, 2000);
+</script>
+</body>
+</html>
